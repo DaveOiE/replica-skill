@@ -1,65 +1,66 @@
-feature,area,priority,original,clone,notes,tag,ceiling,milestone,effort
-"Workspaces, users, roles, password sign-in",foundation,must,yes,yes,"M1: scrypt sign-in, lockout, sessions, 5 roles, can(), hash-chained audit via mutate(), fake seed. Invites and password-rule settings come in M7",C,done,M1,8
-"Task fields: owner, assignee, due date, start date, status, description",tasks,must,yes,no,,C,done,M2,3
-Comments on tasks,tasks,must,yes,no,,C,done,M2,2
-Attachments on tasks,tasks,should,yes,no,"local disk, size and type limits",C,done,M2,3
-Subtasks,tasks,must,yes,no,,C,done,M2,2
-Projects with sections,projects,must,yes,no,,C,done,M2,3
-Project templates (custom),projects,should,yes,no,,C,done,M2,3
-List view,views,must,yes,no,,C,done,M2,3
-Board view,views,must,yes,no,,C,done,M3,3
-Calendar view,views,must,yes,no,,C,done,M3,3
-Timeline view (Gantt-style),views,should,yes,no,,C,done,M3,5
-"Custom fields: text, number, date, single and multi select",custom fields,must,yes,no,A2,C,done,M3,5
-Task dependencies,tasks,should,yes,no,,C,done,M2,3
-Milestones,tasks,should,yes,no,,C,done,M2,1
-Forms that create tasks,forms,must,yes,no,,C,done,M3,5
-Form branching logic,forms,should,yes,no,,C,done,M3,3
-Form customisation,forms,could,yes,no,,C,done,M3,2
-"Rules automation: trigger, condition, action",automation,must,yes,no,A2 triggers and conditions,C,done,M4,8
-Project status updates,projects,should,yes,no,,C,done,M4,2
-Time tracking: estimated vs actual,time,should,yes,no,,C,done,M4,3
-Unlimited free guests,access,must,yes,no,A5,C,done,M2,3
-Mobile-friendly web app,shell,must,yes,partial,M1: app shell and sign-in verified at 390px and 1440px in Chromium; each later screen is checked as it is built,C,done,M1,3
-Integrations plugin interface,integrations,should,yes,no,,C,done,M9,3
-2 or 3 sample connectors,integrations,could,yes,no,"outbound webhook, CSV import/export, calendar-file feed; no account needed",C,stub,M9,3
-Catalogue of 100+ connectors,integrations,could,yes,skip,the owner's catalogue is not part of the product to rebuild,C,skip,M9,0
-Native mobile apps,shell,could,yes,skip,out of scope per the list,C,skip,M1,0
-Reporting dashboards with custom charts,reporting,must,yes,no,,C,done,M5,8
-Portfolios: roll-up of projects with status and progress,portfolios,should,yes,no,,C,done,M5,5
-Goals linked to projects and portfolios,goals,should,yes,no,,C,done,M5,3
-Workload and resource management in a portfolio,portfolios,should,yes,no,,C,done,M5,3
-Organisation-wide resource and capacity planning,capacity,could,yes,no,"A3, kept simple",C,done,M5,3
-Approvals,approvals,should,yes,no,,C,done,M5,3
-Proofing: review and sign-off on a piece of work,approvals,could,yes,no,comment and decision on an attachment,C,done,M5,2
-Universal reporting across projects and teams,reporting,should,yes,no,kept simple,C,done,M5,3
-SAML single sign-on,sso,must,yes,no,local mock IdP only,E,mock,M7,8
-SCIM provisioning,provisioning,must,yes,no,SCIM 2.0 against a local test client,E,mock,M7,5
-SCIM deprovisioning,provisioning,must,yes,no,deactivation ends sessions,E,mock,M7,2
-Admin console: teams,admin,must,yes,no,,E,done,M7,3
-Admin console: settings and access,admin,must,yes,no,,E,done,M7,5
-Per-project admin controls,admin,should,yes,no,,E,done,M2,2
-Service accounts,admin,should,yes,no,,E,done,M6,3
-View-only seats,access,must,yes,yes,"M1: view-only and guest can never write; proven by route walk on every route. No billing or licence counting (A4)",E,done,M1,2
-Control who can invite guests,access,should,yes,no,,E,done,M7,1
-Trusted guest domains,access,should,yes,no,,E,done,M7,2
-Approved workspaces,admin,should,yes,no,,E,done,M7,2
-Admin control over which apps connect,admin,should,yes,no,,E,done,M7,2
-Custom password requirements,security,should,yes,no,,E,done,M7,2
-Custom onboarding,admin,should,yes,no,,E,done,M8,2
-Custom branding,admin,should,yes,no,,E,done,M8,2
-Workflow bundles,admin,should,yes,no,,E,done,M8,3
-Cross-region backup,backup,could,yes,no,"local backup to a second directory; simulation, no real region",E,stub,M8,2
-Audit log of admin and user actions,audit,must,yes,no,,E,done,M6,5
-Audit API suited to SIEM export,audit,must,yes,no,"JSON and NDJSON, cursor paging",E,done,M6,3
-Data residency selection,compliance,could,yes,no,"not certified, no real regions",S,setting only,M9,1
-Enterprise key management,compliance,could,yes,no,"not certified, no real key custody",S,setting only,M9,1
-"DLP, archiving and eDiscovery integration points",compliance,could,yes,no,A1; hooks and export endpoints only,S,stub,M9,2
-Dedicated workspace tier,compliance,could,yes,no,not certified,S,setting only,M9,1
-Priority and 24/7 support contact page,support,could,yes,no,"placeholder contact details, no staffing claim",S,stub,M9,1
-Certifications documented as not certified,compliance,could,yes,no,documents say not certified,S,setting only,M9,1
-AI teammates (agents),ai,could,yes,no,"feature flag, rule-based",S,stub,M10,2
-No-code AI builder for automations,ai,could,yes,no,"keyword and template matching, usage credits shown as a number only",S,stub,M10,2
-AI planning assistant,ai,could,yes,no,"feature flag, rule-based",S,stub,M10,1
-MCP-style endpoint for outside AI apps,ai,could,yes,no,"A6; service account token, local only",S,stub,M10,2
-"Smart fields, summaries, status drafts, editing help",ai,could,yes,no,A7; rule-based text,?,stub,M10,1
+feature,area,priority,original,clone,notes,tag,ceiling,milestone,effort,scope
+"Workspaces, users, roles, password sign-in",foundation,must,yes,yes,"M1: scrypt sign-in, lockout, sessions, 5 roles, can(), hash-chained audit via mutate(), fake seed. Invites and password-rule settings come in M7",C,done,M1,8,demo
+"Task fields: owner, assignee, due date, start date, status, description",tasks,must,yes,no,,C,done,M2,3,demo
+Comments on tasks,tasks,must,yes,no,,C,done,M2,2,demo
+Attachments on tasks,tasks,should,yes,no,"local disk, size and type limits",C,done,M2,3,later
+Subtasks,tasks,must,yes,no,,C,done,M2,2,demo
+Projects with sections,projects,must,yes,no,,C,done,M2,3,demo
+Project templates (custom),projects,should,yes,no,,C,done,M2,3,later
+List view,views,must,yes,no,,C,done,M2,3,demo
+Board view,views,must,yes,no,"drag to move, plus a Move-to menu for keyboard users",C,done,M3,3,demo
+Calendar view,views,must,yes,no,,C,done,M3,3,later
+Timeline view (Gantt-style),views,should,yes,no,,C,done,M3,5,later
+"Custom fields: text, number, date, single and multi select",custom fields,must,yes,no,A2,C,done,M3,5,later
+Task dependencies,tasks,should,yes,no,,C,done,M2,3,demo
+Milestones,tasks,should,yes,no,,C,done,M2,1,demo
+Forms that create tasks,forms,must,yes,no,,C,done,M3,5,later
+Form branching logic,forms,should,yes,no,,C,done,M3,3,later
+Form customisation,forms,could,yes,no,,C,done,M3,2,later
+"Rules automation: trigger, condition, action",automation,must,yes,no,A2 triggers and conditions,C,done,M4,8,later
+Project status updates,projects,should,yes,no,,C,done,M4,2,later
+Time tracking: estimated vs actual,time,should,yes,no,,C,done,M4,3,later
+Unlimited free guests,access,must,yes,no,guests see only projects they are added to (A5),C,done,M2,3,demo
+Mobile-friendly web app,shell,must,yes,partial,M1: app shell and sign-in verified at 390px and 1440px in Chromium; each later screen is checked as it is built,C,done,M1,3,demo
+Integrations plugin interface,integrations,should,yes,no,,C,done,M9,3,later
+2 or 3 sample connectors,integrations,could,yes,no,"outbound webhook, CSV import/export, calendar-file feed; no account needed",C,stub,M9,3,later
+Catalogue of 100+ connectors,integrations,could,yes,skip,the owner's catalogue is not part of the product to rebuild,C,skip,M9,0,skip
+Native mobile apps,shell,could,yes,skip,out of scope per the list,C,skip,M1,0,skip
+Reporting dashboards with custom charts,reporting,must,yes,no,"demo slice: fixed widgets (status, overdue, due soon, workload); the custom chart builder is later",C,done,M5,4,demo
+Portfolios: roll-up of projects with status and progress,portfolios,should,yes,no,,C,done,M5,5,later
+Goals linked to projects and portfolios,goals,should,yes,no,,C,done,M5,3,demo
+Workload and resource management in a portfolio,portfolios,should,yes,no,,C,done,M5,3,later
+Organisation-wide resource and capacity planning,capacity,could,yes,no,"A3, kept simple",C,done,M5,3,later
+Approvals,approvals,should,yes,no,,C,done,M5,3,later
+Proofing: review and sign-off on a piece of work,approvals,could,yes,no,comment and decision on an attachment,C,done,M5,2,later
+Universal reporting across projects and teams,reporting,should,yes,no,kept simple,C,done,M5,3,later
+SAML single sign-on,sso,must,yes,no,local mock IdP only,E,mock,M7,8,later
+SCIM provisioning,provisioning,must,yes,no,SCIM 2.0 against a local test client,E,mock,M7,5,later
+SCIM deprovisioning,provisioning,must,yes,no,deactivation ends sessions,E,mock,M7,2,later
+Admin console: teams,admin,must,yes,no,,E,done,M7,3,later
+Admin console: settings and access,admin,must,yes,no,,E,done,M7,5,later
+Per-project admin controls,admin,should,yes,no,,E,done,M2,2,demo
+Service accounts,admin,should,yes,no,,E,done,M6,3,later
+View-only seats,access,must,yes,yes,M1: view-only and guest can never write; proven by route walk on every route. No billing or licence counting (A4),E,done,M1,2,demo
+Control who can invite guests,access,should,yes,no,,E,done,M7,1,later
+Trusted guest domains,access,should,yes,no,,E,done,M7,2,later
+Approved workspaces,admin,should,yes,no,,E,done,M7,2,later
+Admin control over which apps connect,admin,should,yes,no,,E,done,M7,2,later
+Custom password requirements,security,should,yes,no,,E,done,M7,2,later
+Custom onboarding,admin,should,yes,no,,E,done,M8,2,later
+Custom branding,admin,should,yes,no,,E,done,M8,2,later
+Workflow bundles,admin,should,yes,no,,E,done,M8,3,later
+Cross-region backup,backup,could,yes,no,"local backup to a second directory; simulation, no real region",E,stub,M8,2,later
+Audit log of admin and user actions,audit,must,yes,no,"demo slice: admin screen with filters, before/after, verify chain; SIEM export API and service accounts are later",E,done,M6,5,demo
+Audit API suited to SIEM export,audit,must,yes,no,"JSON and NDJSON, cursor paging",E,done,M6,3,later
+Data residency selection,compliance,could,yes,no,"not certified, no real regions",S,setting only,M9,1,later
+Enterprise key management,compliance,could,yes,no,"not certified, no real key custody",S,setting only,M9,1,later
+"DLP, archiving and eDiscovery integration points",compliance,could,yes,no,A1; hooks and export endpoints only,S,stub,M9,2,later
+Dedicated workspace tier,compliance,could,yes,no,not certified,S,setting only,M9,1,later
+Priority and 24/7 support contact page,support,could,yes,no,"placeholder contact details, no staffing claim",S,stub,M9,1,later
+Certifications documented as not certified,compliance,could,yes,no,documents say not certified,S,setting only,M9,1,later
+AI teammates (agents),ai,could,yes,no,"feature flag, rule-based",S,stub,M10,2,later
+No-code AI builder for automations,ai,could,yes,no,"keyword and template matching, usage credits shown as a number only",S,stub,M10,2,later
+AI planning assistant,ai,could,yes,no,"feature flag, rule-based",S,stub,M10,1,later
+MCP-style endpoint for outside AI apps,ai,could,yes,no,"A6; service account token, local only",S,stub,M10,2,later
+"Smart fields, summaries, status drafts, editing help",ai,could,yes,no,A7; rule-based text,?,stub,M10,1,later
+Add a person (admin creates a teammate or guest; temporary password shown once),access,must,no,no,"ADDED, needs owner OK: without invites (later) there is no way to add people beyond the seed",E,done,M2,2,demo

@@ -3,7 +3,7 @@
 Date: 2026-10-12
 Branch: `claude/dreamy-mendel-jczq11`
 Source of truth: `replica/screens/feature-list.md` (owner-written, public information only)
-Status: framed; Organize complete; waiting for "go" to start Run
+Status: framed; Organize complete; M1 built; Run rescoped for a demo (see run-plan.md), waiting for "go" to start M2
 
 ## Goal
 

@@ -133,6 +133,10 @@ pick changes in one place.
 
 ## Build order, effort, and tests (milestones for Run)
 
+> **Rescoped 2026-10-12 for a demo:** M7 to M10 and parts of M2, M3, M4, M5 and M6 moved to a "later"
+> list. The live plan, numbers and stop line are in `replica/run-plan.md`; this table is the original
+> full plan.
+
 Effort is in points: one point is a small tested feature (a few routes, one screen state, its
 tests). The scale is 1, 2, 3, 5 or 8 per feature; 183 points in all across 62 features (2 are
 skipped). Per-feature points are in `replica/features.csv` and shown in `STATUS.md`, with each

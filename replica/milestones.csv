@@ -1,11 +1,11 @@
-id,name,size,planned_commits
-M1,Data model and roles,L,4
-M2,Tasks and projects,L,5
-M3,Views and forms,L,4
-M4,Automation,M,3
-M5,Reporting and goals,L,4
-M6,Audit log and service accounts,M,2
-M7,Admin console SSO and provisioning,L,4
-M8,Bundles branding and backup,M,2
-M9,Integrations stubs and compliance docs,M,2
-M10,AI flagged stubs,S,1
+id,name,size,planned_commits,scope
+M1,Data model and roles,L,4,demo
+M2,Tasks and projects (trimmed),L,5,demo
+M3,Board view (rest of views and forms later),S,1,demo
+M4,Automation,M,3,later
+M5,Simple dashboard and goals (portfolios and approvals later),M,2,demo
+M6,Audit log screen (SIEM API and service accounts later),M,2,demo
+M7,Admin console SSO and provisioning,L,4,later
+M8,Bundles branding and backup,M,2,later
+M9,Integrations stubs and compliance docs,M,2,later
+M10,AI flagged stubs,S,1,later

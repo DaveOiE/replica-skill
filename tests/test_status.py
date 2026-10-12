@@ -34,18 +34,33 @@ class StatusTests(unittest.TestCase):
             self.assertIn("| %s |" % f["feature"], out)
         self.assertIn("**6**", out)
 
-    def test_effort_totals_and_shares(self):
-        ms = [{"id": "M1", "name": "One", "size": "S", "planned_commits": "1"},
-              {"id": "M2", "name": "Two", "size": "S", "planned_commits": "1"},
-              {"id": "M3", "name": "Three", "size": "S", "planned_commits": "1"}]
+    def test_demo_scope_totals(self):
+        ms = [{"id": "M1", "name": "One", "size": "S", "planned_commits": "1"}]
         out = status.render(FEATS, ms, today="2026-01-01")
-        # built = A 3 + B 5 + C 2 + D 1 = 11 of 19 points (E is 8, F is skipped at 0)
-        self.assertIn("**11 of 19 points (58%)**", out)
-        self.assertIn("| about % of session |", out)
+        # built = A 3 + B 5 + C 2 + D 1 = 11 of 19 demo points (E is 8; F is skipped at 0)
+        self.assertIn("**11 of 19 points built (58%)**", out)
         self.assertNotIn("%%", out)
-        self.assertIn("| M1 | One | S | 1 | 8 | 42% |", out)
-        self.assertIn("| M3 | Three | S | 1 | 8 | 42% |", out)
 
+    def test_deferred_work_is_later_not_skipped_and_never_remaining(self):
+        later = dict(FEATS[4], scope="later")
+        self.assertEqual(status.state(later), "later (deferred)")
+        self.assertEqual(status.remaining(later), 0)
+        self.assertEqual(status.remaining(FEATS[4]), 8)               # demo, not started
+        self.assertEqual(status.remaining(dict(FEATS[0], clone="partial")), 0)  # partial rest lives in later screens
+        self.assertEqual(status.milestone_state([later]), "later")
+
+    def test_milestone_with_a_partial_row_says_so(self):
+        done = dict(FEATS[0]); part = dict(FEATS[0], clone="partial", ceiling="done")
+        self.assertEqual(status.milestone_state([done, part]), "done, 1 partial")
+
+    def test_stop_line_fit_uses_the_rate_in_order(self):
+        feats = [dict(FEATS[4], milestone="M1", effort="10"), dict(FEATS[4], milestone="M2", effort="5"), dict(FEATS[4], milestone="M3", effort="3")]
+        ms = [{"id": m, "name": m, "size": "S", "planned_commits": "1", "scope": "demo"} for m in ("M1", "M2", "M3")]
+        out = status.render(feats, ms, today="d", budget={"used_percent": 20.0, "rate_percent_per_point": 1.0, "stop_line_percent": 36.0})
+        self.assertIn("| M1 | M1 | demo | 10 | 10 | 0 | not started | 10.0% | 30.0% |", out)
+        self.assertIn("| M2 | M2 | demo | 5 | 5 | 0 | not started | 5.0% | 35.0% |", out)
+        self.assertIn("| M3 | M3 | demo | 3 | 3 | 0 | not started | 3.0% | 38.0% |", out)
+        self.assertIn("Fits inside the 36% stop line at the M1 rate: M1, M2.", out)   # M3 would end at 38%
     def test_check_detects_stale_file(self):
         with tempfile.TemporaryDirectory() as d:
             os.makedirs(os.path.join(d, "replica"))
