@@ -1,6 +1,6 @@
 {
-  "used_percent": 38.2,
+  "used_percent": 41.4,
   "rate_percent_per_point": 0.4,
   "stop_line_percent": 45.0,
-  "note": "used_percent is a proxy: Frame and Organize 18, M1 7.0, re-plan 2.1, M2 8.3, board and dashboard about 2.8 (about 29k tokens including test debugging). Rate = latest measured cost per built point (2.8 percent over 7 points). Gauge and Evolve must fit in the 45 percent stop line (reserve 7)."
+  "note": "used_percent is a proxy (no usage meter was available): Frame and Organize 18, M1 7.0, re-plan 2.1, M2 8.3, board and dashboard 2.6, Gauge and Evolve about 3.4 (about 35k tokens). Stop line 45 held, with about 3.6 left."
 }
