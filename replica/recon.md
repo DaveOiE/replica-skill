@@ -612,3 +612,16 @@ Marked in the order they block work. I have assumed none of these.
 Screens 114 (more once settings pages and popups are counted individually), flows 24, entities about 70 tables, about 240 API endpoints.
 Hard parts: (1) the order engine (tax x discount x unit x coupon x partial payment x refund, all consistent to the cent), (2) the stock ledger with units, conversion, grouped and variable products, (3) the accounting rules engine and the register ledger, (4) the POS UI on touch plus keyboard, (5) the module/hook system.
 **Size: XL as a single project.** It is realistic as phased work if the vertical slice (sign-in, products, POS checkout, orders and payments) ships first and later phases are ticked off against `features.csv`. Expect many sessions, not one.
+
+---
+
+## 18. Decisions recorded (2026-10-12)
+
+| question | answer | effect |
+| --- | --- | --- |
+| 1 Licence | **GPL-3.0** for the new app | removes the derivative-work risk from reading the source; the app folder gets its own GPL-3.0 `LICENSE`; a credit line to NexoPOS goes in its README |
+| 2 Stack | **Next.js + Postgres + Prisma** | see `plan.md` |
+| 3 Dine-in | **simple order type** with a table label | restaurant suite stays out of scope |
+| 4 Extras | **build all**: product CSV import, webhooks, backups, activity log, email/notification settings, sales-by-customer report, PDF/XLSX report export | their rows in `features.csv` stay `must`/`should` |
+
+Still open, with the default `plan.md` assumes: 5 (all paid modules, multi-store, marketplace, telemetry, AI server out of scope), 6 (rounding: see plan), 7 (single store, self-hosted), 8 (AUD, 10% GST inclusive, en-AU), 9 (docs site stays blocked), 10 (working title "Tillbox"; replaced at `/replica-brand`).
