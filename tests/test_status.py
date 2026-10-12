@@ -60,7 +60,7 @@ class StatusTests(unittest.TestCase):
         self.assertIn("| M1 | M1 | demo | 10 | 10 | 0 | not started | 10.0% | 30.0% |", out)
         self.assertIn("| M2 | M2 | demo | 5 | 5 | 0 | not started | 5.0% | 35.0% |", out)
         self.assertIn("| M3 | M3 | demo | 3 | 3 | 0 | not started | 3.0% | 38.0% |", out)
-        self.assertIn("Fits inside the 36% stop line at the M1 rate: M1, M2.", out)   # M3 would end at 38%
+        self.assertIn("Fits inside the 36% stop line at this rate: M1, M2.", out)   # M3 would end at 38%
     def test_check_detects_stale_file(self):
         with tempfile.TemporaryDirectory() as d:
             os.makedirs(os.path.join(d, "replica"))

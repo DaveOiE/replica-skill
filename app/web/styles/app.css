@@ -44,3 +44,47 @@ h1 { font-size: var(--text-xl-size); line-height: var(--text-xl-line); font-weig
   .side { flex-direction: column; border-bottom: 0; border-right: 1px solid var(--color-border); padding: var(--space-4) var(--space-3); }
   .content { padding: var(--space-6); }
 }
+
+/* ---- M2 screens ---- */
+h2 { font-size: var(--text-lg-size); line-height: var(--text-lg-line); font-weight: var(--text-lg-weight); margin: var(--space-5) 0 var(--space-3); }
+h3 { font-size: var(--text-base-size); font-weight: 600; margin: var(--space-4) 0 var(--space-2); }
+.muted { color: var(--color-text-muted); font-size: var(--text-sm-size); }
+.page-head { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3); margin-bottom: var(--space-4); }
+.page-head h1, .page-head h2 { margin: 0; margin-right: auto; }
+a.btn { display: inline-flex; align-items: center; text-decoration: none; }
+.task-link { color: var(--color-text); font-weight: 600; text-decoration: underline; text-underline-offset: 3px; overflow-wrap: anywhere; }
+.list { list-style: none; margin: 0 0 var(--space-3); padding: 0; border: 1px solid var(--color-border); border-radius: var(--radius-lg); background: var(--color-bg); }
+.row { display: grid; grid-template-columns: 1fr; gap: var(--space-2); align-items: center; padding: var(--space-3); border-bottom: 1px solid var(--color-border); }
+.row:last-child { border-bottom: 0; }
+.row.sub { padding-left: var(--space-6); background: var(--color-surface); }
+.row-main { display: flex; flex-wrap: wrap; gap: var(--space-2); align-items: center; min-width: 0; }
+.row .field { margin: 0; }
+.row .field label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.chip { font-size: var(--text-xs-size); font-weight: 600; padding: 2px var(--space-2); border-radius: var(--radius-pill); justify-self: start; background: var(--color-surface); color: var(--color-text); border: 1px solid var(--color-border-input); }
+.chip-in_progress { background: var(--color-accent-soft); color: var(--color-on-accent-soft); }
+.chip-blocked { background: var(--color-danger-soft); color: var(--color-danger); }
+.chip-done { background: var(--color-success-soft); color: var(--color-success); }
+.overdue { color: var(--color-danger); font-size: var(--text-xs-size); font-weight: 600; }
+.add-task, .inline-form { display: flex; flex-wrap: wrap; gap: var(--space-2); align-items: end; margin-bottom: var(--space-4); }
+.add-task .input { flex: 1 1 200px; width: auto; }
+.inline-form.card { padding: var(--space-4); }
+.inline-form .field { margin: 0; flex: 1 1 180px; }
+.btn-danger { background: var(--color-danger-soft); color: var(--color-danger); border-color: var(--color-danger); margin-top: var(--space-4); }
+.check { display: flex; align-items: center; gap: var(--space-2); }
+.check label { margin: 0; }
+textarea.input { padding: var(--space-2) var(--space-3); min-height: 80px; }
+.comment { padding: var(--space-3); border-bottom: 1px solid var(--color-border); }
+.comment p { margin: var(--space-1) 0 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+.drawer { position: fixed; inset: 0 0 0 auto; width: min(480px, 100%); overflow-y: auto; background: var(--color-bg); border-left: 1px solid var(--color-border); box-shadow: var(--shadow-pop); padding: var(--space-5) var(--space-4); z-index: 5; }
+.secret { display: block; font-family: var(--font-mono); font-size: var(--text-lg-size); background: var(--color-surface); padding: var(--space-3); border-radius: var(--radius-md); overflow-wrap: anywhere; user-select: all; }
+.reveal { margin-top: var(--space-4); }
+.toasts { position: fixed; bottom: var(--space-4); left: var(--space-4); right: var(--space-4); display: grid; gap: var(--space-2); justify-items: start; pointer-events: none; z-index: 20; }
+.toast { margin: 0; padding: var(--space-2) var(--space-3); border-radius: var(--radius-md); background: var(--color-text); color: var(--color-bg); font-size: var(--text-sm-size); box-shadow: var(--shadow-pop); }
+.toast-error { background: var(--color-danger); color: var(--color-on-accent); }
+.section { margin-bottom: var(--space-4); }
+@media (min-width: 640px) {
+  .row { grid-template-columns: minmax(0, 1fr) 150px 170px 160px; }
+  .row-main { grid-column: 1; }
+}
+/* The drawer is narrow, so its rows are two columns, not the four-column project row. Must come after the media query. */
+.drawer .row { grid-template-columns: minmax(0, 1fr) auto; }

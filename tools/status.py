@@ -95,10 +95,10 @@ def render(features, milestones, today=None, budget=None):
     cols = "| id | milestone | scope | demo pts | to build | later pts | state |"
     sep = "| --- | --- | --- | --- | --- | --- | --- |"
     if rate is not None and used is not None:
-        cols += " cost at M1 rate | session % when done |"
+        cols += " cost at this rate | session % when done |"
         sep += " --- | --- |"
         out += ["## Budget", "",
-                "Used so far (proxy): **%.1f%%**. Rate: **%.2f%% of session per point** (measured on M1). "
+                "Used so far (proxy): **%.1f%%**. Rate: **%.2f%% of session per point** (measured on the latest milestone). "
                 "Stop line: **%.0f%%**." % (used, rate, stop or 0), ""]
     out += ["## Milestones", "", cols, sep]
     running = used if used is not None else 0.0
@@ -118,7 +118,7 @@ def render(features, milestones, today=None, budget=None):
                 fits.append(m["id"])
         out.append(row)
     if rate is not None and used is not None and stop is not None:
-        out += ["", "Fits inside the %.0f%% stop line at the M1 rate: %s." % (stop, ", ".join(fits) if fits else "nothing"),
+        out += ["", "Fits inside the %.0f%% stop line at this rate: %s." % (stop, ", ".join(fits) if fits else "nothing"),
                 "(Gauge and Evolve are extra: see replica/run-plan.md.)"]
     out += ["", "## Features", "", "| milestone | feature | tag | priority | effort | scope | state | note |",
             "| --- | --- | --- | --- | --- | --- | --- | --- |"]

@@ -36,6 +36,8 @@ export const SCREEN_TITLES = {
   S32: 'AI features (preview)',
   S33: 'Compliance documents',
   S34: 'Mock identity provider',
+  S35: 'Projects',
+  S36: 'Account',
 };
 
 /** "Detail · Screen title · Product name". `detail` is optional (a project or task name). */

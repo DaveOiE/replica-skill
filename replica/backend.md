@@ -9,11 +9,16 @@
 | rate limits on auth | done | sign-in per address, plus lockout after five failures including unknown emails |
 | sessions: http-only cookie, sign out ends it on the server | done | cookie flags test; old cookie is dead after sign-out |
 | cross-site writes refused | done | Origin check on non-GET |
-| uploads limits | n/a yet | M2 |
+| uploads limits | n/a | attachments are deferred, so there are no uploads |
 | dependencies audited | done | `npm audit`: 0 vulnerabilities at install (re-run before release) |
 | webhooks verify signatures | n/a yet | M9 |
 | no user data in URLs or logs | partial | logger redacts cookie and authorization; request bodies are not logged |
 | Secure cookie flag | setting | `COOKIE_SECURE=true` behind HTTPS; off on localhost by design |
+
+M2 additions: project-level permissions are resolved per request (`access.js`), hidden projects and tasks
+answer 404 like missing ones, assignees must be able to see the project, temporary passwords are shown
+once and never stored or audited, changing a password ends other sessions, task text is stored and
+rendered as plain text (a test stores markup and the UI has no innerHTML).
 
 Known trade-offs: the unknown-email lockout counter lives in memory (one process). Not a compliance
 claim of any kind.

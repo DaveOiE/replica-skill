@@ -17,6 +17,12 @@ export function projectRoutes(define, db) {
     handler: async ({ actor }) => ({ projects: db.prepare('select * from projects where workspace_id = ? order by name').all(actor.workspaceId)
       .map((p) => [p, projectAccess(db, actor, p.id)]).filter(([, a]) => a).map(([p, a]) => viewOf(p, a.role)) }) });
 
+  // Who can see this project: the people you can hand work to. Not the staff directory, only people with access here.
+  define({ method: 'GET', url: '/api/v1/projects/:id/people', action: 'project:read', write: false, projectOf: byId,
+    sample: (fx) => ({ url: `/api/v1/projects/${fx.creds.projects.pub}/people` }),
+    handler: async ({ actor, access }) => ({ people: db.prepare('select u.id as userId, u.name, m.role from memberships m join users u on u.id = m.user_id where m.workspace_id = ? and u.status = \'active\' order by u.name').all(actor.workspaceId)
+      .filter((x) => projectAccess(db, { userId: x.userId, workspaceId: actor.workspaceId, role: x.role }, access.project.id)).map(({ userId, name }) => ({ userId, name })) }) });
+
   define({ method: 'POST', url: '/api/v1/projects', action: 'project:create', write: true,
     body: z.object({ name, description: z.string().max(2000).optional(), visibility: visibility.optional() }).strict(),
     sample: () => ({ url: '/api/v1/projects', payload: { name: 'Walk test project' } }),

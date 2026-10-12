@@ -59,6 +59,8 @@ admin controls who gets in and can prove what changed.
 | S31 | Support | `/support` | priority and 24/7 contact page | contact block | placeholder details |
 | S32 | AI (flagged) | `/ai` | assistant, teammates, builder, smart fields, all stubs | chat-like panel | flag off, flag on |
 | S33 | Documents | `/docs/compliance` | "not certified" document pages | prose | static |
+| S35 | Projects | `/projects` | list and create projects | list, form | empty, filled |
+| S36 | Account | `/account` | change own password | form | wrong current, too short |
 | S34 | Mock IdP (separate app) | `localhost:4001` | local SAML identity provider and fake directory | login, user list | dev only |
 
 ## Flows

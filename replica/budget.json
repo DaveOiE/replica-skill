@@ -1,6 +1,6 @@
 {
-  "used_percent": 27.1,
-  "rate_percent_per_point": 0.7,
+  "used_percent": 35.4,
+  "rate_percent_per_point": 0.34,
   "stop_line_percent": 45.0,
-  "note": "used_percent is a proxy: Frame and Organize at their planned 18 percent, M1 measured at about 72k tokens (7.0 percent), and this re-plan at about 21k tokens (2.1 percent). The rate is M1's cost per built point (7.0 percent over 10 points)."
+  "note": "used_percent is a proxy: Frame and Organize 18, M1 7.0, re-plan 2.1, M2 about 8.1 (about 83k tokens). The rate is M2's measured cost per built point (8.1 percent over 25 points built, including two small unplanned extras). M1's rate was 0.70."
 }

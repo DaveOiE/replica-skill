@@ -26,7 +26,7 @@ test('the page the server sends has the product name from the one constant, and 
   const page = await app.inject('/');
   assert.match(page.body, new RegExp(`<title>${PRODUCT_NAME}</title>`));
   assert.ok(!page.body.includes('{{'));
-  for (const url of ['/styles/tokens.css', '/styles/app.css', '/app.js', '/dom.js', '/api.js', '/strings.js', '/shared/brand.js', '/shared/titles.js', '/favicon.svg'])
+  for (const url of ['/styles/tokens.css', '/styles/app.css', '/app.js', '/dom.js', '/api.js', '/strings.js', '/views.js', '/shared/brand.js', '/shared/titles.js', '/favicon.svg'])
     assert.equal((await app.inject(url)).statusCode, 200, url);
   assert.equal((await app.inject('/../server/auth.js')).statusCode >= 400, true, 'server code is not served');
   assert.equal((await app.inject('/server/auth.js')).statusCode, 404);
@@ -37,4 +37,9 @@ test('tokens.css served to the browser is in step with tokens.json', async () =>
   const css = (await app.inject('/styles/tokens.css')).body;
   const tokens = JSON.parse(readFileSync(join(web, '..', '..', 'replica', 'design', 'tokens.json'), 'utf8'));
   for (const [k, v] of Object.entries(tokens.color)) assert.ok(css.includes(`--color-${k}: ${v};`), k);
+});
+
+test('every web module parses (a typo here would blank the whole app)', async () => {
+  const { execFileSync } = await import('node:child_process');
+  for (const [f] of files('.js')) execFileSync(process.execPath, ['--check', join(web, f)], { stdio: 'pipe' });
 });

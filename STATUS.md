@@ -8,35 +8,35 @@ Updated: 2026-10-12
 
 | state | features |
 | --- | --- |
-| done | 2 |
+| done | 13 |
 | partly done | 1 |
-| not started | 14 |
+| not started | 4 |
 | later (deferred) | 46 |
 | skipped | 2 |
-| **total** | **65** |
+| **total** | **66** |
 
-Demo scope: **10 of 52 points built (19%)**. Later pool: 129 points, not scheduled. One point is a small tested feature (a few routes, one screen state, its tests).
+Demo scope: **35 of 53 points built (66%)**. Later pool: 129 points, not scheduled. One point is a small tested feature (a few routes, one screen state, its tests).
 
 ## Budget
 
-Used so far (proxy): **27.1%**. Rate: **0.70% of session per point** (measured on M1). Stop line: **45%**.
+Used so far (proxy): **35.4%**. Rate: **0.34% of session per point** (measured on the latest milestone). Stop line: **45%**.
 
 ## Milestones
 
-| id | milestone | scope | demo pts | to build | later pts | state | cost at M1 rate | session % when done |
+| id | milestone | scope | demo pts | to build | later pts | state | cost at this rate | session % when done |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | M1 | Data model and roles | demo | 13 | 0 | 0 | done, 1 partial | 0.0% | - |
-| M2 | Tasks and projects (trimmed) | demo | 24 | 24 | 6 | not started | 16.8% | 43.9% |
-| M3 | Board view (rest of views and forms later) | demo | 3 | 3 | 23 | not started | 2.1% | 46.0% |
+| M2 | Tasks and projects (trimmed) | demo | 25 | 0 | 6 | done | 0.0% | - |
+| M3 | Board view (rest of views and forms later) | demo | 3 | 3 | 23 | not started | 1.0% | 36.4% |
 | M4 | Automation | later | 0 | 0 | 13 | later | 0.0% | - |
-| M5 | Simple dashboard and goals (portfolios and approvals later) | demo | 7 | 7 | 19 | not started | 4.9% | 50.9% |
-| M6 | Audit log screen (SIEM API and service accounts later) | demo | 5 | 5 | 6 | not started | 3.5% | 54.4% |
+| M5 | Simple dashboard and goals (portfolios and approvals later) | demo | 7 | 7 | 19 | not started | 2.4% | 38.8% |
+| M6 | Audit log screen (SIEM API and service accounts later) | demo | 5 | 5 | 6 | not started | 1.7% | 40.5% |
 | M7 | Admin console SSO and provisioning | later | 0 | 0 | 32 | later | 0.0% | - |
 | M8 | Bundles branding and backup | later | 0 | 0 | 9 | later | 0.0% | - |
 | M9 | Integrations stubs and compliance docs | later | 0 | 0 | 13 | later | 0.0% | - |
 | M10 | AI flagged stubs | later | 0 | 0 | 8 | later | 0.0% | - |
 
-Fits inside the 45% stop line at the M1 rate: M2.
+Fits inside the 45% stop line at this rate: M3, M5, M6.
 (Gauge and Evolve are extra: see replica/run-plan.md.)
 
 ## Features
@@ -45,20 +45,21 @@ Fits inside the 45% stop line at the M1 rate: M2.
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | M1 | View-only seats | E | must | 2 | demo | done | M1: view-only and guest can never write; proven by route walk on every route. No billing or licence counting (A4) |
 | M1 | Workspaces, users, roles, password sign-in | C | must | 8 | demo | done | M1: scrypt sign-in, lockout, sessions, 5 roles, can(), hash-chained audit via mutate(), fake seed. Invites and password-rule settings come in M7 |
-| M1 | Mobile-friendly web app | C | must | 3 | demo | partly done | M1: app shell and sign-in verified at 390px and 1440px in Chromium; each later screen is checked as it is built |
+| M1 | Mobile-friendly web app | C | must | 3 | demo | partly done | M1 and M2: shell, sign-in, projects, list view and task drawer checked at 390px and 1440px in Chromium; later screens are checked as built |
 | M1 | Native mobile apps | C | could | 0 | skip | skipped | out of scope per the list |
-| M2 | Unlimited free guests | C | must | 3 | demo | not started | guests see only projects they are added to (A5) |
-| M2 | Add a person (admin creates a teammate or guest; temporary password shown once) | E | must | 2 | demo | not started | ADDED, needs owner OK: without invites (later) there is no way to add people beyond the seed |
-| M2 | Per-project admin controls | E | should | 2 | demo | not started |  |
-| M2 | Projects with sections | C | must | 3 | demo | not started |  |
+| M2 | Unlimited free guests | C | must | 3 | demo | done | M2: guests see only projects they are added to; never project admin; no seat limit |
+| M2 | Add a person (admin creates a teammate or guest; temporary password shown once) | E | must | 2 | demo | done | M2: built; hash stored, password never in the audit trail; no email is sent (invites are later) |
+| M2 | Per-project admin controls | E | should | 2 | demo | done | M2: project admins rename, archive, manage sections and who is on the project, nothing wider |
+| M2 | Projects with sections | C | must | 3 | demo | done | M2: create (default sections), rename, archive (read-only), visibility private or workspace; sections add and delete. Team-visible projects work in the API but there is no team UI until M7 |
 | M2 | Project templates (custom) | C | should | 3 | later | later (deferred) |  |
-| M2 | Task fields: owner, assignee, due date, start date, status, description | C | must | 3 | demo | not started |  |
-| M2 | Comments on tasks | C | must | 2 | demo | not started |  |
+| M2 | Change own password (needed because new people get a temporary one) | E | must | 1 | demo | done | ADDED in M2: needs the current password, enforces the 12-character rule, ends other sessions |
+| M2 | Task fields: owner, assignee, due date, start date, status, description | C | must | 3 | demo | done | M2: create, edit, delete; assignee must be able to see the project; dates validated; every change audited with before and after |
+| M2 | Comments on tasks | C | must | 2 | demo | done | M2: commenters and up; author and time set by the server |
 | M2 | Attachments on tasks | C | should | 3 | later | later (deferred) | local disk, size and type limits |
-| M2 | Subtasks | C | must | 2 | demo | not started |  |
-| M2 | Task dependencies | C | should | 3 | demo | not started |  |
-| M2 | Milestones | C | should | 1 | demo | not started |  |
-| M2 | List view | C | must | 3 | demo | not started |  |
+| M2 | Subtasks | C | must | 2 | demo | done | M2: one level; listed with the parent in the list view and drawer |
+| M2 | Task dependencies | C | should | 3 | demo | done | M2: no loops; blocked tasks closable only by a project admin, and the audit says so |
+| M2 | Milestones | C | should | 1 | demo | done | M2: a flag on a task, shown as a badge |
+| M2 | List view | C | must | 3 | demo | done | M2: grouped by section with inline status, assignee and due date; read-only for view-only seats |
 | M3 | Custom fields: text, number, date, single and multi select | C | must | 5 | later | later (deferred) | A2 |
 | M3 | Forms that create tasks | C | must | 5 | later | later (deferred) |  |
 | M3 | Form branching logic | C | should | 3 | later | later (deferred) |  |
