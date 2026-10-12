@@ -1,8 +1,10 @@
 # Build plan: working title "Tillbox"
 
-Status: **proposal, awaiting your approval. Nothing is built.**
-Inputs: `recon.md` (what to build), `features.csv` (the checklist), decisions in recon section 18.
-Licence: GPL-3.0. Stack: Next.js + Postgres + Prisma.
+Status: **architecture revised to local-first. Phase 0a (spike) is done and reported in `spike-report.md`. Waiting for your review; Phase 0b and later are not started.**
+Inputs: `recon.md` (what to build), `features.csv` (the checklist), `spike-report.md` (what was proven), decisions in recon section 18.
+Licence: GPL-3.0. Stack: Next.js (static export) + PGlite on the device + PostgreSQL on the server + Drizzle (one schema).
+
+> **Change from the approved plan:** Prisma is replaced by Drizzle. Reason in 2.3. Everything else you approved (4b, the ten fixed items, held-cart re-pricing) still stands.
 
 ---
 
@@ -10,78 +12,177 @@ Licence: GPL-3.0. Stack: Next.js + Postgres + Prisma.
 
 | # | assumption | why it matters |
 | --- | --- | --- |
-| A1 | Single store per install, self-hosted (Docker compose: app + worker + Postgres). No multi-tenant SaaS. | multi-tenant would put a `store_id` on every table |
+| A1 | **One codebase, three deployment modes** (2.1). One store per install; no multi-tenant SaaS. The default is mode 1, fully standalone. | it shapes every layer below |
 | A2 | **Initial seed values only**: AUD, en-AU, 10% GST inclusive, 5-cent cash rounding on. Every one is editable in Settings by a user holding the matching permission (section 4b). | rounding rules are the riskiest maths in the product |
 | A3 | Rounding **seed**: half-up, applied **per line**; cash rounding to the nearest 5c on the final cash tender only, shown as its own line. Mode and cash rounding (on/off, increment) are settings; the per-line scope is fixed (section 4b). | the original's rule is unknown; this is the common retail rule and testable |
 | A4 | Paid NexoPOS modules, multi-store, marketplace, telemetry, update check, AI/MCP server: out of scope. | recon section 16 |
-| A5 | Plugins are TypeScript packages installed by the admin on the server (folder + manifest, loaded at boot). No in-browser zip upload that runs code. | uploading executable code through a web form is a security hole; flagged as a deliberate departure |
-| A6 | One repo, app in `/app`, own `LICENSE` (GPL-3.0). The Replica skill folders stay as they are. | keeps the MIT skill pack and the GPL app separate |
-| A7 | Name "Tillbox" is a placeholder; I have not run trademark checks. | `/replica-brand` does that later |
+| A5 | **Plugins are TypeScript packages compiled into the app at build time** (folder + manifest), not uploaded at runtime. | in mode 1 there is no server to load code on, and a web form that runs uploaded code is a security hole. This is a deliberate departure from the original |
+| A6 | One repo, app in `/app`, own GPL-3.0 `LICENSE` (added). The Replica skill folders stay as they are. | keeps the MIT skill pack and the GPL app separate |
+| A7 | Name "Tillbox" is a placeholder; no trademark checks yet. | `/replica-brand` does that later |
 | A8 | The docs site stays unreachable, so behaviour is specified from the repo audit plus normal retail practice. | some behaviour will differ in detail; the demo scripts make that visible |
+| A9 | **Cloud mode runs in an Australian region** (for example AWS Sydney, Azure Australia East or GCP Sydney), managed Postgres, TLS in transit, encryption at rest. I will not sign up to any provider without your approval. | data residency |
+| A10 | **Permissions on a device protect against mistakes, not against a hostile owner of that device** (R10). Server modes re-check on the server. | mode 1 has no server to be the authority |
+| A11 | **Held carts are re-priced on resume**, with a visible notice that lists every line whose price changed (old and new). Covered by a test in Phase 0b. | your decision |
+| A12 | Every device is a **full replica** of its store's data. | simplest and safest for offline use; large shops need archiving later (R7) |
 
 ---
 
 ## 2. Architecture
 
+### 2.1 Three deployment modes, one codebase
+
+| | mode 1: standalone (**default**) | mode 2: local server | mode 3: cloud |
+| --- | --- | --- | --- |
+| Where the data lives | on the device (PGlite) | on every device **and** a mini PC (Postgres in Docker) | on every device **and** managed Postgres in an Australian region |
+| Needs | the device | shop network | internet (works offline; syncs when back) |
+| Sync | none | devices <-> mini PC over the LAN | devices <-> cloud over HTTPS |
+| Server-only features | none | webhooks, email, scheduled jobs that must run while no till is open, API tokens, scheduled server backups | the same |
+| Switch later | to 2 or 3 with no data loss; between 2 and 3 by changing the server address | | |
+
+A device behaves the same in all three modes. It always reads and writes its own database; sync is a background step that is simply switched off in mode 1. That is what makes switching safe: the till never waits for a server.
+
+### 2.2 Shape
+
 ```
- Browser (PWA, tablet-first)                         Worker process (same codebase)
- ┌──────────────────────────────┐                    ┌──────────────────────────────┐
- │ Next.js App Router (React)   │                    │ pg-boss consumers + cron     │
- │  - POS (client-heavy, Zustand│                    │  - recurring expenses        │
- │    cart, offline-tolerant)   │                    │  - low-stock scan            │
- │  - Back office (server comps)│                    │  - held-order expiry         │
- └──────────────┬───────────────┘                    │  - report roll-ups           │
-                │ server actions / route handlers    │  - webhook delivery + retry  │
- ┌──────────────▼───────────────┐                    │  - backups, emails           │
- │ Application layer (services) │◄──── jobs ────────►└──────────────┬───────────────┘
- │  permission check → use case │                                   │
- │  → domain → repo → audit log │                                   │
- │  → emit domain event         │                                   │
- └───────┬───────────┬──────────┘                                   │
-         │           │ events                                       │
- ┌───────▼─────┐  ┌──▼────────────────────┐   ┌─────────────────────▼───┐
- │ Domain (pure│  │ Event bus + hook      │   │ PostgreSQL              │
- │ TS, no I/O) │  │ registry (plugins,    │   │  - Prisma models        │
- │ money, tax, │  │ webhooks, accounting, │   │  - pg-boss queue tables │
- │ pricing,    │  │ rewards, audit)       │   │  - append-only ledgers  │
- │ stock rules │  └───────────────────────┘   └─────────────────────────┘
- └─────────────┘
+ DEVICE (tablet / PC browser, installed as an app)                       SERVER (modes 2 and 3 only)
+ ┌────────────────────────────────────────────────────┐                  ┌───────────────────────────────┐
+ │ Next.js static export (React, client-only screens) │                  │ Sync service (Node)           │
+ │   POS, back office, reports                        │                  │   /sync/register|push|pull    │
+ │            │                                       │                  │   token auth, TLS             │
+ │ Application layer (services)                       │   HTTPS / LAN    │            │                  │
+ │   permission check -> use case -> domain -> SQL    │◄────────────────►│ same schema + same apply code │
+ │   -> audit row -> event                            │   push / pull    │            │                  │
+ │            │                                       │                  │ PostgreSQL (change feed =     │
+ │ Domain (pure TS): money, tax, discount, rounding,  │                  │   outbox, ordered)            │
+ │   pricing, units, coupons, stock rules             │                  │ Job runner (pg-boss):         │
+ │            │                                       │                  │   webhooks, email, backups,   │
+ │ Sync engine: change log (outbox), push/pull,       │                  │   recurring posts             │
+ │   status, backups                                  │                  └───────────────────────────────┘
+ │            │                                       │
+ │ PGlite (Postgres in WebAssembly) on IndexedDB      │   Service worker: app shell + engine cached for offline start
+ └────────────────────────────────────────────────────┘
 ```
 
-Rules that keep it honest:
+Rules that keep it honest (unchanged in spirit):
 
-1. **Domain code is pure.** `money`, `tax`, `discount`, `pricing engine`, `unit conversion`, `rounding`, `coupon eligibility` take plain values and return plain values. No database, no clock. That is where the unit tests concentrate.
-2. **One write path.** Every mutation goes through a service function that checks permission, runs in a transaction, writes the audit row, and emits an event. The REST API, server actions and plugins all call the same services, so there is no second set of rules.
-3. **Ledgers are append-only.** Stock, register cash, customer account and accounting journal are never edited, only reversed by a new row. Cached balances are columns updated in the same transaction and re-derivable.
-4. **Side effects use events**, delivered by an outbox table so a crash never loses one: accounting postings, reward points, webhooks, notifications.
+1. **Domain code is pure** and takes configuration as arguments (4b).
+2. **One write path.** Every mutation goes through a service that checks permission, runs in one transaction, writes the audit row and emits an event.
+3. **Ledgers are append-only,** and the database enforces it with triggers on both engines (proven in the spike).
+4. **Side effects use events** recorded in the same transaction.
 
-### Tech choices
+### 2.3 On-device data layer: PGlite, and Drizzle instead of Prisma
+
+| option | verdict |
+| --- | --- |
+| **PGlite** (Postgres compiled to WebAssembly) | **Chosen.** It is real Postgres, so the device and the server share one schema, one set of SQL migrations, triggers, constraints and `numeric`. Proven in the spike. Cost: 16 MB download, young project (0.x), single connection. |
+| SQLite-wasm | Rejected. Different SQL dialect from the server Postgres, so two schemas or a lowest-common-denominator one, and every ledger trigger and constraint written twice. |
+| Tauri or Electron wrapper | **Not required, recommended later for PCs.** It would give reliable file storage and truly scheduled backups (R2, R13). It wraps the same static app; PGlite also runs in Node, so the same code works. Deferred until after the spike review. |
+
+**How it fits Next.js.** The app is a static export: plain files, no Next server. Every screen is a client component that talks to the on-device database through the service layer. Next.js server components and route handlers are not used, because they cannot reach the device's database. The sync service (modes 2 and 3) is a separate small Node process. This is a good reason to ask whether Vite would be a lighter shell than Next.js for a purely client app; I kept Next.js because you approved it, it built and ran the full spike, and it gives routing and tooling. Say if you want that revisited.
+
+**What replaces Prisma.** Drizzle ORM. I did not try Prisma against PGlite in a browser, so I cannot say it fails; I chose not to carry that unknown. Drizzle has first-party drivers for both PGlite and node-postgres, and the spike ran the same table definition against both. Drizzle also generates the SQL migrations, which are applied byte-for-byte on device and server. The shared engine itself talks to a thin `Db` interface (query, exec, transaction), so it does not depend on either ORM.
+
+### 2.4 Sync design
+
+**Principles**
+
+- Every row has a **client-generated UUID**, so a device can create data offline and join a server later with no renumbering. (UUIDv7 in the real build, for index locality.)
+- Every synced table converges by exactly one of three rules:
+
+| class | tables (examples) | rule |
+| --- | --- | --- |
+| **Append-only ledger / event** | orders and lines, payments, stock movements, register entries, customer-account entries, journal lines, audit log, refunds, status-change events | insert if absent, never updated. The database blocks updates and deletes. Corrections are new reversing rows. Union of all devices' rows = the truth. |
+| **Versioned last-write-wins** | catalogue (products, categories, prices, taxes), customers, settings, roles | each row carries a version counter plus update time and device id. The higher `(version, time, device)` wins everywhere; an older edit can never overwrite a newer one. Concurrent edits to one row keep one winner and lose the other, **visibly** in the activity log. |
+| **Single-owner** | the device's own record, its register session, its held carts | only the owning device writes it; sent as current state |
+
+- Anything mutable that is not catalogue-like (for example "order status") becomes append-only events with a derived state, so no row ever has two writers.
+- **Change capture is inside the database:** a trigger on each synced table writes to a local `outbox`. Because it is a trigger, no code path can forget it, and the same trigger on the server produces the ordered feed that other devices pull.
+- **Push** sends outbox rows after the saved cursor; **pull** fetches server rows after its cursor, excluding the device's own. Both are batched, cursor-based and **idempotent**: replaying a batch changes nothing (tested).
+- The server serialises writes so sequence numbers become visible in order; a puller can never skip one (bug found and fixed in the spike).
+- **Order numbers:** `<device prefix>-<per-device sequence>`, for example `K7QM-000042`. The prefix is four characters from an alphabet without look-alikes and is reserved at registration; if it clashes, the newcomer changes it for **future orders only**. Residual risk: a clash that already issued the same number on two receipts is surfaced as an exception, not silently merged.
+- **Schema version handshake** (to build): every push carries the schema version; the server refuses incompatible versions and the device shows "update required". Offline devices on old code keep trading locally.
+
+**Visible sync status** (spike has the first version): a badge on every screen with one of `standalone`, `synced`, `pending (n)`, `offline`, `error: reason`, plus last-synced time, a "Sync now" action, and a detail panel listing unsynced item counts and any conflicts or stock exceptions. In mode 1 the badge reads "standalone: backed up N days ago", which ties sync status to backup status.
+
+### 2.5 Stock across offline devices
+
+- Stock is a **ledger of movements**; the level is `SUM(qty)`. Two devices selling the same item offline each append a movement; after sync every device and the server show the same number (tested: 10 on hand, one till sells 7 and another 6, all three converge to -3).
+- **Default policy: allow and flag.** The goods have physically left, so the till must not refuse the sale. A negative level appears in a "stock exceptions" list and as a badge.
+- Options, chosen per product or globally in Settings: (a) allow and flag (default); (b) **warn at a low-water mark** based on the device's own last-known level; (c) **block when below zero only while connected** to a server; (d) later, per-device allocation of fast-moving items.
+- In mode 2 the LAN sync interval is short (seconds), which makes overselling rare. In mode 3 and mode 1 it is whatever connectivity allows.
+- Stocktake and adjustments are ordinary movements, so they reconcile the books; nothing is overwritten.
+
+### 2.6 Switching modes with no data loss
+
+1. **Mode 1 -> 2 or 3.** Admin enters the server address and a pairing token. The device registers (reserving its prefix), pushes its whole change log from the start, then pulls. Nothing local is renumbered or rewritten. Tested with a device that had already traded.
+2. **A second device joins** by connecting *first*, then pulling. It never seeds its own demo data (that would duplicate the catalogue; fixed in the spike).
+3. **2 <-> 3.** Change the server address. The new server is empty, so the first device to connect pushes its full replica. Because every device is a full replica, any complete device can rebuild a server. Guard to build: the server has a `store_id`; a device remembers it and refuses, without explicit confirmation, to push into a server with a different one (stops two shops being merged by accident).
+4. **Back to mode 1.** Disconnect. The device keeps its full local copy and carries on standalone.
+5. Because the change log is kept from day one, mode 1 stores roughly twice the data for synced tables (R7). On connect we can instead snapshot current rows and compact the log.
+
+### 2.7 Mode 1 data safety
+
+The device is the only copy, so this is a product feature, not an afterthought.
+
+- **Persistent storage.** On first run the app asks the browser for persistent storage and shows the result in Settings > Data safety. If it is refused, a standing banner explains the risk. Prompt the user to install the app to the home screen or desktop, which makes browsers far more likely to grant it. (Not testable in headless; real devices pending.)
+- **Backup prompts.** Setup ends with "Set up backups". A banner shows "last verified backup: N days ago" and escalates after 3 and 7 days. The cash-register close screen offers a backup. The backup status is part of the sync badge in mode 1.
+- **One-tap export, three destinations:**
+  - **File:** save to the device (File System Access API where available, otherwise a download; the share sheet on tablets). Needs nothing external.
+  - **Google Drive:** upload the encrypted file to a "Tillbox Backups" folder using the narrow `drive.file` scope. This needs an OAuth client registered in a Google Cloud project, which is an external signup I will not do without your approval. Alternative: you register it once and give me the client ID, or each shop owner supplies their own. Whether the app can ship to the public unverified with that scope needs checking, not assuming.
+  - **S3-compatible** (including Australian providers or a NAS running MinIO): upload with a write-only access key stored on the device, encrypted with the backup passphrase. The bucket needs CORS enabled. In modes 2 and 3 the server uploads with its own key, so no key lives on tablets.
+- **Scheduled encrypted backups.** Browsers cannot run code when the app is closed. So "scheduled" means: when the app is open and a backup is due (daily by default), and at register close. A Tauri/Electron wrapper can schedule properly and write to a chosen folder. In modes 2 and 3 the server does real scheduled `pg_dump` backups.
+- **Encryption.** AES-256-GCM, key from the shop owner's passphrase (PBKDF2, 600,000 iterations), authenticated (tampering is detected). Lose the passphrase and the backup is unreadable by design; setup prints a recovery code to store with the passphrase.
+- **Tested restore.** Every backup is restored into a scratch database and compared with the live one (row counts and stock total) **before** it is reported as good. A "restore drill" prompt runs this monthly against the stored file. A restore screen checks version compatibility and offers two choices: **restore in place** (disaster recovery, same identity) or **restore as a new device** (new identity and order prefix, so receipts can never clash; tested).
+- **Drive is for backup files only.** The live database is never synced through Drive, a shared folder or any file-sync tool. Backups are written once under a timestamped name and never opened as a live database. The UI has no "open from Drive" path, only "restore from this file", which first verifies it.
+- **Portable export.** Besides the physical snapshot there will be a logical export (NDJSON of the same change records used for sync) so a backup survives engine upgrades (R5, R11).
+
+### 2.8 Local server (mode 2) and cloud (mode 3)
+
+- **Mode 2:** `deploy/docker-compose.local-server.yml` runs Postgres 16 plus the sync service on a mini PC. **Written but never executed** (no Docker daemon in this sandbox); first real test is on your hardware. Needs a fixed LAN address, a token, and a backup volume. Plain HTTP on a closed LAN is acceptable; HTTPS via a local certificate is recommended and is a Phase 9 task.
+- **Mode 3:** the same sync service container, deployed to an Australian region with managed Postgres. No provider chosen and nothing signed up.
+- Auth in both: per-device tokens issued by an admin pairing code (the spike uses one shared token; not for production).
+
+### 2.9 What the new architecture changes in the rest of the plan
+
+| area | change |
+| --- | --- |
+| Auth and roles | Mode 1 uses on-device accounts (PIN or password, hashed with a slow hash). Modes 2/3 add server-side validation. Roles and permissions replicate like any LWW data. |
+| Jobs | The original's scheduled tasks (held-order expiry, low-stock scan, recurring expenses, roll-ups) run **inside the app whenever it is open** and catch up on start in mode 1; in modes 2/3 the server job runner also runs them. They must be idempotent so two runners never double-post (recurring expenses use a deterministic id per schedule and date). |
+| Email, webhooks, API tokens | Need a server. In mode 1 they are disabled and the screens say why. |
+| Reports and PDFs | Run as SQL on the device. PDF/XLSX/CSV are generated in the browser. |
+| Settings | Replicated and versioned. 4b still holds. The "currency lock after first order" is enforced per device and on the server; two offline devices changing currency before their first order could disagree, so that setting is only editable while connected or before any device has traded. |
+| Installer | Becomes a first-run wizard on the device: start a new store, or join an existing one. |
+| Plugins | Build-time, see A5. |
+| Registers | A register session belongs to one device; it is single-owner data. |
+| Held carts | Local to the device by default; they are a cart snapshot, not an order. |
+
+### 2.10 Tech choices (updated)
 
 | concern | choice | reason |
 | --- | --- | --- |
-| Framework | Next.js (App Router), TypeScript strict | one language end to end |
-| DB / ORM | PostgreSQL, Prisma | transactions, `numeric`, row locks, constraints |
-| Money | integer minor units (`bigint` in DB, `number` safe-integer in code, wrapped in a `Money` type); quantities and rates as `Decimal` (decimal.js) | brief: integer cents or decimal; no floats anywhere near money |
-| Auth | session cookies (Auth.js credentials provider, argon2 hashes) for UI; hashed opaque bearer tokens for API | simple, no third-party signup |
-| Permissions | role → permission set, checked in services; same string list as the permission matrix screen | |
-| Validation | zod schemas shared by client and server | |
-| UI | Tailwind + Radix primitives; own design tokens (from `/replica-design`); logical CSS properties for RTL; dark mode by CSS variables | |
-| Client state | TanStack Query (server data), Zustand (POS cart) | |
-| i18n | next-intl, ICU messages, English + one RTL language (Arabic) at launch | our own strings |
-| Jobs / queue | pg-boss on the same Postgres (no Redis), cron schedules in the worker | one fewer service to run |
-| Realtime | Server-Sent Events for notifications | no websocket server needed |
-| PDF / XLSX / CSV | Playwright-rendered print views to PDF, exceljs, csv-stringify | |
-| Barcodes | bwip-js (EAN-13, UPC-A, Code 128, Code 39, Codabar) | |
-| Email | nodemailer over SMTP configured in Settings | no external signup |
-| Backups | scheduled `pg_dump` to a local or S3-compatible path, restore guarded by confirmation + permission | |
-| Tests | Vitest (unit, integration against a real Postgres in Docker), Playwright (end-to-end, tablet viewport) | |
-| CI | GitHub Actions: typecheck, lint, unit, integration, e2e | |
+| Framework | Next.js static export, React, TypeScript strict | approved; spike builds and runs |
+| On-device DB | PGlite (Postgres in WebAssembly), IndexedDB now; the newer file-system storage later | one schema with the server |
+| Server DB | PostgreSQL 16 | |
+| ORM / migrations | Drizzle + drizzle-kit; shared `Db` interface | works with both engines |
+| Sync | triggers + outbox, HTTP push/pull, own code (about 250 lines, tested) | full control of the three convergence classes |
+| Money | integer minor units; quantities and rates as Decimal | unchanged |
+| Auth | on-device accounts; server tokens in modes 2/3 | |
+| UI | Tailwind + Radix, own tokens; logical CSS properties for RTL; dark mode by CSS variables | unchanged |
+| Client state | Zustand for the POS cart; the database is the source of truth otherwise | |
+| i18n | next-intl or equivalent client-side, ICU messages, English + Arabic | |
+| Jobs | in-app scheduler on device; pg-boss on the server | |
+| Offline shell | service worker pre-cache (proven) | |
+| PDF / XLSX / CSV | browser print view to PDF, exceljs, csv-stringify | |
+| Barcodes | bwip-js | |
+| Backups | encrypted PGlite snapshot + logical export; Drive/S3/file destinations; `pg_dump` on the server | |
+| Tests | Vitest (unit + integration on real Postgres and PGlite), Playwright (Chromium, tablet viewport, offline and two-device scenarios) | |
+| CI | GitHub Actions with a Postgres service container | |
 
 ---
 
 ## 3. Data model (our own design)
 
-Groups and relations. Full column design happens in Phase 0 as `prisma/schema.prisma`; it will **not** mirror NexoPOS table names.
+Groups and relations. Full column design happens in Phase 0b as the Drizzle schema in `app/src/schema`; it will **not** mirror NexoPOS table names. The spike already proved the pattern on seven tables.
 
 ```
 IDENTITY      User ─< UserRole >─ Role ─< RolePermission >─ Permission
@@ -119,7 +220,8 @@ ACCOUNTING    Account (chart, parent) ─< JournalLine >─ JournalEntry (source
               DayBalance, MonthBalance (cached roll-ups)
 
 SYSTEM        Setting (key/value + type + scope)   Media   Notification   Plugin (manifest, enabled)
-              WebhookEndpoint ─< WebhookDelivery   OutboxEvent   BackupRun   ImportRun   JobRun (via pg-boss)
+              Device (id, name, order prefix)   Outbox (change feed)   SyncState   BackupRun   ImportRun
+              WebhookEndpoint ─< WebhookDelivery (server modes only)
 ```
 
 Design decisions that differ from the original, on purpose:
@@ -128,9 +230,12 @@ Design decisions that differ from the original, on purpose:
 - **Accounting is double-entry** (`JournalEntry` balanced by `JournalLine`), driven by posting rules. The original's rules engine is the model for behaviour, not for tables.
 - **Order lines are snapshots**, so later price, tax or name changes never alter history.
 - **Customers are their own table**, not users with a role. A staff user can optionally link to one.
+- **Every ledger row carries the id of the device that wrote it**; every mutable row carries `version`, `updated_at`, `updated_by_device`.
+- **Keys are UUIDs generated on the client**, never database sequences; per-device sequences exist only for human-readable order numbers.
 - **Partial indexes and CHECK constraints** enforce invariants in the database: one open session per register, balanced journal entries, non-negative stock unless allowed, a payment never exceeds its limit.
 
 ---
+
 
 ## 4. Money, tax, discount, rounding (specified before coding)
 
@@ -180,31 +285,29 @@ These rules become executable tests in Phase 0, before any screen exists.
 
 **Verification (added to the quality gates).** For each editable item above, a test changes the setting through the service and asserts that behaviour changes (15% tax changes a cart total, half-even changes a .5 case, cash rounding off removes the rounding line, a new order type appears at the POS, a new payment type of cash kind gives change). A schema test fails if a default literal appears outside `seed/`.
 
-**Open question this raises.** A cart held before a tax or price change: I propose it is re-priced on resume with a visible notice. Confirm or tell me to keep the held prices.
+**Held carts (decided).** A cart held before a tax, price or rounding change is re-priced when resumed. The cashier sees a notice that names every line whose unit price changed, with the old and the new price, and any change in the cart total. A line whose price did not change is not listed. If nothing changed, no notice is shown. The re-pricing is a pure function (`repriceHeldCart(held, currentConfig, currentCatalogue)` returning the new cart and a list of `{line, oldPrice, newPrice}`), and it has tests in Phase 0b for: unchanged cart (empty notice), one price changed, a tax-rate change moving a tax-inclusive price, a rounding-mode change, a product that became inactive or was removed (flagged, not silently dropped), and a quantity-based price tier change.
 
 ## 5. Build order
 
-Each phase ends with: the code runs; unit + integration + e2e tests pass in CI; seed data loads; a demo script (`docs/demo/phase-N.md`) walks through it; `features.csv` is updated and the parity score reported with `replica-diff/parity.py`.
+Each phase ends with: the code runs; unit + integration + e2e tests pass in CI; seed data loads; a demo script (`docs/demo/phase-N.md`) walks through it; `features.csv` is updated and the parity score reported with `replica-diff/parity.py`. **From Phase 1 on, every e2e flow is run in mode 1 and again with two devices in mode 2.**
 
-| phase | scope | rows in features.csv (approx.) | demo ends with |
-| --- | --- | --- | --- |
-| **0 Foundation** | repo layout, Docker compose, CI, Prisma schema v1, `Money`/tax/discount/rounding engine with its tests, design tokens, app shell, i18n + RTL + dark mode scaffolding, settings store, audit-log wrapper, event bus + hook registry skeleton | 10 | a green CI and a page that renders in LTR/RTL, light/dark |
-| **1 Auth and roles** | installer wizard, sign-in/out, users, roles, permission matrix, locked roles, API tokens, activity log (first version), profile | 20 | fresh install, create a cashier role, sign in as the cashier, API call with a token |
-| **2 Catalogue** | taxes and groups, units and groups, categories, products (simple, dematerialised, grouped, variable), SKU and barcode generation, media library, stock levels, adjustments, product history, CSV import and export, labels | 40 | import 200 products from CSV, adjust stock, print a label sheet |
-| **3 POS checkout (the vertical slice)** | POS screen: grid, search, scan, cart, units, price override, line and cart discounts, taxes, coupon entry, customer pick, order types incl. dine-in label, hold/resume/void, cash + card payment, change due, receipt print, shortcuts, touch layout | 45 | ring up a sale end to end on a tablet viewport and print a receipt |
-| **4 Orders and payments** | orders list/filters/detail, multi-payment, partial, unpaid, instalments, payment types, refunds and returns with restock option, registers (open, close, cash in/out, Z-report, session balancing), invoices | 35 | a day on the till: open, 10 sales, a refund, close with a counted difference |
-| **5 Customers** | customers, addresses, groups, account ledger, credit limit, pay-by-account, rewards, coupons (all rules), customer import | 20 | loyalty points issue a coupon that a later sale redeems |
-| **6 Procurement** | providers, procurements, receive stock, payment status, purchase-price history, low-stock suggestions, auto-stocking job, low-stock alerts | 15 | low-stock alert → suggested PO → receive → stock rises, cost updated |
-| **7 Accounting** | chart of accounts, expenses (direct, recurring, scheduled), transaction/account history, posting rules and journals, day/month roll-ups, payment-type accounts | 15 | recurring rent expense fires; a sale and a refund post balanced journals |
-| **8 Reports** | all reports in recon section 10 plus sales-by-customer; date ranges; print, CSV, PDF, XLSX; dashboard cards | 22 | run every report for a seeded quarter; totals reconcile to the ledger |
-| **9 Settings, extensibility, ops** | every settings page incl. email/notifications, plugin system with events and hooks, webhooks (signed, retried), backups and restore, notifications (stored + SSE), dashboard widgets and layouts, language packs, themes, API docs, scheduled-job health page | 30 | install a sample plugin; a webhook fires on sale; backup then restore |
-| **10 Hardening and parity report** | accessibility pass, performance budget on POS, security review, load test, translation review, final parity report | | parity report listing anything not replicated and why |
+| phase | scope | demo ends with |
+| --- | --- | --- |
+| **0a Spike (done)** | on-device DB, offline checkout, sync to a server, backup/restore; see `spike-report.md` | the report |
+| **0b Foundation** | repo layout and CI (Postgres service), Drizzle schema v1 for the whole model, **money/tax/discount/rounding engine with property tests, incl. rounding mode and cash rounding as inputs**, **held-cart re-pricing with the changed-line notice and its test**, settings store (versioned) and the `seed/` import rule, audit-log wrapper, event bus + hook registry, sync hardening (schema-version handshake, store id guard, SKU/barcode merge rule, per-device tokens), device performance baseline on the cheapest target tablet, design tokens, app shell with i18n, RTL, dark mode | green CI; engine tests; a page that renders LTR/RTL, light/dark, with the sync badge |
+| **1 Auth and roles** | first-run wizard (new store / join), on-device accounts, users, roles, permission matrix, last-admin guard, device pairing, activity log v1, profile | fresh install, create a cashier, sign in as the cashier, pair a second device |
+| **2 Catalogue** | taxes, units, categories, products (simple, dematerialised, grouped, variable), SKU and barcode generation, media, stock ledger, adjustments, product history, CSV import and export, labels, indexes for the grid and search | import 200 products, adjust stock, print labels; both devices see it |
+| **3 POS checkout (vertical slice)** | grid, search, scan, cart, units, price override, discounts, taxes, coupon entry, customer pick, order types incl. dine-in label, hold/resume/void, cash + card, change due, receipt print, shortcuts, touch layout | ring up a sale on a tablet **with the network off**, then sync |
+| **4 Orders and payments** | orders list/detail, multi-payment, partial, unpaid, instalments, payment types, refunds and returns with restock option, registers (device-bound sessions, Z-report), invoices | a day on the till |
+| **5 Customers** | customers, groups, account ledger, credit limit, rewards, coupons, import | loyalty coupon redeemed on the second device |
+| **6 Procurement** | providers, procurements, receive stock, price history, low-stock suggestions, alerts | low-stock to PO to stock |
+| **7 Accounting** | chart, expenses incl. recurring (idempotent runners), journals, roll-ups | recurring expense posts once even with two runners |
+| **8 Reports** | all reports, print, CSV, PDF, XLSX | totals reconcile to the ledger |
+| **9 Settings, extensibility, ops** | all settings pages, build-time plugins with events/hooks, webhooks and email (server modes), **backups to file, Drive and S3-compatible, scheduled backups, restore drill, restore-as-new-device UI**, local-server Docker tested on real hardware, cloud deployment recipe, notifications, dashboard widgets, language packs, themes, API docs | backup, wipe, restore; switch mode 1 to 2 to 3 on real devices |
+| **10 Hardening and parity report** | accessibility, performance budget, security review, load test with several tills, translation review, final parity report | the report |
 
-Order follows your brief (Auth → Products → POS → Orders → Customers → Procurement → Accounting → Reports → Settings/Modules), with foundation first and registers folded into phase 4 because a till session needs orders to exist.
+Order follows your brief, with foundation first and registers in phase 4.
 
-Rough effort: phases 0 to 4 are the product's spine and about half the work. Each phase is several working sessions. I will stop at the end of every phase for your review.
-
----
 
 ## 6. Quality gates
 
@@ -214,6 +317,11 @@ Rough effort: phases 0 to 4 are the product's spine and about half the work. Eac
 - **Concurrency.** Tests for two cashiers selling the last unit, two sessions opening one register, double-submitted payments (idempotency key on order create and payment).
 - **Accessibility and touch.** Minimum 44px targets on POS, keyboard operable, axe checks in e2e.
 - **Clean room by construction.** The code is written from our specs; no NexoPOS text enters the repo. `replica-brand/sweep.py` runs in CI against the strings "NexoPOS", "Nexo" and the original's palette values.
+- **Offline and sync gates.** Every phase's main flow is tested (a) standalone, (b) with the network cut mid-flow, (c) with two devices diverging and converging. Convergence is asserted by comparing the full data of both devices and the server, not just totals.
+- **Replay safety.** Every sync and job path has a test that runs it twice.
+- **Device performance budget** set from the cheapest target tablet in Phase 0b (checkout under an agreed time with a realistic catalogue); regressions fail CI.
+- **Backup gate.** A backup is only "good" after a verified scratch restore; CI restores one every run.
+
 
 ## 7. Tracking
 
@@ -225,20 +333,29 @@ python3 replica-diff/parity.py replica/features.csv
 
 and paste the score, the must-have gaps and the by-area table into `replica/progress.md`. Baseline today: 0 of 134 must-haves.
 
+
 ## 8. Risks
+
+The full list with severities is in `spike-report.md` (R1 to R13). The ones that decide the plan:
 
 | risk | mitigation |
 | --- | --- |
-| Rounding and tax rules differ from what you or your accountant expect | A2/A3 are explicit; Phase 0 tests are reviewable by a non-developer; jurisdiction presets are configuration |
-| POS performance on cheap tablets | client-side cart engine, product list cached locally, performance budget in Phase 3 |
-| Offline use | not in the original's core either; Phase 3 keeps the cart resilient to a dropped connection, true offline sync is out of scope unless you add it |
-| Scope creep from the extras | each extra sits in a named phase; none starts before its phase |
-| No access to NexoPOS docs | behaviour questions are collected in each phase demo for you to rule on |
+| **R2 browser storage can be evicted** (largest mode-1 data-loss risk; Safari clears unused site data after about 7 days unless installed) | persistent-storage request, install prompt, escalating verified-backup prompts, wrapper for PCs, advise mode 2/3 for shops that cannot accept it |
+| **R4 speed on low-end tablets is unmeasured** | measure on the target tablet at the start of Phase 0b; it can change the stack decision |
+| R5 PGlite is young | pin the version, portable logical export |
+| R6 duplicate SKUs across offline devices | merge rule in Phase 0b, exceptions inbox |
+| R9 devices on different versions | version handshake |
+| R10 device-side permissions are advisory | stated plainly; server modes enforce |
+| Rounding and tax rules differ from what you or your accountant expect | A2/A3 explicit; engine tests reviewable by a non-developer |
+| Scope creep from the extras | each extra sits in a named phase |
+| No access to NexoPOS docs | behaviour questions collected in each phase demo |
 
-## 9. What I need from you to start
+## 9. What I need from you
 
-1. **Approve** the plan, or say what to change.
-2. Confirm or change **A1 to A8** (especially A2/A3 rounding and A5 plugin loading).
-3. Say whether to **keep the working title** or give me a name.
+1. **Review `spike-report.md` and this revision.** Do the risks change your mind about mode 1 as the default, or about browser-only versus a PC wrapper?
+2. **Approve the Prisma to Drizzle change** (2.3), and say whether to **revisit Next.js versus Vite** for a client-only app.
+3. **Decide on Google Drive:** do you want me to prepare the OAuth setup steps for you to run, or should Drive be dropped in favour of file and S3-compatible?
+4. **Hardware:** which tablet and which mini PC do you target? Measuring on a real low-end tablet is the next most valuable test.
+5. Confirm A5 (build-time plugins), A9 (Australian region), A10 (device-side permissions are advisory) and A12 (full replicas).
 
-On approval I will start **Phase 0**, and stop at its demo for review.
+On approval I will start **Phase 0b** and stop at its demo.

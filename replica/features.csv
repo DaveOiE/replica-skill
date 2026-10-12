@@ -215,3 +215,28 @@ Original translation files,out of scope,skip,yes,no,owned by the vendor; we writ
 Multi-store,out of scope,skip,module,no,paid module; confirm in question 5
 "Restaurant suite: tables, waiters, kitchen display",out of scope,skip,module,no,paid module (Gastro); see question 3
 "PIN login, 2FA, rentals, commissions, workforce, bookings, QR menu, print-server adapter",out of scope,skip,module,no,paid modules
+Standalone mode: full operation on one device with no server,local-first,must,no,no,default mode; original needs a server
+"Offline checkout, including app restart with no network",local-first,must,no,no,service-worker cached shell
+Per-device order-number prefixes,local-first,must,no,no,
+Sync status badge on every screen (standalone/synced/pending/offline/error),local-first,must,no,no,
+"Sync detail panel: unsynced counts, conflicts, stock exceptions",local-first,should,no,no,
+Connect a standalone device to a local server or cloud with no data loss,local-first,must,no,no,proven in spike
+"Join an existing store from a new device (pull, never seed)",local-first,must,no,no,
+Switch server (local to cloud) and disconnect back to standalone,local-first,must,no,no,store-id guard
+Stock exceptions list for offline overselling,local-first,must,no,no,allow and flag by default
+Duplicate SKU/barcode merge rule across devices,local-first,must,no,no,known gap in spike
+Schema-version handshake between devices and server,local-first,must,no,no,
+Per-device sync tokens issued by pairing code,local-first,must,no,no,
+Local-server Docker setup (Postgres + sync service),deploy,must,no,no,"written, untested"
+"Cloud deployment recipe, Australian region",deploy,must,no,no,no provider chosen
+Persistent-storage request and status display,data safety,must,no,no,
+Backup prompts and 'last verified backup' banner,data safety,must,no,no,
+One-tap backup export to file,data safety,must,no,no,
+One-tap backup export to Google Drive (backup files only),data safety,should,no,no,needs OAuth client; your decision
+One-tap backup export to S3-compatible storage,data safety,should,no,no,
+Scheduled encrypted backups (when app open; true schedule on server/wrapper),data safety,must,no,no,
+Backup verified by scratch restore before reported good,data safety,must,no,no,proven in spike
+Restore in place and restore as new device,data safety,must,no,no,new-device path proven in spike
+Portable logical export of all data,data safety,should,no,no,
+Held cart re-priced on resume with changed-line notice (old and new price),pos,must,no,no,tested in Phase 0b
+PC wrapper (Tauri or Electron) for reliable storage and scheduled backups,deploy,could,no,no,after spike review
