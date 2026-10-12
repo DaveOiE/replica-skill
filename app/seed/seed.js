@@ -68,6 +68,7 @@ export function seedDemo(db) {
     mkTask(demo, pub, sDone, creds.admin.userId, 'Collect the old logo files', { assignee: creds.member.userId, status: 'done', due: day(-4) });
     mkTask(demo, pub, sTodo, creds.admin.userId, 'Launch day', { milestone: true, due: day(14) });
     const disposable = mkTask(demo, pub, sTodo, creds.admin.userId, 'Scratch task to delete', { assignee: creds.member.userId });
+    db.prepare('insert into task_dependencies(task_id, depends_on_id) values (?, ?)').run(b, a);   // choosing colours waits on the copy
     const secret = mkTask(demo, priv, null, creds.admin.userId, 'Fix the Friday payroll export');
     db.prepare('insert into project_members(id,project_id,user_id,role) values (?,?,?,?)').run(newId(), pub, creds.guest.userId, 'editor');
     const otherProj = mkProject(other, creds.outsider.userId, 'Other Co onboarding', 'Belongs to another workspace.', 'workspace');
