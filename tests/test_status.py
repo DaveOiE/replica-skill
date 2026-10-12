@@ -46,5 +46,18 @@ class StatusTests(unittest.TestCase):
             self.assertEqual(status.main(["--root", d, "--check"]), 1)
 
 
+
+class TokensCssTests(unittest.TestCase):
+    def test_css_has_every_color_and_no_hand_edits_note(self):
+        tokens_css = load("tools", "tokens_css")
+        tokens = {"color": {"bg": "#ffffff", "accent": "#0f766e"}, "font": {"sans": "x"},
+                  "type": {"sm": {"size": 14, "line": 20, "weight": 400}}, "space": [0, 4],
+                  "radius": {"sm": 6}, "shadow": {"card": "0 0 0 #000"}, "motion": {"fast": "1ms"}}
+        out = tokens_css.css(tokens)
+        for needle in ("--color-bg: #ffffff;", "--color-accent: #0f766e;", "--text-sm-size: 14px;",
+                       "--space-1: 4px;", "--radius-sm: 6px;", "Do not edit by hand"):
+            self.assertIn(needle, out)
+
+
 if __name__ == "__main__":
     unittest.main()
