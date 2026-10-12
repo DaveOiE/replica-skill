@@ -50,3 +50,13 @@ test('compliance wording: certification and residency words appear only next to 
   }
   assert.deepEqual(bad, []);
 });
+
+test('client data stays out of git: CSV files and the import folder are ignored, and only the three planning matrices are tracked', () => {
+  const ignore = text('.gitignore');
+  assert.match(ignore, /^import\/$/m);
+  assert.match(ignore, /^\*\.csv$/m);
+  for (const f of ['import/anything.txt', 'jobs-export.csv', 'app/tests/fixtures/real-clients.csv'])
+    assert.doesNotThrow(() => execFileSync('git', ['check-ignore', '-q', f], { cwd: root }), `${f} must be ignored`);
+  assert.deepEqual(tracked.filter((f) => f.endsWith('.csv')).sort(), ['replica-recon/features.csv', 'replica/features.csv', 'replica/milestones.csv']);
+  assert.deepEqual(tracked.filter((f) => f.startsWith('import/')), []);
+});

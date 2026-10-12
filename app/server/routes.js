@@ -9,6 +9,7 @@ import { taskRoutes } from './routes-tasks.js';
 import { peopleRoutes } from './routes-people.js';
 import { reportRoutes } from './routes-reports.js';
 import { accessRoutes } from './routes-access.js';
+import { jobRoutes } from './routes-jobs.js';
 import { nowIso } from './db.js';
 
 const SESSION_COOKIE = 'session';
@@ -24,7 +25,7 @@ export function registerRoutes(app, { db, config, limiters }) {
   const define = (spec) => {
     app.routeTable.push(spec);
     app.route({
-      method: spec.method, url: spec.url,
+      method: spec.method, url: spec.url, ...(spec.bodyLimit ? { bodyLimit: spec.bodyLimit } : {}),
       handler: async (req, reply) => {
         const actor = actorFromToken(db, req.cookies?.[SESSION_COOKIE]);
         let access = null;
@@ -84,6 +85,7 @@ export function registerRoutes(app, { db, config, limiters }) {
   peopleRoutes(define, db);
   reportRoutes(define, db);
   accessRoutes(define, db, limiters);
+  jobRoutes(define, db);
 
   const workspaceRow = (id) => db.prepare('select id, name, slug, accent from workspaces where id = ?').get(id);
 

@@ -39,6 +39,8 @@ export const SCREEN_TITLES = {
   S35: 'Projects',
   S36: 'Account',
   S37: 'Reset password',
+  S38: 'Jobs',
+  S39: 'Import jobs',
 };
 
 /** "Detail · Screen title · Product name". `detail` is optional (a project or task name). */

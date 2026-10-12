@@ -62,6 +62,8 @@ admin controls who gets in and can prove what changed.
 | S35 | Projects | `/projects` | list and create projects | list, form | empty, filled |
 | S36 | Account | `/account` | change own password | form | wrong current, too short |
 | S37 | Reset password | `/reset/:token` | set a new password from an admin-issued link | form | valid, expired or used |
+| S38 | Jobs | `/jobs` | the imported Job Register: search, filters, Completed and Lost hidden by default | list, filters | empty, filtered, closed shown |
+| S39 | Import jobs | `/import` | admin uploads the register CSV, previews counts and warnings, confirms | file input, preview | file too large, wrong columns, preview, done |
 | S34 | Mock IdP (separate app) | `localhost:4001` | local SAML identity provider and fake directory | login, user list | dev only |
 
 ## Flows

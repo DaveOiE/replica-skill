@@ -22,7 +22,10 @@ export function loadConfig(env = process.env) {
 }
 
 export async function buildApp({ db, config = loadConfig(), logger = false, signinPerMinute = 30, tokenPerMinute = 30 }) {
-  const app = Fastify({ logger: logger ? { redact: ['req.headers.cookie', 'req.headers.authorization'] } : false, genReqId: () => randomUUID(), bodyLimit: 1_000_000 });
+  const app = Fastify({ logger: logger ? { redact: ['req.headers.cookie', 'req.headers.authorization'],
+    // Query strings can hold typed client names (job search), so only the path is logged.
+    serializers: { req: (req) => ({ method: req.method, url: String(req.url).split('?')[0], host: req.headers?.host, remoteAddress: req.ip }) },
+    ...(logger === true ? {} : logger) } : false, genReqId: () => randomUUID(), bodyLimit: 1_000_000 });
   app.routeTable = [];
   app.seenApiRoutes = [];
   app.addHook('onRoute', (r) => { if (String(r.url).startsWith('/api/v1')) app.seenApiRoutes.push(`${[].concat(r.method).join(',')} ${r.url}`); });

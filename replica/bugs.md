@@ -13,6 +13,7 @@ S3 broken with a workaround, or visibly wrong. S4 cosmetic. Only reproduced bugs
 | B-002 | S3 | Escape stopped closing the task drawer after any save, because each save re-renders and focus was lost. | browser test | M2 `fd9d005` | m2 browser spec |
 | B-003 | S3 | At desktop width the drawer's rows collapsed to zero width, so subtasks were invisible. Phone width looked fine. | 1440px browser run | M2 `fd9d005` | m2 browser spec at 1440px |
 | B-004 | S3 | A fast double click on Add task created two tasks. | GAUGE-2 | Gauge commit | GAUGE-2 (forms ignore a second submit while one runs) |
+| B-007 | S2 (privacy) | Typed search terms reached the server logs through the request URL: Fastify logs the full URL including the query string, and the Jobs search holds client names. | log-privacy test on the importer | pilot item 2 | the logger now records the path only; `jobs.test.js` checks the logs after search, preview and import. |
 | B-006 | S3 | The sign-in and lockout messages told people to ask an admin to reset or unlock, but neither existed. | exploratory pass | pilot item 1 | `access.test.js` end-to-end reset and unlock tests, and a browser test of the same flow. The wording now stays because it is true. |
 | B-005 | S3 | When a session ended mid-use, an action showed an error toast on a stale page and never sent the person back to sign in. | GAUGE-1 | Gauge commit | GAUGE-1 (returns to sign-in with the plain message) |
 

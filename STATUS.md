@@ -8,17 +8,17 @@ Updated: 2026-10-12
 
 | state | features |
 | --- | --- |
-| done | 17 |
+| done | 20 |
 | partly done | 2 |
 | later (deferred) | 48 |
 | skipped | 2 |
-| **total** | **69** |
+| **total** | **72** |
 
-Demo scope: **46 of 53 points built (87%)**. Later pool: 137 points, not scheduled. One point is a small tested feature (a few routes, one screen state, its tests).
+Demo scope: **61 of 68 points built (90%)**. Later pool: 137 points, not scheduled. One point is a small tested feature (a few routes, one screen state, its tests).
 
 ## Budget
 
-Used so far (proxy): **46.0%**. Rate: **0.56% of session per point** (measured on the latest milestone). Stop line: **60%**.
+Used so far (proxy): **50.6%**. Rate: **0.43% of session per point** (measured on the latest milestone). Stop line: **60%**.
 
 ## Milestones
 
@@ -35,7 +35,7 @@ Used so far (proxy): **46.0%**. Rate: **0.56% of session per point** (measured o
 | M9 | Integrations stubs and compliance docs | later | 0 | 0 | 13 | later | 0.0% | - |
 | M10 | AI flagged stubs | later | 0 | 0 | 8 | later | 0.0% | - |
 | P1 | Pilot 1: admin reset and unlock and invites | demo | 8 | 0 | 0 | done | 0.0% | - |
-| P2 | Pilot 2: Job Register importer and Jobs view | demo | 0 | 0 | 0 | later | 0.0% | - |
+| P2 | Pilot 2: Job Register importer and Jobs view | demo | 15 | 0 | 0 | done | 0.0% | - |
 | P3 | Pilot 3: public request form and one rule | demo | 0 | 0 | 0 | later | 0.0% | - |
 
 Fits inside the 60% stop line at this rate: nothing.
@@ -55,6 +55,9 @@ Fits inside the 60% stop line at this rate: nothing.
 | M2 | Unlimited free guests | C | must | 3 | demo | done | M2: guests see only projects they are added to; never project admin; no seat limit |
 | M2 | Add a person (admin creates a teammate or guest; temporary password shown once) | E | must | 2 | demo | done | M2: built; hash stored, password never in the audit trail; no email is sent (invites are later) |
 | M2 | Per-project admin controls | E | should | 2 | demo | done | M2: project admins rename, archive, manage sections and who is on the project, nothing wider |
+| P2 | Job Register CSV importer (admin only, preview then confirm, idempotent by job number) | E | must | 8 | demo | done | PILOT item 2: cleans #REF! and blanks, reads 01-Jul-24 dates, never reads dates inside comments, combines duration number and unit, maps team text to a person when the name matches, skips rows without a job number (row numbers and reasons only), 13 known statuses checked; counts-only audit event per import plus one per job created or changed; file is never stored or logged |
+| P2 | Jobs view: search by job number or title, filters for status, client and team, Completed and Lost hidden by default | E | must | 5 | demo | done | PILOT item 2: respects project visibility (private imports are visible to owners and admins only unless chosen otherwise); checked at 390px and 1440px |
+| P2 | Extra project fields: job number, client, status, owner name, start, due and closed dates, tags, latest note | E | must | 2 | demo | done | PILOT item 2: migration 0003; job number kept as raw text |
 | M2 | Projects with sections | C | must | 3 | demo | done | M2: create (default sections), rename, archive (read-only), visibility private or workspace; sections add and delete. Team-visible projects work in the API but there is no team UI until M7 |
 | M2 | Project templates (custom) | C | should | 3 | later | later (deferred) |  |
 | M2 | Change own password (needed because new people get a temporary one) | E | must | 1 | demo | done | ADDED in M2: needs the current password, enforces the 12-character rule, ends other sessions |

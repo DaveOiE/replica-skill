@@ -22,6 +22,10 @@ export const ACTIONS = {
   'members:unlock': { roles: MANAGERS, write: true },
   'members:reset_password': { roles: MANAGERS, write: true },
   'invites:read': { roles: MANAGERS, write: false },
+  // The Job Register: only owners and admins import; the list shows only jobs in projects the caller can already see.
+  'jobs:list': { roles: ALL, write: false },
+  'jobs:import_preview': { roles: MANAGERS, write: false },
+  'jobs:import': { roles: MANAGERS, write: true },
   'invites:manage': { roles: MANAGERS, write: true },
   // Changing your own password is self-service, so every role may, view-only and guest included.
   'session:password': { roles: ALL, write: false },

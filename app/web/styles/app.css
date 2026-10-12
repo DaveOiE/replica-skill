@@ -125,3 +125,12 @@ summary { cursor: pointer; color: var(--color-text-muted); font-size: var(--text
 
 .actions { display: flex; flex-wrap: wrap; gap: var(--space-2); }
 @media (min-width: 640px) { .row .actions { grid-column: 3 / span 2; } }
+
+/* ---- jobs ---- */
+.filters { display: grid; gap: var(--space-3); margin-bottom: var(--space-4); align-items: end; }
+.filters .field { margin: 0; }
+.row.job .row-note { grid-column: 1 / -1; margin: 0; display: flex; flex-wrap: wrap; gap: var(--space-1); overflow-wrap: anywhere; }
+.counts { display: grid; grid-template-columns: 1fr auto; gap: var(--space-1) var(--space-4); max-width: 420px; margin: 0 0 var(--space-4); }
+.counts dt { color: var(--color-text-muted); font-size: var(--text-sm-size); }
+.counts dd { margin: 0; font-weight: 600; text-align: right; }
+@media (min-width: 640px) { .filters { grid-template-columns: minmax(200px, 2fr) repeat(3, minmax(130px, 1fr)); } .filters .check, .filters button { align-self: center; } .row.job { grid-template-columns: minmax(0, 1fr) 150px 140px 130px; } }

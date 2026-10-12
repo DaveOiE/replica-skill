@@ -47,6 +47,17 @@ Seed passwords are random each time and live only in the gitignored file. Tests:
 | Dashboard | task counts, tasks by status, open tasks by person, progress by project (fixed widgets) |
 | Accountability | every change is recorded in a tamper-evident audit trail; permissions and the trail are tested on every route |
 
+### Job Register import (pilot)
+
+Admins can import a Job Register CSV exported from a spreadsheet, then everyone with access can search it on the
+Jobs screen. **Run the real import only on your own computer, never in a cloud session.** Real client data must
+never be committed: `*.csv` files and the `import/` folder are ignored by git, and a test checks that. The file is
+read in your browser, parsed in memory on the server, and never stored or logged; only the resulting jobs are
+kept, and the audit trail records counts and field names, never values. Re-importing updates jobs by job number
+and never duplicates them. Job numbers are kept exactly as written (for example `J9075P`); no meaning is read into
+a suffix. The project due date comes from "Estimated Completion Date"; "Next Action Due" and the duration are kept
+in the description. All test data is invented.
+
 ### Partly built
 
 - **Dashboard:** fixed widgets only. You cannot build your own charts.
