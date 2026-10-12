@@ -30,5 +30,8 @@ export const S = {
   projectSettings: 'Project settings', rename: 'Save', archive: 'Archive project', unarchive: 'Unarchive project', sections: 'Sections', addSection: 'Add section', remove: 'Remove', projectPeople: 'People on this project',
   addToProject: 'Add to project', onlyAdminsAdd: 'Ask a workspace admin to add more people.', myTasksMore: 'Open project',
   projectRoles: { viewer: 'Viewer', commenter: 'Commenter', editor: 'Editor', admin: 'Admin' },
-  nav: { myTasks: 'My tasks', projects: 'Projects', people: 'People', account: 'Account' },
+  nav: { myTasks: 'My tasks', projects: 'Projects', people: 'People', account: 'Account', dashboard: 'Dashboard' },
+  viewList: 'List', viewBoard: 'Board', views: 'Views', moveTo: 'Move to', dragHint: 'Drag a card to another column, or use its Move to menu.',
+  dashHeading: 'Dashboard', dashOpen: 'Open tasks', dashOverdue: 'Overdue', dashSoon: 'Due in the next 7 days', dashDone: 'Done in the last 7 days',
+  dashByStatus: 'Tasks by status', dashByPerson: 'Open tasks by person', dashByProject: 'Progress by project', showData: 'Show the numbers', dashEmpty: 'Nothing to chart yet. Add some tasks.', dashNote: 'Counts every task you can see, including subtasks. Dates use UTC.',
 };

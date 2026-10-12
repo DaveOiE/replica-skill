@@ -1,5 +1,5 @@
 // Screens after sign-in. Everything the user typed is rendered as text, never as markup.
-import { h, select, field, toast } from './dom.js';
+import { h, select, field, toast, svg } from './dom.js';
 import { api } from './api.js';
 import { S } from './strings.js';
 import { pageTitle } from '/shared/titles.js';
@@ -37,13 +37,13 @@ export async function projectsView(ctx) {
   return [h('h1', {}, S.projectsHeading), items.length ? h('ul', { class: 'list' }, items) : h('div', { class: 'empty' }, h('p', {}, S.noProjects)), canCreate && h('h2', {}, S.newProject), canCreate && form];
 }
 
-export async function projectView(ctx, id, taskId) {
+export async function projectView(ctx, id, taskId, view = 'list') {
   const pr = await api('GET', `/api/v1/projects/${id}`);
   if (pr.status !== 200) return [notFound()];
   const proj = pr.data, rank = { viewer: 1, commenter: 2, editor: 3, admin: 4 }[proj.myRole];
   const canEdit = rank >= 3 && !proj.archived;
   const [{ data: td }, { data: pp }] = await Promise.all([api('GET', `/api/v1/projects/${id}/tasks`), api('GET', `/api/v1/projects/${id}/people`)]);
-  document.title = pageTitle('S04', proj.name);
+  document.title = pageTitle(view === 'board' ? 'S05' : 'S04', proj.name);
   if (!taskId) lastDrawerTask = null;
   const people = [['', S.unassigned], ...pp.people.map((x) => [x.userId, x.name])];
   const reload = () => ctx.refresh();
@@ -66,9 +66,36 @@ export async function projectView(ctx, id, taskId) {
     return h('section', { class: 'section', 'aria-label': sec.name }, h('h2', {}, `${sec.name} `, h('span', { class: 'muted' }, String(mine.length))),
       mine.length ? h('ul', { class: 'list' }, mine.flatMap((t) => [taskRow(t, false), ...subsOf(t).map((s) => taskRow(s, true))])) : h('p', { class: 'muted' }, S.noTasks), canEdit && add);
   };
+  // ---- board: one column per section; drag a card, or use its Move to menu (keyboard friendly)
+  const move = (tid, sectionId, position) => patch(tid, { sectionId, position }, false);
+  const colTasks = (secId) => td.tasks.filter((t) => !t.parentId && (secId ? t.sectionId === secId : !t.sectionId)).sort((a, b) => a.position - b.position);
+  const endOf = (secId) => (colTasks(secId).at(-1)?.position ?? 0) + 1;
+  const sectionChoices = [...td.sections.map((x) => [x.id, x.name]), ['', S.unsectioned]];
+  const card = (t, secId) => h('article', { class: 'bcard', draggable: canEdit ? 'true' : false,
+    ondragstart: (e) => e.dataTransfer.setData('text/plain', t.id),
+    ondragover: (e) => { if (canEdit) e.preventDefault(); },
+    ondrop: (e) => { e.preventDefault(); e.stopPropagation(); const dragged = e.dataTransfer.getData('text/plain'); if (!canEdit || !dragged || dragged === t.id) return;
+      const col = colTasks(secId), i = col.findIndex((x) => x.id === t.id), prev = col[i - 1]; move(dragged, secId, prev ? (prev.position + t.position) / 2 : t.position - 1); } },
+    link(`#/p/${id}/board/t/${t.id}`, t.title, 'task-link'),
+    h('div', { class: 'row-main' }, h('span', { class: `chip chip-${t.status}` }, S.status[t.status]), t.assigneeName && h('span', { class: 'muted' }, t.assigneeName),
+      t.dueDate && h('span', { class: t.dueDate < today() && t.status !== 'done' ? 'overdue' : 'muted' }, t.dueDate < today() && t.status !== 'done' ? `${S.overdue}: ${t.dueDate}` : t.dueDate),
+      t.isMilestone && h('span', { class: 'badge' }, S.milestone), subsOf(t).length > 0 && h('span', { class: 'muted' }, `${subsOf(t).filter((x) => x.status === 'done').length}/${subsOf(t).length}`)),
+    canEdit && select(`mv-${t.id}`, `${S.moveTo}: ${t.title}`, sectionChoices, secId || '', (v) => move(t.id, v || null, endOf(v || null))));
+  const column = (sec) => {
+    const mine = colTasks(sec.id);
+    if (!sec.id && !mine.length) return null;
+    return h('section', { class: 'col', 'aria-label': sec.name, ondragover: (e) => { if (canEdit) e.preventDefault(); },
+      ondrop: (e) => { e.preventDefault(); const dragged = e.dataTransfer.getData('text/plain'); if (canEdit && dragged) move(dragged, sec.id, endOf(sec.id)); } },
+      h('h2', {}, `${sec.name} `, h('span', { class: 'muted' }, String(mine.length))), mine.length ? mine.map((t) => card(t, sec.id)) : h('p', { class: 'muted' }, S.noTasks));
+  };
+  const tabs = h('nav', { class: 'tabs', 'aria-label': S.views }, link(`#/p/${id}`, S.viewList, 'tab'), link(`#/p/${id}/board`, S.viewBoard, 'tab'));
+  tabs.querySelectorAll('a')[view === 'board' ? 1 : 0].setAttribute('aria-current', 'page');
+  const base = view === 'board' ? `#/p/${id}/board` : `#/p/${id}`;
   const body = [h('div', { class: 'page-head' }, h('h1', {}, proj.name), h('span', { class: 'badge' }, S.projectRoles[proj.myRole]), rank === 4 && link(`#/p/${id}/settings`, S.settings, 'btn btn-secondary')),
-    proj.archived && h('div', { class: 'banner', role: 'note' }, S.archivedBanner), ...[...td.sections, { id: null, name: S.unsectioned }].map(sectionBlock)];
-  if (taskId) body.push(await drawer(ctx, id, taskId, { td, people, canEdit, rank, patch, reload }));
+    proj.archived && h('div', { class: 'banner', role: 'note' }, S.archivedBanner), tabs,
+    ...(view === 'board' ? [canEdit && h('p', { class: 'muted' }, S.dragHint), h('div', { class: 'board' }, [...td.sections, { id: null, name: S.unsectioned }].map(column))]
+      : [...td.sections, { id: null, name: S.unsectioned }].map(sectionBlock))];
+  if (taskId) body.push(await drawer(ctx, id, taskId, { td, people, canEdit, rank, patch, reload, base }));
   return body;
 }
 
@@ -77,7 +104,7 @@ async function drawer(ctx, projectId, taskId, k) {
   if (r.status !== 200) return h('aside', { class: 'drawer', role: 'dialog', 'aria-label': S.notFound }, notFound());
   const d = r.data, t = d.task, { canEdit, rank, patch, reload } = k;
   document.title = pageTitle('S08', t.title);
-  const close = () => { location.hash = `#/p/${projectId}`; };
+  const close = () => { location.hash = k.base; };
   const text = (id, label, val, key, attrs = {}) => field(id, label, { value: val ?? '', disabled: !canEdit, ...attrs, onchange: (e) => patch(t.id, { [key]: attrs.type === 'number' ? (e.target.value === '' ? null : Number(e.target.value)) : (e.target.value.trim() || null) }, false) });
   const title = text('d-title', S.taskTitle, t.title, 'title', { maxlength: '300' });
   title.querySelector('input').onchange = (e) => patch(t.id, { title: e.target.value.trim() });
@@ -98,7 +125,7 @@ async function drawer(ctx, projectId, taskId, k) {
     h('h3', {}, S.waitingOn), h('ul', { class: 'list' }, d.blockedBy.map((b) => h('li', { class: 'row' }, h('span', { class: 'row-main' }, `${b.title} (${S.status[b.status]})`),
       canEdit && h('button', { class: 'btn btn-secondary', type: 'button', 'aria-label': `${S.remove}: ${b.title}`, onclick: async () => { const x = await api('DELETE', `/api/v1/tasks/${t.id}/dependencies/${b.id}`); x.status === 200 ? reload() : fail(x); } }, S.remove)))),
     canEdit && h('div', { class: 'inline-form' }, select('d-dep', S.waitingOn, [['', S.chooseTask], ...others], '', (v) => { depId = v; }), h('button', { class: 'btn btn-secondary', type: 'button', onclick: async () => { if (!depId) return; const x = await api('POST', `/api/v1/tasks/${t.id}/dependencies`, { dependsOnId: depId }); x.status === 201 ? reload() : fail(x); } }, S.addDependency)),
-    !t.parentId && h('h3', {}, S.subtasks), !t.parentId && h('ul', { class: 'list' }, d.subtasks.map((s) => h('li', { class: 'row' }, link(`#/p/${projectId}/t/${s.id}`, s.title, 'task-link'), h('span', { class: `chip chip-${s.status}` }, S.status[s.status])))),
+    !t.parentId && h('h3', {}, S.subtasks), !t.parentId && h('ul', { class: 'list' }, d.subtasks.map((s) => h('li', { class: 'row' }, link(`${k.base}/t/${s.id}`, s.title, 'task-link'), h('span', { class: `chip chip-${s.status}` }, S.status[s.status])))),
     !t.parentId && canEdit && h('form', { class: 'add-task', onsubmit: async (e) => { e.preventDefault(); if (!sub.value.trim()) return; const x = await api('POST', `/api/v1/projects/${projectId}/tasks`, { title: sub.value.trim(), parentId: t.id, sectionId: t.sectionId }); x.status === 201 ? reload() : fail(x); } }, sub, h('button', { class: 'btn btn-secondary', type: 'submit' }, S.addSubtask)),
     h('h3', {}, S.comments), d.comments.length ? h('ul', { class: 'list' }, d.comments.map((c) => h('li', { class: 'comment' }, h('strong', {}, c.author), h('span', { class: 'muted' }, ` ${c.createdAt.slice(0, 16).replace('T', ' ')} UTC`), h('p', {}, c.body)))) : h('p', { class: 'muted' }, S.noComments),
     rank >= 2 && h('form', { onsubmit: async (e) => { e.preventDefault(); if (!comment.value.trim()) return; const x = await api('POST', `/api/v1/tasks/${t.id}/comments`, { body: comment.value }); x.status === 201 ? reload() : fail(x); } }, h('div', { class: 'field' }, h('label', { for: 'd-comment' }, S.addComment), comment), h('button', { class: 'btn btn-primary', type: 'submit' }, S.addComment)),
@@ -165,4 +192,38 @@ export async function accountView(ctx) {
     r.status === 200 ? (toast(S.passwordChanged), form.reset()) : fail(r);
   } }, cur, next, h('button', { class: 'btn btn-primary', type: 'submit' }, S.changePassword));
   return [h('h1', {}, S.accountHeading), form];
+}
+
+// Width is set through the CSS object model: allowed under our Content-Security-Policy, unlike a style attribute.
+function meterFill(pct) { const el = h('div', { class: 'meter-fill' }); el.style.width = `${pct}%`; return el; }
+
+// ---- dashboard: fixed widgets, hand-drawn SVG, a numbers table behind every chart
+function barChart(title, rows, colorClass) {
+  const max = Math.max(1, ...rows.map((r) => r.value)), rowH = 30, labelW = 150, barW = 170, w = labelW + barW + 40;
+  const chart = svg('svg', { viewBox: `0 0 ${w} ${rows.length * rowH + 4}`, role: 'img', 'aria-label': title, class: 'chart' },
+    svg('title', {}, title),
+    rows.map((r, i) => svg('g', { transform: `translate(0 ${i * rowH + 2})` },
+      svg('text', { x: 0, y: 17, class: 'chart-label' }, r.label.length > 22 ? `${r.label.slice(0, 21)}...` : r.label),
+      svg('rect', { x: labelW, y: 3, width: Math.max(r.value ? 4 : 0, (r.value / max) * barW), height: 18, rx: 4, class: colorClass }),
+      svg('text', { x: labelW + (r.value / max) * barW + 6, y: 17, class: 'chart-value' }, String(r.value)))));
+  const table = h('table', { class: 'data-table' }, h('caption', {}, title), h('tbody', {}, rows.map((r) => h('tr', {}, h('th', { scope: 'row' }, r.label), h('td', {}, String(r.value))))));
+  return h('section', { class: 'card widget' }, h('h2', {}, title), chart, h('details', {}, h('summary', {}, S.showData), table));
+}
+
+export async function reportsView(ctx) {
+  document.title = pageTitle('S14');
+  const { data } = await api('GET', '/api/v1/reports/summary');
+  const total = Object.values(data.byStatus).reduce((a, b) => a + b, 0);
+  const tile = (label, value) => h('div', { class: 'tile' }, h('p', { class: 'tile-value' }, String(value)), h('p', { class: 'tile-label' }, label));
+  if (!total) return [h('h1', {}, S.dashHeading), h('div', { class: 'empty' }, h('p', {}, S.dashEmpty))];
+  return [h('h1', {}, S.dashHeading),
+    h('div', { class: 'tiles' }, tile(S.dashOpen, data.totals.open), tile(S.dashOverdue, data.totals.overdue), tile(S.dashSoon, data.totals.dueSoon), tile(S.dashDone, data.totals.doneRecently)),
+    h('div', { class: 'widgets' },
+      barChart(S.dashByStatus, Object.entries(S.status).map(([k, label]) => ({ label, value: data.byStatus[k] })), 'bar-1'),
+      barChart(S.dashByPerson, data.byAssignee.map((r) => ({ label: r.name || S.unassigned, value: r.open })), 'bar-2')),
+    h('section', { class: 'card widget' }, h('h2', {}, S.dashByProject),
+      h('ul', { class: 'list' }, data.byProject.map((p) => h('li', { class: 'row prog' }, h('span', { class: 'row-main' }, link(`#/p/${p.id}`, p.name, 'task-link'), h('span', { class: 'muted' }, ` ${p.done} of ${p.total} done`)),
+        h('div', { class: 'meter', role: 'progressbar', 'aria-label': `${p.name}: ${p.done} of ${p.total} done`, 'aria-valuemin': '0', 'aria-valuemax': String(p.total), 'aria-valuenow': String(p.done) },
+          meterFill(p.total ? Math.round((100 * p.done) / p.total) : 0)))))),
+    h('p', { class: 'muted' }, S.dashNote)];
 }

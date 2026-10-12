@@ -30,6 +30,8 @@ export const ACTIONS = {
   'task:write': { project: 'editor', write: true },
   'project:manage': { project: 'admin', write: true },
   'me:tasks': { roles: ALL, write: false },
+  // The summary only counts projects the caller can already see, so every role may ask.
+  'report:read': { roles: ALL, write: false },
 };
 
 /**

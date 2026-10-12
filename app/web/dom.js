@@ -30,3 +30,11 @@ export function toast(message, isError = false) {
   box.append(t);
   setTimeout(() => t.remove(), 4500);
 }
+
+/** SVG element builder (for charts). Text only, same rule as h(). */
+export function svg(tag, attrs = {}, ...children) {
+  const el = document.createElementNS('http://www.w3.org/2000/svg', tag);
+  for (const [k, v] of Object.entries(attrs)) if (v != null && v !== false) el.setAttribute(k, String(v));
+  for (const c of children.flat()) if (c != null) el.append(c.nodeType ? c : document.createTextNode(String(c)));
+  return el;
+}

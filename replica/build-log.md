@@ -22,3 +22,13 @@ Screens S02, S04 to S34 are not started.
 
 A typo (a double comma in `strings.js`) blanked the whole app in the browser while every unit test
 stayed green. Fixed, and a test now syntax-checks every web module.
+
+## Board and dashboard (2026-10-12)
+
+| screen | state | missing | harder than expected |
+| --- | --- | --- | --- |
+| S05 Board | done | none | none in the app; the browser tests needed to wait for the board (the list view has regions with the same names) |
+| S14 Dashboard | partial | custom chart builder (later) | the meter width cannot be an inline style under our Content-Security-Policy, so it is set from script |
+
+Goals (S16) and the audit log screen (S28) were deferred to the later list to hold the 45% line with the
+Gauge and Evolve reserve. The audit trail itself is recorded and verifiable; only its screen is later.

@@ -88,3 +88,37 @@ textarea.input { padding: var(--space-2) var(--space-3); min-height: 80px; }
 }
 /* The drawer is narrow, so its rows are two columns, not the four-column project row. Must come after the media query. */
 .drawer .row { grid-template-columns: minmax(0, 1fr) auto; }
+
+/* ---- board ---- */
+.tabs { display: flex; gap: var(--space-2); margin-bottom: var(--space-4); border-bottom: 1px solid var(--color-border); }
+.tab { padding: var(--space-2) var(--space-3); color: var(--color-text); text-decoration: none; border-bottom: 3px solid transparent; }
+.tab[aria-current='page'] { border-bottom-color: var(--color-accent); font-weight: 600; }
+.board { display: grid; gap: var(--space-3); }
+.col { background: var(--color-surface); border-radius: var(--radius-lg); padding: var(--space-3); min-width: 0; align-content: start; display: grid; gap: var(--space-2); }
+.col h2 { margin: 0 0 var(--space-2); font-size: var(--text-base-size); }
+.bcard { background: var(--color-bg); border: 1px solid var(--color-border); border-radius: var(--radius-md); box-shadow: var(--shadow-card); padding: var(--space-3); display: grid; gap: var(--space-2); cursor: grab; }
+.bcard .field { margin: 0; }
+.bcard .field label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+@media (min-width: 640px) { .board { grid-auto-flow: column; grid-auto-columns: minmax(240px, 1fr); overflow-x: auto; padding-bottom: var(--space-2); } }
+
+/* ---- dashboard ---- */
+.tiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-3); margin-bottom: var(--space-4); }
+.tile { background: var(--color-bg); border: 1px solid var(--color-border); border-radius: var(--radius-lg); padding: var(--space-4); box-shadow: var(--shadow-card); }
+.tile-value { margin: 0; font-size: var(--text-xl-size); line-height: var(--text-xl-line); font-weight: var(--text-xl-weight); }
+.tile-label { margin: var(--space-1) 0 0; color: var(--color-text-muted); font-size: var(--text-sm-size); }
+.widgets { display: grid; gap: var(--space-4); margin-bottom: var(--space-4); }
+.widget { margin-bottom: var(--space-4); }
+.widget h2 { margin-top: 0; }
+.chart { width: 100%; height: auto; max-width: 420px; }
+.chart-label, .chart-value { fill: var(--color-text); font-size: 13px; font-family: var(--font-sans); }
+.chart-value { font-weight: 600; }
+.bar-1 { fill: var(--color-chart-1); }
+.bar-2 { fill: var(--color-chart-2); }
+.data-table { border-collapse: collapse; margin-top: var(--space-2); font-size: var(--text-sm-size); }
+.data-table th, .data-table td { text-align: left; padding: var(--space-1) var(--space-3); border-bottom: 1px solid var(--color-border); }
+.data-table caption { text-align: left; color: var(--color-text-muted); padding-bottom: var(--space-1); }
+summary { cursor: pointer; color: var(--color-text-muted); font-size: var(--text-sm-size); margin-top: var(--space-2); }
+.meter { height: 10px; background: var(--color-surface); border: 1px solid var(--color-border-input); border-radius: var(--radius-pill); overflow: hidden; }
+.meter-fill { height: 100%; background: var(--color-chart-1); }
+@media (min-width: 640px) { .tiles { grid-template-columns: repeat(4, minmax(0, 1fr)); } .row.prog { grid-template-columns: minmax(0, 1fr) 220px; } }
+@media (min-width: 1024px) { .widgets { grid-template-columns: repeat(2, minmax(0, 1fr)); } }

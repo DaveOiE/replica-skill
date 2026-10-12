@@ -8,18 +8,17 @@ Updated: 2026-10-12
 
 | state | features |
 | --- | --- |
-| done | 13 |
-| partly done | 1 |
-| not started | 4 |
-| later (deferred) | 46 |
+| done | 14 |
+| partly done | 2 |
+| later (deferred) | 48 |
 | skipped | 2 |
 | **total** | **66** |
 
-Demo scope: **35 of 53 points built (66%)**. Later pool: 129 points, not scheduled. One point is a small tested feature (a few routes, one screen state, its tests).
+Demo scope: **38 of 45 points built (84%)**. Later pool: 137 points, not scheduled. One point is a small tested feature (a few routes, one screen state, its tests).
 
 ## Budget
 
-Used so far (proxy): **35.4%**. Rate: **0.34% of session per point** (measured on the latest milestone). Stop line: **45%**.
+Used so far (proxy): **38.2%**. Rate: **0.40% of session per point** (measured on the latest milestone). Stop line: **45%**.
 
 ## Milestones
 
@@ -27,16 +26,16 @@ Used so far (proxy): **35.4%**. Rate: **0.34% of session per point** (measured o
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | M1 | Data model and roles | demo | 13 | 0 | 0 | done, 1 partial | 0.0% | - |
 | M2 | Tasks and projects (trimmed) | demo | 25 | 0 | 6 | done | 0.0% | - |
-| M3 | Board view (rest of views and forms later) | demo | 3 | 3 | 23 | not started | 1.0% | 36.4% |
+| M3 | Board view (rest of views and forms later) | demo | 3 | 0 | 23 | done | 0.0% | - |
 | M4 | Automation | later | 0 | 0 | 13 | later | 0.0% | - |
-| M5 | Simple dashboard and goals (portfolios and approvals later) | demo | 7 | 7 | 19 | not started | 2.4% | 38.8% |
-| M6 | Audit log screen (SIEM API and service accounts later) | demo | 5 | 5 | 6 | not started | 1.7% | 40.5% |
+| M5 | Simple dashboard (goals portfolios and approvals later) | demo | 4 | 0 | 22 | done, 1 partial | 0.0% | - |
+| M6 | Audit log screen and SIEM API and service accounts | later | 0 | 0 | 11 | later | 0.0% | - |
 | M7 | Admin console SSO and provisioning | later | 0 | 0 | 32 | later | 0.0% | - |
 | M8 | Bundles branding and backup | later | 0 | 0 | 9 | later | 0.0% | - |
 | M9 | Integrations stubs and compliance docs | later | 0 | 0 | 13 | later | 0.0% | - |
 | M10 | AI flagged stubs | later | 0 | 0 | 8 | later | 0.0% | - |
 
-Fits inside the 45% stop line at this rate: M3, M5, M6.
+Fits inside the 45% stop line at this rate: nothing.
 (Gauge and Evolve are extra: see replica/run-plan.md.)
 
 ## Features
@@ -64,7 +63,7 @@ Fits inside the 45% stop line at this rate: M3, M5, M6.
 | M3 | Forms that create tasks | C | must | 5 | later | later (deferred) |  |
 | M3 | Form branching logic | C | should | 3 | later | later (deferred) |  |
 | M3 | Form customisation | C | could | 2 | later | later (deferred) |  |
-| M3 | Board view | C | must | 3 | demo | not started | drag to move, plus a Move-to menu for keyboard users |
+| M3 | Board view | C | must | 3 | demo | done | Built: one column per section; drag a card or use its Move to menu (keyboard); read-only for view-only seats; opens the same task drawer |
 | M3 | Calendar view | C | must | 3 | later | later (deferred) |  |
 | M3 | Timeline view (Gantt-style) | C | should | 5 | later | later (deferred) |  |
 | M4 | Rules automation: trigger, condition, action | C | must | 8 | later | later (deferred) | A2 triggers and conditions |
@@ -73,13 +72,13 @@ Fits inside the 45% stop line at this rate: M3, M5, M6.
 | M5 | Approvals | C | should | 3 | later | later (deferred) |  |
 | M5 | Proofing: review and sign-off on a piece of work | C | could | 2 | later | later (deferred) | comment and decision on an attachment |
 | M5 | Organisation-wide resource and capacity planning | C | could | 3 | later | later (deferred) | A3, kept simple |
-| M5 | Goals linked to projects and portfolios | C | should | 3 | demo | not started |  |
+| M5 | Goals linked to projects and portfolios | C | should | 3 | later | later (deferred) | (deferred 2026-10-12 to hold the 45% line) |
 | M5 | Portfolios: roll-up of projects with status and progress | C | should | 5 | later | later (deferred) |  |
 | M5 | Workload and resource management in a portfolio | C | should | 3 | later | later (deferred) |  |
-| M5 | Reporting dashboards with custom charts | C | must | 4 | demo | not started | demo slice: fixed widgets (status, overdue, due soon, workload); the custom chart builder is later |
+| M5 | Reporting dashboards with custom charts | C | must | 4 | demo | partly done | Demo slice built: four number tiles, tasks by status, open tasks by person, progress by project, each chart with a numbers table, counting only projects the viewer can see. NOT built: choosing or building your own charts (custom chart builder is later) |
 | M5 | Universal reporting across projects and teams | C | should | 3 | later | later (deferred) | kept simple |
 | M6 | Service accounts | E | should | 3 | later | later (deferred) |  |
-| M6 | Audit log of admin and user actions | E | must | 5 | demo | not started | demo slice: admin screen with filters, before/after, verify chain; SIEM export API and service accounts are later |
+| M6 | Audit log of admin and user actions | E | must | 5 | later | later (deferred) | demo slice: admin screen with filters, before/after, verify chain; SIEM export API and service accounts are later (deferred 2026-10-12 to hold the 45% line with the Gauge and Evolve reserve; the audit trail itself is recorded and verifiable today, only the screen is later) |
 | M6 | Audit API suited to SIEM export | E | must | 3 | later | later (deferred) | JSON and NDJSON, cursor paging |
 | M7 | Control who can invite guests | E | should | 1 | later | later (deferred) |  |
 | M7 | Trusted guest domains | E | should | 2 | later | later (deferred) |  |

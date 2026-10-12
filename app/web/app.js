@@ -2,7 +2,7 @@ import { h, field } from './dom.js';
 import { api } from './api.js';
 import { S } from './strings.js';
 import { pageTitle } from '/shared/titles.js';
-import { myTasksView, projectsView, projectView, settingsView, peopleView, accountView } from './views.js';
+import { myTasksView, projectsView, reportsView, projectView, settingsView, peopleView, accountView } from './views.js';
 
 const root = document.getElementById('app');
 let session = null;
@@ -46,7 +46,7 @@ function shell(content) {
     h('a', { class: 'skip', href: '#main' }, S.skipToContent),
     h('header', { class: 'topbar' }, h('strong', { class: 'workspace-name' }, session.workspace.name), h('span', { class: 'badge' }, roleLabel), h('span', { class: 'who' }, session.user.name), signOut),
     h('nav', { class: 'side', 'aria-label': S.navLabel },
-      item('#/', S.nav.myTasks, here === '#/'), item('#/projects', S.nav.projects, here.startsWith('#/projects') || here.startsWith('#/p/')),
+      item('#/', S.nav.myTasks, here === '#/'), item('#/projects', S.nav.projects, here.startsWith('#/projects') || here.startsWith('#/p/')), item('#/reports', S.nav.dashboard, here === '#/reports'),
       admin && item('#/people', S.nav.people, here === '#/people'), item('#/account', S.nav.account, here === '#/account')),
     h('main', { id: 'main', class: 'content', tabindex: '-1' },
       /\(demo\)$/.test(session.workspace.name) && banner(S.demoBanner), session.role === 'view_only' && banner(S.viewOnlyBanner, 'banner-info'), content),
@@ -59,10 +59,11 @@ async function route() {
   let parts;
   if (hash === '#/') parts = await myTasksView(ctx);
   else if (hash === '#/projects') parts = await projectsView(ctx);
+  else if (hash === '#/reports') parts = await reportsView(ctx);
   else if (hash === '#/people') parts = await peopleView(ctx);
   else if (hash === '#/account') parts = await accountView(ctx);
   else if ((parts = hash.match(/^#\/p\/([\w-]+)\/settings$/))) parts = await settingsView(ctx, parts[1]);
-  else if ((parts = hash.match(/^#\/p\/([\w-]+)(?:\/t\/([\w-]+))?$/))) parts = await projectView(ctx, parts[1], parts[2]);
+  else if ((parts = hash.match(/^#\/p\/([\w-]+)(\/board)?(?:\/t\/([\w-]+))?$/))) parts = await projectView(ctx, parts[1], parts[3], parts[2] ? 'board' : 'list');
   else parts = [h('div', { class: 'empty' }, h('p', {}, S.notFound))];
   const scroll = window.scrollY;
   render(shell(parts), false);
@@ -79,7 +80,7 @@ export async function start() {
 }
 
 // Escape closes an open task, wherever keyboard focus happens to be.
-document.addEventListener('keydown', (e) => { if (e.key !== 'Escape') return; const m = location.hash.match(/^(#\/p\/[\w-]+)\/t\//); if (m) location.hash = m[1]; });
+document.addEventListener('keydown', (e) => { if (e.key !== 'Escape') return; const m = location.hash.match(/^(#\/p\/[\w-]+(?:\/board)?)\/t\//); if (m) location.hash = m[1]; });
 
 window.addEventListener('hashchange', () => { if (session) route(); });
 start();

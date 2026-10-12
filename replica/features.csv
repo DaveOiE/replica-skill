@@ -7,7 +7,7 @@ Subtasks,tasks,must,yes,yes,M2: one level; listed with the parent in the list vi
 Projects with sections,projects,must,yes,yes,"M2: create (default sections), rename, archive (read-only), visibility private or workspace; sections add and delete. Team-visible projects work in the API but there is no team UI until M7",C,done,M2,3,demo
 Project templates (custom),projects,should,yes,no,,C,done,M2,3,later
 List view,views,must,yes,yes,"M2: grouped by section with inline status, assignee and due date; read-only for view-only seats",C,done,M2,3,demo
-Board view,views,must,yes,no,"drag to move, plus a Move-to menu for keyboard users",C,done,M3,3,demo
+Board view,views,must,yes,yes,Built: one column per section; drag a card or use its Move to menu (keyboard); read-only for view-only seats; opens the same task drawer,C,done,M3,3,demo
 Calendar view,views,must,yes,no,,C,done,M3,3,later
 Timeline view (Gantt-style),views,should,yes,no,,C,done,M3,5,later
 "Custom fields: text, number, date, single and multi select",custom fields,must,yes,no,A2,C,done,M3,5,later
@@ -25,9 +25,9 @@ Integrations plugin interface,integrations,should,yes,no,,C,done,M9,3,later
 2 or 3 sample connectors,integrations,could,yes,no,"outbound webhook, CSV import/export, calendar-file feed; no account needed",C,stub,M9,3,later
 Catalogue of 100+ connectors,integrations,could,yes,skip,the owner's catalogue is not part of the product to rebuild,C,skip,M9,0,skip
 Native mobile apps,shell,could,yes,skip,out of scope per the list,C,skip,M1,0,skip
-Reporting dashboards with custom charts,reporting,must,yes,no,"demo slice: fixed widgets (status, overdue, due soon, workload); the custom chart builder is later",C,done,M5,4,demo
+Reporting dashboards with custom charts,reporting,must,yes,partial,"Demo slice built: four number tiles, tasks by status, open tasks by person, progress by project, each chart with a numbers table, counting only projects the viewer can see. NOT built: choosing or building your own charts (custom chart builder is later)",C,done,M5,4,demo
 Portfolios: roll-up of projects with status and progress,portfolios,should,yes,no,,C,done,M5,5,later
-Goals linked to projects and portfolios,goals,should,yes,no,,C,done,M5,3,demo
+Goals linked to projects and portfolios,goals,should,yes,no, (deferred 2026-10-12 to hold the 45% line),C,done,M5,3,later
 Workload and resource management in a portfolio,portfolios,should,yes,no,,C,done,M5,3,later
 Organisation-wide resource and capacity planning,capacity,could,yes,no,"A3, kept simple",C,done,M5,3,later
 Approvals,approvals,should,yes,no,,C,done,M5,3,later
@@ -50,7 +50,7 @@ Custom onboarding,admin,should,yes,no,,E,done,M8,2,later
 Custom branding,admin,should,yes,no,,E,done,M8,2,later
 Workflow bundles,admin,should,yes,no,,E,done,M8,3,later
 Cross-region backup,backup,could,yes,no,"local backup to a second directory; simulation, no real region",E,stub,M8,2,later
-Audit log of admin and user actions,audit,must,yes,no,"demo slice: admin screen with filters, before/after, verify chain; SIEM export API and service accounts are later",E,done,M6,5,demo
+Audit log of admin and user actions,audit,must,yes,no,"demo slice: admin screen with filters, before/after, verify chain; SIEM export API and service accounts are later (deferred 2026-10-12 to hold the 45% line with the Gauge and Evolve reserve; the audit trail itself is recorded and verifiable today, only the screen is later)",E,done,M6,5,later
 Audit API suited to SIEM export,audit,must,yes,no,"JSON and NDJSON, cursor paging",E,done,M6,3,later
 Data residency selection,compliance,could,yes,no,"not certified, no real regions",S,setting only,M9,1,later
 Enterprise key management,compliance,could,yes,no,"not certified, no real key custody",S,setting only,M9,1,later

@@ -3,8 +3,8 @@ M1,Data model and roles,L,4,demo
 M2,Tasks and projects (trimmed),L,5,demo
 M3,Board view (rest of views and forms later),S,1,demo
 M4,Automation,M,3,later
-M5,Simple dashboard and goals (portfolios and approvals later),M,2,demo
-M6,Audit log screen (SIEM API and service accounts later),M,2,demo
+M5,Simple dashboard (goals portfolios and approvals later),M,1,demo
+M6,Audit log screen and SIEM API and service accounts,M,2,later
 M7,Admin console SSO and provisioning,L,4,later
 M8,Bundles branding and backup,M,2,later
 M9,Integrations stubs and compliance docs,M,2,later

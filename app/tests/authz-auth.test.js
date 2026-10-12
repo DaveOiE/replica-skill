@@ -20,6 +20,7 @@ test('authz matrix: every role against every action', () => {
     'project:list': { owner: 1, admin: 1, member: 1, view_only: 1, guest: 1 },
     'project:create': { owner: 1, admin: 1, member: 1, view_only: 0, guest: 0 },
     'me:tasks': { owner: 1, admin: 1, member: 1, view_only: 1, guest: 1 },
+    'report:read': { owner: 1, admin: 1, member: 1, view_only: 1, guest: 1 },
   };
   assert.deepEqual(Object.keys(expected).sort(), Object.keys(ACTIONS).filter((a) => !ACTIONS[a].project).sort(), 'matrix covers every workspace-level action');
   for (const [action, byRole] of Object.entries(expected))
