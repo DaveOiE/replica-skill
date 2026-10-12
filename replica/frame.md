@@ -3,7 +3,7 @@
 Date: 2026-10-12
 Branch: `claude/dreamy-mendel-jczq11`
 Source of truth: `replica/screens/feature-list.md` (owner-written, public information only)
-Status: framed, waiting for "go" to start Organize
+Status: framed; Organize complete; waiting for "go" to start Run
 
 ## Goal
 
@@ -77,7 +77,14 @@ built, stubbed or missing. A smaller working app beats a big unfinished one.
 - **A7.** Smart fields and summaries [?] are rule-based text, not generated
   by a model.
 
-## Open questions for you (none block Organize)
+## Decisions log (2026-10-12)
+
+- **Q1 answered:** the name is **Deskrail** (owner chose it; owner runs trademark and domain checks).
+- **Q2 answered:** the support page uses placeholder contact details only, never real ones.
+- **Q3 answered:** A1 to A7 accepted as written; the owner may paste help pages later to confirm them.
+- **Plan:** the full ten-milestone plan stands (the smaller cut was not requested; the cut line is kept).
+
+## Open questions for you (all answered, kept for the record)
 
 - **Q1.** Business name or colour preferences for the brand, or my pick from
   five candidates? (Trademark and domain checks stay "to run", I cannot run

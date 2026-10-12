@@ -1,5 +1,10 @@
 {
-  "avoid": ["Asana"],
-  "domains": ["asana.com"],
+  "name": "Deskrail",
+  "avoid": [
+    "Asana"
+  ],
+  "domains": [
+    "asana.com"
+  ],
   "colors": []
 }

@@ -1,0 +1,12 @@
+{
+  "name": "deskrail",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Work management for small teams, with enterprise administration.",
+  "engines": { "node": ">=22.13" },
+  "scripts": {
+    "test": "node --no-warnings --test \"app/tests/**/*.test.js\""
+  },
+  "license": "MIT"
+}
