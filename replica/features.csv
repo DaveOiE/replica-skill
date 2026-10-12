@@ -1,0 +1,217 @@
+feature,area,priority,original,clone,notes
+Sign in with username or email + password,auth,must,yes,no,
+Sign out,auth,must,yes,no,
+Self sign-up (toggle),auth,should,yes,no,"setting-controlled, default role, optional email validation"
+Account activation by emailed link,auth,should,yes,no,
+Password recovery by emailed link (toggle),auth,should,yes,no,
+"Per-user API tokens (create, list, revoke)",auth,must,yes,no,Sanctum-style bearer tokens in original
+Locked system roles cannot be deleted,auth,should,yes,no,
+"Installation wizard (database check, store + admin setup)",install,must,yes,no,
+"Default data on install (roles, permissions, payment types, accounts)",install,must,yes,no,
+Upgrade screen that runs pending migrations,install,should,yes,no,
+Hard reset with optional demo data,install,could,yes,no,destructive; permission-gated
+Health check command,install,could,yes,no,doctor command in original
+"Backups (create, list, restore)",install,should,no,no,absent from NexoPOS core; asked for in brief
+POS product grid with category navigation,pos,must,yes,no,
+"Product search by name, SKU, barcode",pos,must,yes,no,
+Barcode scan input (keyboard-wedge scanners),pos,must,yes,no,
+Phone as wireless scanner,pos,could,yes,no,socket relay in original
+Pinned products on POS,pos,could,yes,no,
+Custom ordering of categories and products,pos,could,yes,no,
+Hide exhausted products / empty categories (settings),pos,should,yes,no,
+"Cart: add, remove, merge identical lines (toggle)",pos,must,yes,no,
+Cart line quantity edit with numpad,pos,must,yes,no,
+Decimal quantities (toggle),pos,should,yes,no,
+Change unit on a cart line (price and stock follow the unit),pos,must,yes,no,
+Unit-price override (permission-gated),pos,must,yes,no,
+"Price tier choice: sale, wholesale, custom",pos,should,yes,no,
+"Line discount, percentage or flat",pos,must,yes,no,permission-gated
+"Cart discount, percentage or flat",pos,must,yes,no,permission-gated
+Discount can never exceed its base amount,pos,must,yes,no,
+Coupon entry and validation at POS,pos,must,yes,no,
+"Cart tax selection (group, inclusive/exclusive)",pos,must,yes,no,
+"Shipping amount, flat or percentage",pos,must,yes,no,
+Order type: takeaway,pos,must,yes,no,
+"Order type: delivery (shipping address, driver)",pos,must,yes,no,
+Order type: dine-in,pos,must,module,no,brief lists it; NexoPOS sells it in a paid module. See open question 3
+Hold order,pos,must,yes,no,
+Resume held order,pos,must,yes,no,
+Held orders expire after configured time,pos,should,yes,no,daily job
+Void order with reason,pos,must,yes,no,reverses stock and register effects
+Order note (private / visible on receipt),pos,must,yes,no,
+Product-level note on a cart line,pos,should,no,no,brief lists it; original has order-level notes only (not verified for lines)
+Order-level settings popup (extensible fields),pos,should,yes,no,
+Quick (ad-hoc) product,pos,should,yes,no,
+Customer select and search at POS,pos,must,yes,no,
+Customer quick-create with addresses at POS,pos,must,yes,no,
+Pay: single payment,pos,must,yes,no,
+Pay: multiple payment lines,pos,must,yes,no,
+Pay: partial payment (toggle),pos,must,yes,no,
+Pay: unpaid order / pay later (toggle),pos,should,yes,no,
+Pay: instalments / layaway,pos,must,yes,no,dated parts; strict mode
+Pay: customer account balance,pos,must,yes,no,
+Change due calculation and preset tender buttons,pos,must,yes,no,
+Custom payment types,pos,must,yes,no,
+Receipt print after sale (auto-print option),pos,must,yes,no,
+Invoice print,pos,must,yes,no,
+"Reprint receipt, refund receipt, payment receipt",pos,should,yes,no,
+Receipt template with placeholders,pos,should,yes,no,
+Keyboard shortcuts on POS (configurable),pos,must,yes,no,
+Fullscreen POS,pos,should,yes,no,
+Touch and tablet layout,pos,must,yes,no,
+Sound on sale complete / new item,pos,could,yes,no,
+Protected actions needing approval from a privileged user,pos,could,yes,no,time-boxed grant
+Scale/weighed-item barcodes with PLU ranges,pos,could,yes,no,
+Cash register CRUD,registers,must,yes,no,
+Open register with opening float,registers,must,yes,no,
+Close register with counted cash and difference,registers,must,yes,no,session balancing
+Cash in / cash out with reason,registers,must,yes,no,
+"Register history (every movement, balance before/after)",registers,must,yes,no,
+One cashier per open register,registers,must,yes,no,
+Z-report,registers,should,yes,no,
+Register session history,registers,should,yes,no,
+"Orders list with filters, search, export",orders,must,yes,no,
+Order detail view,orders,must,yes,no,
+Add payment to unpaid/partial order,orders,must,yes,no,
+"Instalments: create, edit, delete, pay, list due",orders,should,yes,no,
+"Payment status, process status, delivery status",orders,must,yes,no,three independent fields
+Change process and delivery status,orders,should,yes,no,
+Refund whole order,orders,must,yes,no,
+Refund selected lines and quantities,orders,must,yes,no,
+Return condition good / damaged,orders,must,yes,no,good restocks; damaged goes to defective
+Restock option on return,orders,must,partial,no,original decides by condition; brief wants an explicit option
+Delete order (permission-gated),orders,should,yes,no,
+"Order code schemes (date+seq, random, sequence)",orders,should,yes,no,
+Order coupons tracked,orders,should,yes,no,
+Order taxes stored per tax,orders,must,yes,no,
+Order bulk actions,orders,could,yes,no,
+Product types: simple (materialized),catalogue,must,yes,no,
+Product type: dematerialized (no stock/service),catalogue,should,yes,no,
+Product type: grouped (bundle),catalogue,must,yes,no,
+Product type: variable (parent + variations),catalogue,must,yes,no,
+Units and unit groups with base unit and ratios,catalogue,must,yes,no,
+"Per-unit price, stock, barcode and low-stock threshold",catalogue,must,yes,no,
+Convert stock between units,catalogue,should,yes,no,
+SKU generation,catalogue,must,yes,no,
+Barcode generation (several symbologies),catalogue,must,yes,no,"ean13, upc-a, code128, code39, codabar"
+Stock management on/off per product,catalogue,must,yes,no,
+Expiry date and block-sales-on-expiry,catalogue,could,yes,no,
+Product status available / unavailable,catalogue,should,yes,no,
+Searchable flag,catalogue,could,yes,no,
+Product images and gallery,catalogue,must,yes,no,
+Product CSV export,catalogue,must,yes,no,from list screens
+Product CSV import,catalogue,must,no,no,absent from NexoPOS core; asked for in brief
+Categories with parent and image,catalogue,must,yes,no,
+Category 'show on POS' flag and product counts,catalogue,should,yes,no,
+Taxes and tax groups,catalogue,must,yes,no,
+Tax per product: inclusive / exclusive,catalogue,must,yes,no,
+Print labels / barcode sheets,catalogue,must,yes,no,
+Product history (every stock movement),catalogue,must,yes,no,
+Low-stock threshold and alert flag,catalogue,must,yes,no,
+Low-stock notification and report,catalogue,must,yes,no,daily job
+"Stock adjustment: add, remove, damaged, lost, set",catalogue,must,yes,no,draft then execute
+Adjustment history,catalogue,must,yes,no,
+Damaged / defective stock tracked separately,catalogue,must,yes,no,
+"Daily combined stock history (opening, sold, procured, defective, closing)",catalogue,should,yes,no,
+Auto cost of goods,catalogue,could,yes,no,flag on product
+Scheduled reorder quantity and low-stock procurement suggestions,catalogue,could,yes,no,
+"Media library (upload, rename, delete, pick)",catalogue,must,yes,no,
+Providers CRUD,purchasing,must,yes,no,
+"Procurement (purchase order) create, edit, delete",purchasing,must,yes,no,
+"Procurement statuses: draft, pending, delivered, stocked",purchasing,must,yes,no,
+Receive stock into inventory,purchasing,must,yes,no,
+Procurement payment status paid / unpaid and mark-as-paid,purchasing,must,yes,no,
+Procurement lines with tax and expiry,purchasing,should,yes,no,
+Procurement invoice print,purchasing,should,yes,no,
+Provider amount due / paid tracking,purchasing,should,yes,no,
+Purchase-price history per product,purchasing,must,partial,no,stored per line; no dedicated screen found
+Automatic approval and daily auto-stocking,purchasing,could,yes,no,
+Provider procurements and products views,purchasing,should,yes,no,
+Customer CRUD with billing and shipping addresses,customers,must,yes,no,
+Customer groups,customers,must,yes,no,
+"Customer balances: purchases, owed, credit limit, account",customers,must,yes,no,
+Customer account history (credit/debit ledger),customers,must,yes,no,
+Manual deposit / deduct / refund on account,customers,must,yes,no,permission-gated
+Credit limit enforcement (toggle),customers,should,yes,no,
+Valid-email and unique-phone enforcement (toggles),customers,could,yes,no,
+Default walk-in customer and default group,customers,must,yes,no,
+Customer orders view,customers,must,yes,no,
+Reward programmes with spend-range rules,customers,must,yes,no,
+Customer reward points and target-to-coupon,customers,must,yes,no,
+Coupons: percentage or flat,customers,must,yes,no,
+"Coupon rules: validity, hours, min/max cart, usage limits",customers,must,yes,no,
+"Coupon restrictions: products, categories, customers, groups",customers,should,yes,no,
+Coupon usage history,customers,should,yes,no,
+Customer import (CSV),customers,could,partial,no,permission exists in original with no screen
+Expenses and incomes (transactions) CRUD,accounting,must,yes,no,
+Expense categories / chart of accounts with sub-accounts,accounting,must,yes,no,
+Recurring expenses,accounting,must,yes,no,several recurrence patterns
+Scheduled one-off expenses,accounting,should,yes,no,
+"Transaction history (debit/credit, status)",accounting,must,yes,no,
+Account history,accounting,must,yes,no,
+"Payment types CRUD (active flag, priority)",accounting,must,yes,no,
+Accounting rules engine (event to journal lines),accounting,should,yes,no,
+Journals,accounting,could,yes,no,
+Daily and monthly balance roll-ups,accounting,should,yes,no,
+"Default accounts for orders, COGS, unpaid, cash",accounting,should,yes,no,
+Sales report (daily/period),reports,must,yes,no,
+Sales by product,reports,must,yes,no,
+Sales by category,reports,must,yes,no,
+Sales by cashier,reports,must,yes,no,filter
+Sales by customer,reports,must,no,no,absent from NexoPOS core; asked for in brief
+Sales progress / comparison,reports,could,yes,no,
+Sold stock report,reports,should,yes,no,
+Profit report,reports,must,yes,no,
+Stock / inventory report,reports,must,yes,no,
+Low-stock report,reports,must,yes,no,
+Stock history report,reports,should,yes,no,
+Customer statement,reports,must,yes,no,
+Payment types report,reports,must,yes,no,
+Cash flow report,reports,must,yes,no,
+Annual report,reports,must,yes,no,
+Best products report,reports,could,yes,no,
+Cashier personal report,reports,should,yes,no,
+Date range filter on every report,reports,must,yes,no,
+Print report,reports,must,yes,no,
+Export report to CSV / PDF / XLSX,reports,must,no,no,original has CSV on lists only; brief wants export or print
+Scheduled report email,reports,could,partial,no,settings key exists; behaviour not verified
+Users CRUD with active flag,admin,must,yes,no,
+"Roles CRUD, clone role",admin,must,yes,no,
+Permission matrix manager,admin,must,yes,no,94 permissions in original
+Per-route permission enforcement,admin,must,yes,no,
+"User profile (name, avatar, language, theme)",admin,must,yes,no,
+"Settings: general (identity, currency, date, registration)",admin,must,yes,no,
+"Settings: POS (features, layout, VAT, registers, printing, shortcuts, scale)",admin,must,yes,no,
+Settings: orders,admin,must,yes,no,
+Settings: customers,admin,must,yes,no,
+Settings: invoices and receipts,admin,must,yes,no,
+Settings: workers,admin,should,yes,no,background-worker toggle and health check
+Settings: reports,admin,should,yes,no,
+Settings: accounting,admin,must,yes,no,
+Settings: email and notifications,admin,must,partial,no,SMTP and templates; no screen in original core
+Multi-language UI,admin,must,yes,no,
+RTL layout,admin,must,yes,no,Arabic in original
+Themes incl. dark mode,admin,must,yes,no,
+Dashboard with per-user widget layout,admin,must,yes,no,
+"Dashboard widgets: sales, orders, chart, best customers, best cashiers, expenses, incomplete sales",admin,should,yes,no,
+"In-app notifications (stored, listed, cleared)",admin,must,yes,no,
+Realtime notifications over websocket,admin,could,yes,no,
+"Activity log (who did what, when)",admin,must,no,no,absent from NexoPOS core; asked for in brief
+Guided tours,admin,could,yes,no,
+"Module / plugin system (upload, enable, disable, migrate, delete)",admin,must,yes,no,
+Event surface for modules (before/after events),admin,must,yes,no,
+Filter/action hooks,admin,must,yes,no,
+"Webhooks (outbound, signed, retried)",admin,must,no,no,absent from NexoPOS core; asked for in brief
+REST API with token auth,admin,must,yes,no,
+API documentation,admin,should,no,no,original docs unreachable; we write our own
+Scheduled jobs,admin,must,yes,no,
+Job queue and failed-job handling,admin,must,yes,no,
+"Generic list component: search, sort, filter, bulk, export",admin,must,yes,no,
+MCP / AI tool server,admin,could,yes,no,not in brief
+"Vendor marketplace, OAuth and paid-module downloads",out of scope,skip,yes,no,"vendor's network, not a feature"
+Telemetry to vendor and update check against vendor repo,out of scope,skip,yes,no,would be our own if wanted
+"Vendor branding, logos, marketing images, demo product files",out of scope,skip,yes,no,owned by the vendor
+Original translation files,out of scope,skip,yes,no,owned by the vendor; we write ours
+Multi-store,out of scope,skip,module,no,paid module; confirm in question 5
+"Restaurant suite: tables, waiters, kitchen display",out of scope,skip,module,no,paid module (Gastro); see question 3
+"PIN login, 2FA, rentals, commissions, workforce, bookings, QR menu, print-server adapter",out of scope,skip,module,no,paid modules
