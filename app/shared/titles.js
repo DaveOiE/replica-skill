@@ -34,7 +34,7 @@ export const SCREEN_TITLES = {
   S30: 'Integrations',
   S31: 'Support',
   S32: 'AI features (preview)',
-  S33: 'Compliance documents',
+  S33: 'Compliance documents (not certified)',
   S34: 'Mock identity provider',
   S35: 'Projects',
   S36: 'Account',

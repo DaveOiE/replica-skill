@@ -10,12 +10,13 @@ let session = null;
 function setTitle(screenId) { document.title = pageTitle(screenId); }
 
 
-function signInView(prefillWorkspace = false) {
+function signInView(prefillWorkspace = false, notice = null) {
   setTitle('S01');
   const error = h('p', { class: 'form-error', role: 'alert', hidden: true });
   const button = h('button', { class: 'btn btn-primary', type: 'submit' }, S.signInButton);
   const form = h('form', { class: 'card auth', novalidate: true },
     h('h1', {}, S.signInHeading),
+    notice && h('p', { class: 'banner banner-info', role: 'status' }, notice),
     field('email', S.email, { type: 'email', autocomplete: 'username', required: true }),
     field('password', S.password, { type: 'password', autocomplete: 'current-password', required: true }),
     prefillWorkspace && h('div', { class: 'field' }, h('p', { class: 'hint' }, `${S.workspaceHint} demo`),
@@ -81,6 +82,8 @@ export async function start() {
 
 // Escape closes an open task, wherever keyboard focus happens to be.
 document.addEventListener('keydown', (e) => { if (e.key !== 'Escape') return; const m = location.hash.match(/^(#\/p\/[\w-]+(?:\/board)?)\/t\//); if (m) location.hash = m[1]; });
+
+window.addEventListener('session-ended', () => { if (!session) return; session = null; location.hash = '#/'; render(signInView(false, S.signedOut)); });
 
 window.addEventListener('hashchange', () => { if (session) route(); });
 start();

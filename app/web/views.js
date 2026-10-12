@@ -1,5 +1,5 @@
 // Screens after sign-in. Everything the user typed is rendered as text, never as markup.
-import { h, select, field, toast, svg } from './dom.js';
+import { h, select, field, toast, svg, once } from './dom.js';
 import { api } from './api.js';
 import { S } from './strings.js';
 import { pageTitle } from '/shared/titles.js';
@@ -27,11 +27,10 @@ export async function projectsView(ctx) {
   const canCreate = ctx.session.role !== 'view_only' && ctx.session.role !== 'guest';
   const name = h('input', { id: 'pname', class: 'input', required: true, maxlength: '120' });
   const vis = select('pvis', S.visibility, Object.entries(S.vis).filter(([k]) => k !== 'team'), 'workspace');
-  const form = h('form', { class: 'card inline-form', onsubmit: async (e) => {
-    e.preventDefault();
+  const form = h('form', { class: 'card inline-form', onsubmit: once(async () => {
     const res = await api('POST', '/api/v1/projects', { name: name.value.trim(), visibility: vis.querySelector('select').value });
     if (res.status === 201) location.hash = `#/p/${res.data.id}`; else fail(res);
-  } }, h('div', { class: 'field' }, h('label', { for: 'pname' }, S.projectName), name), vis, h('button', { class: 'btn btn-primary', type: 'submit' }, S.create));
+  }) }, h('div', { class: 'field' }, h('label', { for: 'pname' }, S.projectName), name), vis, h('button', { class: 'btn btn-primary', type: 'submit' }, S.create));
   const items = data.projects.map((p) => h('li', { class: 'row' }, h('div', { class: 'row-main' }, link(`#/p/${p.id}`, p.name, 'task-link'), p.archived && h('span', { class: 'muted' }, ' (archived)')),
     h('span', { class: 'badge' }, S.projectRoles[p.myRole])));
   return [h('h1', {}, S.projectsHeading), items.length ? h('ul', { class: 'list' }, items) : h('div', { class: 'empty' }, h('p', {}, S.noProjects)), canCreate && h('h2', {}, S.newProject), canCreate && form];
@@ -62,7 +61,7 @@ export async function projectView(ctx, id, taskId, view = 'list') {
     const mine = td.tasks.filter((t) => !t.parentId && (sec.id ? t.sectionId === sec.id : !t.sectionId));
     if (!sec.id && !mine.length) return null;
     const title = h('input', { class: 'input', placeholder: S.taskTitle, 'aria-label': `${S.taskTitle}: ${sec.name}`, maxlength: '300' });
-    const add = h('form', { class: 'add-task', onsubmit: async (e) => { e.preventDefault(); if (!title.value.trim()) return; const r = await api('POST', `/api/v1/projects/${id}/tasks`, { title: title.value.trim(), ...(sec.id ? { sectionId: sec.id } : {}) }); if (r.status === 201) await reload(); else fail(r); } }, title, h('button', { class: 'btn btn-secondary', type: 'submit' }, S.addTask));
+    const add = h('form', { class: 'add-task', onsubmit: once(async () => { if (!title.value.trim()) return; const r = await api('POST', `/api/v1/projects/${id}/tasks`, { title: title.value.trim(), ...(sec.id ? { sectionId: sec.id } : {}) }); if (r.status === 201) await reload(); else fail(r); }) }, title, h('button', { class: 'btn btn-secondary', type: 'submit' }, S.addTask));
     return h('section', { class: 'section', 'aria-label': sec.name }, h('h2', {}, `${sec.name} `, h('span', { class: 'muted' }, String(mine.length))),
       mine.length ? h('ul', { class: 'list' }, mine.flatMap((t) => [taskRow(t, false), ...subsOf(t).map((s) => taskRow(s, true))])) : h('p', { class: 'muted' }, S.noTasks), canEdit && add);
   };
@@ -126,9 +125,9 @@ async function drawer(ctx, projectId, taskId, k) {
       canEdit && h('button', { class: 'btn btn-secondary', type: 'button', 'aria-label': `${S.remove}: ${b.title}`, onclick: async () => { const x = await api('DELETE', `/api/v1/tasks/${t.id}/dependencies/${b.id}`); x.status === 200 ? reload() : fail(x); } }, S.remove)))),
     canEdit && h('div', { class: 'inline-form' }, select('d-dep', S.waitingOn, [['', S.chooseTask], ...others], '', (v) => { depId = v; }), h('button', { class: 'btn btn-secondary', type: 'button', onclick: async () => { if (!depId) return; const x = await api('POST', `/api/v1/tasks/${t.id}/dependencies`, { dependsOnId: depId }); x.status === 201 ? reload() : fail(x); } }, S.addDependency)),
     !t.parentId && h('h3', {}, S.subtasks), !t.parentId && h('ul', { class: 'list' }, d.subtasks.map((s) => h('li', { class: 'row' }, link(`${k.base}/t/${s.id}`, s.title, 'task-link'), h('span', { class: `chip chip-${s.status}` }, S.status[s.status])))),
-    !t.parentId && canEdit && h('form', { class: 'add-task', onsubmit: async (e) => { e.preventDefault(); if (!sub.value.trim()) return; const x = await api('POST', `/api/v1/projects/${projectId}/tasks`, { title: sub.value.trim(), parentId: t.id, sectionId: t.sectionId }); x.status === 201 ? reload() : fail(x); } }, sub, h('button', { class: 'btn btn-secondary', type: 'submit' }, S.addSubtask)),
+    !t.parentId && canEdit && h('form', { class: 'add-task', onsubmit: once(async () => { if (!sub.value.trim()) return; const x = await api('POST', `/api/v1/projects/${projectId}/tasks`, { title: sub.value.trim(), parentId: t.id, sectionId: t.sectionId }); x.status === 201 ? reload() : fail(x); }) }, sub, h('button', { class: 'btn btn-secondary', type: 'submit' }, S.addSubtask)),
     h('h3', {}, S.comments), d.comments.length ? h('ul', { class: 'list' }, d.comments.map((c) => h('li', { class: 'comment' }, h('strong', {}, c.author), h('span', { class: 'muted' }, ` ${c.createdAt.slice(0, 16).replace('T', ' ')} UTC`), h('p', {}, c.body)))) : h('p', { class: 'muted' }, S.noComments),
-    rank >= 2 && h('form', { onsubmit: async (e) => { e.preventDefault(); if (!comment.value.trim()) return; const x = await api('POST', `/api/v1/tasks/${t.id}/comments`, { body: comment.value }); x.status === 201 ? reload() : fail(x); } }, h('div', { class: 'field' }, h('label', { for: 'd-comment' }, S.addComment), comment), h('button', { class: 'btn btn-primary', type: 'submit' }, S.addComment)),
+    rank >= 2 && h('form', { onsubmit: once(async () => { if (!comment.value.trim()) return; const x = await api('POST', `/api/v1/tasks/${t.id}/comments`, { body: comment.value }); x.status === 201 ? reload() : fail(x); }) }, h('div', { class: 'field' }, h('label', { for: 'd-comment' }, S.addComment), comment), h('button', { class: 'btn btn-primary', type: 'submit' }, S.addComment)),
     canEdit && del);
   if (lastDrawerTask !== taskId) { lastDrawerTask = taskId; queueMicrotask(() => node.querySelector('input')?.focus({ preventScroll: true })); }
   return node;
@@ -149,11 +148,11 @@ export async function settingsView(ctx, id) {
   let addUser = '', addRole = 'editor';
   const roleOpts = Object.entries(S.projectRoles);
   return [h('div', { class: 'page-head' }, h('h1', {}, `${S.projectSettings}: ${p.name}`), link(`#/p/${id}`, S.myTasksMore, 'btn btn-secondary')),
-    h('form', { class: 'card', onsubmit: (e) => { e.preventDefault(); save({ name: name.querySelector('input').value.trim(), visibility: vis.querySelector('select').value }); } }, name, vis, h('button', { class: 'btn btn-primary', type: 'submit' }, S.rename)),
+    h('form', { class: 'card', onsubmit: once(async () => { await save({ name: name.querySelector('input').value.trim(), visibility: vis.querySelector('select').value }); }) }, name, vis, h('button', { class: 'btn btn-primary', type: 'submit' }, S.rename)),
     h('button', { class: 'btn btn-secondary', type: 'button', onclick: () => save({ archived: !p.archived }) }, p.archived ? S.unarchive : S.archive),
     h('h2', {}, S.sections), h('ul', { class: 'list' }, pr.data.sections.map((s) => h('li', { class: 'row' }, h('span', { class: 'row-main' }, s.name),
       h('button', { class: 'btn btn-secondary', type: 'button', 'aria-label': `${S.remove}: ${s.name}`, onclick: async () => { const r = await api('DELETE', `/api/v1/sections/${s.id}`); r.status === 200 ? ctx.refresh() : fail(r); } }, S.remove)))),
-    h('form', { class: 'inline-form', onsubmit: async (e) => { e.preventDefault(); const v = secName.querySelector('input').value.trim(); if (!v) return; const r = await api('POST', `/api/v1/projects/${id}/sections`, { name: v }); r.status === 201 ? ctx.refresh() : fail(r); } }, secName, h('button', { class: 'btn btn-secondary', type: 'submit' }, S.addSection)),
+    h('form', { class: 'inline-form', onsubmit: once(async () => { const v = secName.querySelector('input').value.trim(); if (!v) return; const r = await api('POST', `/api/v1/projects/${id}/sections`, { name: v }); r.status === 201 ? ctx.refresh() : fail(r); }) }, secName, h('button', { class: 'btn btn-secondary', type: 'submit' }, S.addSection)),
     h('h2', {}, S.projectPeople), h('ul', { class: 'list' }, members.data.members.map((m) => h('li', { class: 'row' }, h('span', { class: 'row-main' }, m.name),
       select(`pr-${m.userId}`, `${S.role}: ${m.name}`, roleOpts, m.role, async (v) => { const r = await api('PUT', `/api/v1/projects/${id}/members`, { userId: m.userId, role: v }); r.status === 200 ? toast(S.saved) : fail(r); ctx.refresh(); }),
       h('button', { class: 'btn btn-secondary', type: 'button', 'aria-label': `${S.remove}: ${m.name}`, onclick: async () => { const r = await api('DELETE', `/api/v1/projects/${id}/members/${m.userId}`); r.status === 200 ? ctx.refresh() : fail(r); } }, S.remove)))),
@@ -170,14 +169,13 @@ export async function peopleView(ctx) {
   const nameI = field('n-name', S.name, { maxlength: '100', required: true }), emailI = field('n-email', S.email, { type: 'email', required: true });
   const roleS = select('n-role', S.role, Object.entries(S.roles).filter(([k]) => k !== 'owner'), 'member');
   const out = h('div', { 'aria-live': 'polite' });
-  const form = h('form', { class: 'card', onsubmit: async (e) => {
-    e.preventDefault();
+  const form = h('form', { class: 'card', onsubmit: once(async () => {
     const r = await api('POST', '/api/v1/members', { name: nameI.querySelector('input').value.trim(), email: emailI.querySelector('input').value.trim(), role: roleS.querySelector('select').value });
     if (r.status !== 201) return fail(r);
     // The password is shown here once and kept nowhere else.
     out.replaceChildren(h('div', { class: 'card reveal' }, h('h3', {}, `${S.tempPasswordTitle}: ${r.data.email}`), h('code', { class: 'secret' }, r.data.temporaryPassword), h('p', { class: 'muted' }, S.tempPasswordNote)));
     form.reset();
-  } }, h('h2', {}, S.addPerson), nameI, emailI, roleS, h('button', { class: 'btn btn-primary', type: 'submit' }, S.createPerson));
+  }) }, h('h2', {}, S.addPerson), nameI, emailI, roleS, h('button', { class: 'btn btn-primary', type: 'submit' }, S.createPerson));
   const rows = data.members.map((m) => h('li', { class: 'row' }, h('span', { class: 'row-main' }, `${m.name} `, h('span', { class: 'muted' }, m.email)),
     select(`role-${m.userId}`, `${S.role}: ${m.name}`, Object.entries(S.roles), m.role, async (v) => { const r = await api('PATCH', `/api/v1/members/${m.userId}/role`, { role: v }); r.status === 200 ? toast(S.saved) : fail(r); ctx.refresh(); })));
   return [h('h1', {}, S.peopleHeading), h('ul', { class: 'list' }, rows), form, out];
@@ -186,11 +184,10 @@ export async function peopleView(ctx) {
 export async function accountView(ctx) {
   document.title = pageTitle('S36');
   const cur = field('a-cur', S.currentPassword, { type: 'password', autocomplete: 'current-password' }), next = field('a-new', S.newPassword, { type: 'password', autocomplete: 'new-password' });
-  const form = h('form', { class: 'card auth', onsubmit: async (e) => {
-    e.preventDefault();
+  const form = h('form', { class: 'card auth', onsubmit: once(async () => {
     const r = await api('POST', '/api/v1/auth/password', { current: cur.querySelector('input').value, next: next.querySelector('input').value });
     r.status === 200 ? (toast(S.passwordChanged), form.reset()) : fail(r);
-  } }, cur, next, h('button', { class: 'btn btn-primary', type: 'submit' }, S.changePassword));
+  }) }, cur, next, h('button', { class: 'btn btn-primary', type: 'submit' }, S.changePassword));
   return [h('h1', {}, S.accountHeading), form];
 }
 

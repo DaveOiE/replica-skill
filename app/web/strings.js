@@ -21,7 +21,7 @@ export const S = {
   noProjects: 'No projects yet. Create the first one to get started.', archivedBanner: 'This project is archived. It is read-only.',
   addTask: 'Add task', taskTitle: 'Task title', noTasks: 'No tasks here yet.', unsectioned: 'No section', settings: 'Settings',
   status: { todo: 'To do', in_progress: 'In progress', blocked: 'Blocked', done: 'Done' }, unassigned: 'Unassigned', overdue: 'Overdue', milestone: 'Milestone',
-  statusLabel: 'Status', saved: 'Saved.', close: 'Close', description: 'Description', assignee: 'Assignee', due: 'Due date', start: 'Start date', estimate: 'Estimate (minutes)',
+  signedOut: 'You were signed out. Sign in to carry on where you left off.', statusLabel: 'Status', saved: 'Saved.', close: 'Close', description: 'Description', assignee: 'Assignee', due: 'Due date', start: 'Start date', estimate: 'Estimate (minutes)',
   subtasks: 'Subtasks', addSubtask: 'Add subtask', waitingOn: 'Waiting on', addDependency: 'Add', chooseTask: 'Choose a task', comments: 'Comments', addComment: 'Add comment', noComments: 'No comments yet.',
   deleteTask: 'Delete task', confirmDeleteTask: 'Delete this task and its subtasks? This can\'t be undone.', notFound: 'We could not find that. It may be hidden from you, or it may not exist.',
   peopleHeading: 'People', addPerson: 'Add a person', name: 'Name', role: 'Role', createPerson: 'Add person',

@@ -38,3 +38,16 @@ export function svg(tag, attrs = {}, ...children) {
   for (const c of children.flat()) if (c != null) el.append(c.nodeType ? c : document.createTextNode(String(c)));
   return el;
 }
+
+/** Wrap a form's submit handler so a second submit is ignored while the first is still running (double click, Enter twice). */
+export function once(handler) {
+  return async (e) => {
+    e.preventDefault();
+    const form = e.currentTarget;
+    if (form.dataset.busy) return;
+    form.dataset.busy = '1';
+    const buttons = [...form.querySelectorAll('button[type="submit"]')];
+    buttons.forEach((b) => { b.disabled = true; });
+    try { await handler(e); } finally { delete form.dataset.busy; buttons.forEach((b) => { b.disabled = false; }); }
+  };
+}
