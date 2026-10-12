@@ -3,3 +3,13 @@ __pycache__/
 *.pyc
 .venv/
 *.tmp
+node_modules/
+.env
+.env.*
+!.env.example
+.local/
+data/
+*.pem
+*.key
+test-results/
+playwright-report/
