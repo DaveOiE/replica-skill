@@ -2,6 +2,8 @@
 // Unknown actions are denied. To add a permission, add a row to ACTIONS: a route that names an action
 // missing from this table fails the route-walking test.
 
+import { PROJECT_RANK } from './access.js';
+
 export const ROLES = ['owner', 'admin', 'member', 'view_only', 'guest'];
 const ALL = ROLES;
 const MANAGERS = ['owner', 'admin'];
@@ -16,6 +18,16 @@ export const ACTIONS = {
   'workspace:update': { roles: MANAGERS, write: true },
   'members:read': { roles: MANAGERS, write: false },
   'members:update_role': { roles: MANAGERS, write: true },
+  'members:create': { roles: MANAGERS, write: true },
+  'project:list': { roles: ALL, write: false },
+  'project:create': { roles: ['owner', 'admin', 'member'], write: true },
+  // Project actions: `project` is the lowest project role allowed. The route layer works out the actor's
+  // project role (see access.js, already capped for view-only and guests) and passes it as resource.projectRole.
+  'project:read': { project: 'viewer', write: false },
+  'task:comment': { project: 'commenter', write: true },
+  'task:write': { project: 'editor', write: true },
+  'project:manage': { project: 'admin', write: true },
+  'me:tasks': { roles: ALL, write: false },
 };
 
 /**
@@ -28,6 +40,7 @@ export function can(actor, action, resource) {
   const rule = ACTIONS[action];
   if (!rule) return false;
   if (resource && resource.workspaceId && resource.workspaceId !== actor.workspaceId) return false;
+  if (rule.project) return !!resource?.projectRole && PROJECT_RANK[resource.projectRole] >= PROJECT_RANK[rule.project];
   if (rule.write && READ_ONLY_ROLES.includes(actor.role)) return false;
   return rule.roles.includes(actor.role);
 }

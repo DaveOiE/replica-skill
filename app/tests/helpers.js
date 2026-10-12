@@ -12,6 +12,7 @@ import { buildApp } from '../server/app.js';
 
 /** App + database + fake users, with signIn(key) returning a Cookie header for a seeded user. */
 export async function freshApp(opts = {}) {
+  // creds keys: owner admin member member2 viewonly guest outsider, plus workspaces, projects, sections, tasks
   const { db, creds } = freshDb();
   const app = await buildApp({ db, ...opts });
   const cookies = {};

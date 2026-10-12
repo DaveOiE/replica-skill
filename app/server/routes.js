@@ -2,6 +2,9 @@ import { z } from 'zod';
 import { can, canAssignRole } from './authz.js';
 import { mutate } from './audit.js';
 import { signIn, signOut, actorFromToken } from './auth.js';
+import { projectAccess } from './access.js';
+import { newId } from './db.js';
+import { projectRoutes } from './routes-projects.js';
 import { nowIso } from './db.js';
 
 const SESSION_COOKIE = 'session';
@@ -20,9 +23,18 @@ export function registerRoutes(app, { db, config, limiters }) {
       method: spec.method, url: spec.url,
       handler: async (req, reply) => {
         const actor = actorFromToken(db, req.cookies?.[SESSION_COOKIE]);
+        let access = null;
         if (spec.action) {
           if (!actor) return reply.code(401).send({ error: 'Sign in to continue.' });
-          if (!can(actor, spec.action, undefined)) return reply.code(403).send({ error: 'You do not have permission to do that.' });
+          let resource;
+          if (spec.projectOf) {
+            // Hidden and missing look the same (404) so nobody can probe for projects they cannot see.
+            const pid = spec.projectOf(req, db, actor);
+            access = pid ? projectAccess(db, actor, pid) : null;
+            if (!access) return reply.code(404).send({ error: 'We could not find that.' });
+            resource = { workspaceId: actor.workspaceId, projectRole: access.role };
+          }
+          if (!can(actor, spec.action, resource)) return reply.code(403).send({ error: 'You do not have permission to do that.' });
         }
         let body;
         if (spec.body) {
@@ -31,7 +43,7 @@ export function registerRoutes(app, { db, config, limiters }) {
           body = parsed.data;
         }
         const ctx = { db, actor, ip: req.ip, requestId: req.id };
-        return spec.handler({ req, reply, ctx, actor, body });
+        return spec.handler({ req, reply, ctx, actor, body, access });
       },
     });
   };
@@ -62,6 +74,8 @@ export function registerRoutes(app, { db, config, limiters }) {
       reply.clearCookie(SESSION_COOKIE, { path: '/' });
       return { ok: true };
     } });
+
+  projectRoutes(define, db);
 
   const workspaceRow = (id) => db.prepare('select id, name, slug, accent from workspaces where id = ?').get(id);
 

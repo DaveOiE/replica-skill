@@ -15,10 +15,24 @@ test('authz matrix: every role against every action', () => {
     'members:read': { owner: 1, admin: 1, member: 0, view_only: 0, guest: 0 },
     'members:update_role': { owner: 1, admin: 1, member: 0, view_only: 0, guest: 0 },
     'session:signout': { owner: 1, admin: 1, member: 1, view_only: 1, guest: 1 },
+    'members:create': { owner: 1, admin: 1, member: 0, view_only: 0, guest: 0 },
+    'project:list': { owner: 1, admin: 1, member: 1, view_only: 1, guest: 1 },
+    'project:create': { owner: 1, admin: 1, member: 1, view_only: 0, guest: 0 },
+    'me:tasks': { owner: 1, admin: 1, member: 1, view_only: 1, guest: 1 },
   };
-  assert.deepEqual(Object.keys(expected).sort(), Object.keys(ACTIONS).sort(), 'matrix covers every action');
+  assert.deepEqual(Object.keys(expected).sort(), Object.keys(ACTIONS).filter((a) => !ACTIONS[a].project).sort(), 'matrix covers every workspace-level action');
   for (const [action, byRole] of Object.entries(expected))
     for (const role of ROLES) assert.equal(can(actor(role), action), !!byRole[role], `${role} ${action}`);
+});
+
+test('project actions: allowed exactly when the project role is high enough, and never across workspaces', () => {
+  const need = { 'project:read': 'viewer', 'task:comment': 'commenter', 'task:write': 'editor', 'project:manage': 'admin' };
+  const rank = ['viewer', 'commenter', 'editor', 'admin'];
+  assert.deepEqual(Object.keys(need).sort(), Object.keys(ACTIONS).filter((a) => ACTIONS[a].project).sort());
+  for (const [action, min] of Object.entries(need))
+    for (const role of rank) assert.equal(can(actor('member'), action, { workspaceId: 'w1', projectRole: role }), rank.indexOf(role) >= rank.indexOf(min), `${role} ${action}`);
+  assert.equal(can(actor('member'), 'task:write', {}), false, 'no project role, no access');
+  assert.equal(can(actor('owner', 'w1'), 'project:read', { workspaceId: 'w2', projectRole: 'admin' }), false);
 });
 
 test('authz: no actor, unknown action, and other workspace are all denied', () => {
