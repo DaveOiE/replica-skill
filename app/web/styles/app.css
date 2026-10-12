@@ -1,0 +1,46 @@
+/* Components use tokens only (see styles/tokens.css, generated from replica/design/tokens.json).
+   Media queries cannot read custom properties, so 1024px mirrors layout.bp-md in the tokens. */
+*, *::before, *::after { box-sizing: border-box; }
+html { font-family: var(--font-sans); font-size: var(--text-base-size); line-height: var(--text-base-line); color: var(--color-text); background: var(--color-bg); }
+body { margin: 0; }
+h1 { font-size: var(--text-xl-size); line-height: var(--text-xl-line); font-weight: var(--text-xl-weight); margin: 0 0 var(--space-5); overflow-wrap: anywhere; }
+:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 2px; }
+.skip { position: absolute; left: var(--space-3); top: -100px; background: var(--color-bg); padding: var(--space-2) var(--space-3); border-radius: var(--radius-sm); z-index: 10; }
+.skip:focus { top: var(--space-2); }
+
+.btn { font: inherit; font-size: var(--text-sm-size); font-weight: 600; min-height: 40px; padding: 0 var(--space-4); border-radius: var(--radius-md); border: 1px solid transparent; cursor: pointer; }
+.btn-primary { background: var(--color-accent); color: var(--color-on-accent); }
+.btn-secondary { background: var(--color-surface); color: var(--color-text); border-color: var(--color-border-input); }
+.btn[disabled] { opacity: .6; cursor: progress; }
+
+.field { margin-bottom: var(--space-4); }
+.field label { display: block; font-size: var(--text-sm-size); font-weight: 600; margin-bottom: var(--space-1); }
+.input { width: 100%; min-height: 40px; padding: 0 var(--space-3); font: inherit; color: var(--color-text); background: var(--color-bg); border: 1px solid var(--color-border-input); border-radius: var(--radius-md); }
+.hint { font-size: var(--text-sm-size); color: var(--color-text-muted); margin: 0 0 var(--space-2); }
+.form-error { color: var(--color-danger); background: var(--color-danger-soft); border-radius: var(--radius-md); padding: var(--space-2) var(--space-3); font-size: var(--text-sm-size); margin: 0 0 var(--space-4); }
+.form-error[hidden] { display: none; }
+
+.card { background: var(--color-bg); border: 1px solid var(--color-border); border-radius: var(--radius-lg); box-shadow: var(--shadow-card); padding: var(--space-6); }
+.center { min-height: 100vh; display: grid; place-items: center; padding: var(--space-4); background: var(--color-surface); }
+.auth { width: 100%; max-width: 400px; }
+
+.shell { min-height: 100vh; display: grid; grid-template-columns: 1fr; grid-template-rows: auto auto 1fr; }
+.topbar { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3); padding: var(--space-3) var(--space-4); border-bottom: 1px solid var(--color-border); background: var(--color-bg); }
+.topbar .who { margin-left: auto; color: var(--color-text-muted); font-size: var(--text-sm-size); }
+.workspace-name { overflow-wrap: anywhere; }
+.badge { font-size: var(--text-xs-size); line-height: var(--text-xs-line); font-weight: var(--text-xs-weight); padding: 2px var(--space-2); border-radius: var(--radius-pill); background: var(--color-accent-soft); color: var(--color-on-accent-soft); }
+.side { display: flex; gap: var(--space-2); padding: var(--space-2) var(--space-4); background: var(--color-surface); border-bottom: 1px solid var(--color-border); overflow-x: auto; }
+.side a { color: var(--color-text); text-decoration: none; padding: var(--space-2) var(--space-3); border-radius: var(--radius-md); white-space: nowrap; }
+.side a[aria-current='page'] { background: var(--color-accent-soft); color: var(--color-on-accent-soft); font-weight: 600; }
+.content { padding: var(--space-5) var(--space-4); max-width: var(--layout-content-max); width: 100%; }
+.content:focus { outline: none; }
+.banner { background: var(--color-warning-soft); color: var(--color-warning); border-radius: var(--radius-md); padding: var(--space-2) var(--space-3); font-size: var(--text-sm-size); margin-bottom: var(--space-4); }
+.banner-info { background: var(--color-accent-soft); color: var(--color-on-accent-soft); }
+.empty { border: 1px dashed var(--color-border-input); border-radius: var(--radius-lg); padding: var(--space-6); color: var(--color-text-muted); text-align: center; }
+
+@media (min-width: 1024px) {
+  .shell { grid-template-columns: var(--layout-sidebar) 1fr; grid-template-rows: auto 1fr; }
+  .topbar { grid-column: 1 / -1; }
+  .side { flex-direction: column; border-bottom: 0; border-right: 1px solid var(--color-border); padding: var(--space-4) var(--space-3); }
+  .content { padding: var(--space-6); }
+}

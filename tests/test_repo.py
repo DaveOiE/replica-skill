@@ -65,7 +65,7 @@ class Repo(unittest.TestCase):
     def test_no_em_dashes_anywhere(self):
         bad = []
         for dirpath, dirnames, filenames in os.walk(ROOT):
-            dirnames[:] = [d for d in dirnames if d not in (".git", "__pycache__")]
+            dirnames[:] = [d for d in dirnames if d not in (".git", "__pycache__", "node_modules", ".local", "data", "test-results", "playwright-report")]
             for fn in filenames:
                 if fn.endswith((".md", ".py", ".json", ".ts", ".csv")):
                     path = os.path.join(dirpath, fn)

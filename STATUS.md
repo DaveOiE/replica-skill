@@ -8,17 +8,19 @@ Updated: 2026-10-12
 
 | state | features |
 | --- | --- |
-| not started | 62 |
+| done | 2 |
+| partly done | 1 |
+| not started | 59 |
 | skipped | 2 |
 | **total** | **64** |
 
-Effort built: **0 of 183 points (0%)**. One point is a small tested feature (a few routes, one screen state, its tests).
+Effort built: **10 of 183 points (5%)**. One point is a small tested feature (a few routes, one screen state, its tests).
 
 ## Milestones
 
 | id | milestone | size | planned commits | effort (pts) | share of Run | about % of session | state | features built |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| M1 | Data model and roles | L | 4 | 13 | 7% | 3.9% | not started | 0 of 4 |
+| M1 | Data model and roles | L | 4 | 13 | 7% | 3.9% | in progress | 2 of 4 |
 | M2 | Tasks and projects | L | 5 | 28 | 15% | 8.4% | not started | 0 of 11 |
 | M3 | Views and forms | L | 4 | 26 | 14% | 7.8% | not started | 0 of 7 |
 | M4 | Automation | M | 3 | 13 | 7% | 3.9% | not started | 0 of 3 |
@@ -33,9 +35,9 @@ Effort built: **0 of 183 points (0%)**. One point is a small tested feature (a f
 
 | milestone | feature | tag | priority | effort | ceiling | state | note |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| M1 | View-only seats | E | must | 2 | done | not started | A4, no billing |
-| M1 | Workspaces, users, roles, password sign-in | C | must | 8 | done | not started | implied by the suggested build order |
-| M1 | Mobile-friendly web app | C | must | 3 | done | not started | responsive web; native apps skipped |
+| M1 | View-only seats | E | must | 2 | done | done | M1: view-only and guest can never write; proven by route walk on every route. No billing or licence counting (A4) |
+| M1 | Workspaces, users, roles, password sign-in | C | must | 8 | done | done | M1: scrypt sign-in, lockout, sessions, 5 roles, can(), hash-chained audit via mutate(), fake seed. Invites and password-rule settings come in M7 |
+| M1 | Mobile-friendly web app | C | must | 3 | done | partly done | M1: app shell and sign-in verified at 390px and 1440px in Chromium; each later screen is checked as it is built |
 | M1 | Native mobile apps | C | could | 0 | skip | skipped | out of scope per the list |
 | M2 | Unlimited free guests | C | must | 3 | done | not started | A5 |
 | M2 | Per-project admin controls | E | should | 2 | done | not started |  |

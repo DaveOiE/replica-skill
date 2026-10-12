@@ -1,5 +1,5 @@
 feature,area,priority,original,clone,notes,tag,ceiling,milestone,effort
-"Workspaces, users, roles, password sign-in",foundation,must,yes,no,implied by the suggested build order,C,done,M1,8
+"Workspaces, users, roles, password sign-in",foundation,must,yes,yes,"M1: scrypt sign-in, lockout, sessions, 5 roles, can(), hash-chained audit via mutate(), fake seed. Invites and password-rule settings come in M7",C,done,M1,8
 "Task fields: owner, assignee, due date, start date, status, description",tasks,must,yes,no,,C,done,M2,3
 Comments on tasks,tasks,must,yes,no,,C,done,M2,2
 Attachments on tasks,tasks,should,yes,no,"local disk, size and type limits",C,done,M2,3
@@ -20,7 +20,7 @@ Form customisation,forms,could,yes,no,,C,done,M3,2
 Project status updates,projects,should,yes,no,,C,done,M4,2
 Time tracking: estimated vs actual,time,should,yes,no,,C,done,M4,3
 Unlimited free guests,access,must,yes,no,A5,C,done,M2,3
-Mobile-friendly web app,shell,must,yes,no,responsive web; native apps skipped,C,done,M1,3
+Mobile-friendly web app,shell,must,yes,partial,M1: app shell and sign-in verified at 390px and 1440px in Chromium; each later screen is checked as it is built,C,done,M1,3
 Integrations plugin interface,integrations,should,yes,no,,C,done,M9,3
 2 or 3 sample connectors,integrations,could,yes,no,"outbound webhook, CSV import/export, calendar-file feed; no account needed",C,stub,M9,3
 Catalogue of 100+ connectors,integrations,could,yes,skip,the owner's catalogue is not part of the product to rebuild,C,skip,M9,0
@@ -40,7 +40,7 @@ Admin console: teams,admin,must,yes,no,,E,done,M7,3
 Admin console: settings and access,admin,must,yes,no,,E,done,M7,5
 Per-project admin controls,admin,should,yes,no,,E,done,M2,2
 Service accounts,admin,should,yes,no,,E,done,M6,3
-View-only seats,access,must,yes,no,"A4, no billing",E,done,M1,2
+View-only seats,access,must,yes,yes,"M1: view-only and guest can never write; proven by route walk on every route. No billing or licence counting (A4)",E,done,M1,2
 Control who can invite guests,access,should,yes,no,,E,done,M7,1
 Trusted guest domains,access,should,yes,no,,E,done,M7,2
 Approved workspaces,admin,should,yes,no,,E,done,M7,2
