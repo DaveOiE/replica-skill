@@ -12,88 +12,90 @@ Updated: 2026-10-12
 | skipped | 2 |
 | **total** | **64** |
 
+Effort built: **0 of 183 points (0%)**. One point is a small tested feature (a few routes, one screen state, its tests).
+
 ## Milestones
 
-| id | milestone | size | planned commits | state | features done |
-| --- | --- | --- | --- | --- | --- |
-| M1 | Data model and roles | L | 4 | not started | 0 of 4 |
-| M2 | Tasks and projects | L | 5 | not started | 0 of 11 |
-| M3 | Views and forms | L | 4 | not started | 0 of 7 |
-| M4 | Automation | M | 3 | not started | 0 of 3 |
-| M5 | Reporting and goals | L | 4 | not started | 0 of 8 |
-| M6 | Audit log and service accounts | M | 2 | not started | 0 of 3 |
-| M7 | Admin console SSO and provisioning | L | 4 | not started | 0 of 10 |
-| M8 | Bundles branding and backup | M | 2 | not started | 0 of 4 |
-| M9 | Integrations stubs and compliance docs | M | 2 | not started | 0 of 9 |
-| M10 | AI flagged stubs | S | 1 | not started | 0 of 5 |
+| id | milestone | size | planned commits | effort (pts) | share of Run | about % of session | state | features built |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| M1 | Data model and roles | L | 4 | 13 | 7% | 3.9% | not started | 0 of 4 |
+| M2 | Tasks and projects | L | 5 | 28 | 15% | 8.4% | not started | 0 of 11 |
+| M3 | Views and forms | L | 4 | 26 | 14% | 7.8% | not started | 0 of 7 |
+| M4 | Automation | M | 3 | 13 | 7% | 3.9% | not started | 0 of 3 |
+| M5 | Reporting and goals | L | 4 | 30 | 16% | 9.0% | not started | 0 of 8 |
+| M6 | Audit log and service accounts | M | 2 | 11 | 6% | 3.3% | not started | 0 of 3 |
+| M7 | Admin console SSO and provisioning | L | 4 | 32 | 17% | 9.6% | not started | 0 of 10 |
+| M8 | Bundles branding and backup | M | 2 | 9 | 5% | 2.7% | not started | 0 of 4 |
+| M9 | Integrations stubs and compliance docs | M | 2 | 13 | 7% | 3.9% | not started | 0 of 9 |
+| M10 | AI flagged stubs | S | 1 | 8 | 4% | 2.4% | not started | 0 of 5 |
 
 ## Features
 
-| milestone | feature | tag | priority | ceiling | state | note |
-| --- | --- | --- | --- | --- | --- | --- |
-| M1 | View-only seats | E | must | done | not started | A4, no billing |
-| M1 | Workspaces, users, roles, password sign-in | C | must | done | not started | implied by the suggested build order |
-| M1 | Mobile-friendly web app | C | must | done | not started | responsive web; native apps skipped |
-| M1 | Native mobile apps | C | could | skip | skipped | out of scope per the list |
-| M2 | Unlimited free guests | C | must | done | not started | A5 |
-| M2 | Per-project admin controls | E | should | done | not started |  |
-| M2 | Projects with sections | C | must | done | not started |  |
-| M2 | Project templates (custom) | C | should | done | not started |  |
-| M2 | Task fields: owner, assignee, due date, start date, status, description | C | must | done | not started |  |
-| M2 | Comments on tasks | C | must | done | not started |  |
-| M2 | Attachments on tasks | C | should | done | not started | local disk, size and type limits |
-| M2 | Subtasks | C | must | done | not started |  |
-| M2 | Task dependencies | C | should | done | not started |  |
-| M2 | Milestones | C | should | done | not started |  |
-| M2 | List view | C | must | done | not started |  |
-| M3 | Custom fields: text, number, date, single and multi select | C | must | done | not started | A2 |
-| M3 | Forms that create tasks | C | must | done | not started |  |
-| M3 | Form branching logic | C | should | done | not started |  |
-| M3 | Form customisation | C | could | done | not started |  |
-| M3 | Board view | C | must | done | not started |  |
-| M3 | Calendar view | C | must | done | not started |  |
-| M3 | Timeline view (Gantt-style) | C | should | done | not started |  |
-| M4 | Rules automation: trigger, condition, action | C | must | done | not started | A2 triggers and conditions |
-| M4 | Project status updates | C | should | done | not started |  |
-| M4 | Time tracking: estimated vs actual | C | should | done | not started |  |
-| M5 | Approvals | C | should | done | not started |  |
-| M5 | Proofing: review and sign-off on a piece of work | C | could | done | not started | comment and decision on an attachment |
-| M5 | Organisation-wide resource and capacity planning | C | could | done | not started | A3, kept simple |
-| M5 | Goals linked to projects and portfolios | C | should | done | not started |  |
-| M5 | Portfolios: roll-up of projects with status and progress | C | should | done | not started |  |
-| M5 | Workload and resource management in a portfolio | C | should | done | not started |  |
-| M5 | Reporting dashboards with custom charts | C | must | done | not started |  |
-| M5 | Universal reporting across projects and teams | C | should | done | not started | kept simple |
-| M6 | Service accounts | E | should | done | not started |  |
-| M6 | Audit log of admin and user actions | E | must | done | not started |  |
-| M6 | Audit API suited to SIEM export | E | must | done | not started | JSON and NDJSON, cursor paging |
-| M7 | Control who can invite guests | E | should | done | not started |  |
-| M7 | Trusted guest domains | E | should | done | not started |  |
-| M7 | Admin console: teams | E | must | done | not started |  |
-| M7 | Admin console: settings and access | E | must | done | not started |  |
-| M7 | Approved workspaces | E | should | done | not started |  |
-| M7 | Admin control over which apps connect | E | should | done | not started |  |
-| M7 | SCIM provisioning | E | must | mock | not started | SCIM 2.0 against a local test client |
-| M7 | SCIM deprovisioning | E | must | mock | not started | deactivation ends sessions |
-| M7 | Custom password requirements | E | should | done | not started |  |
-| M7 | SAML single sign-on | E | must | mock | not started | local mock IdP only |
-| M8 | Custom onboarding | E | should | done | not started |  |
-| M8 | Custom branding | E | should | done | not started |  |
-| M8 | Workflow bundles | E | should | done | not started |  |
-| M8 | Cross-region backup | E | could | stub | not started | local backup to a second directory; simulation, no real region |
-| M9 | Data residency selection | S | could | setting only | not started | not certified, no real regions |
-| M9 | Enterprise key management | S | could | setting only | not started | not certified, no real key custody |
-| M9 | DLP, archiving and eDiscovery integration points | S | could | stub | not started | A1; hooks and export endpoints only |
-| M9 | Dedicated workspace tier | S | could | setting only | not started | not certified |
-| M9 | Certifications documented as not certified | S | could | setting only | not started | documents say not certified |
-| M9 | Integrations plugin interface | C | should | done | not started |  |
-| M9 | 2 or 3 sample connectors | C | could | stub | not started | outbound webhook, CSV import/export, calendar-file feed; no account needed |
-| M9 | Catalogue of 100+ connectors | C | could | skip | skipped | the owner's catalogue is not part of the product to rebuild |
-| M9 | Priority and 24/7 support contact page | S | could | stub | not started | placeholder contact details, no staffing claim |
-| M10 | AI teammates (agents) | S | could | stub | not started | feature flag, rule-based |
-| M10 | No-code AI builder for automations | S | could | stub | not started | keyword and template matching, usage credits shown as a number only |
-| M10 | AI planning assistant | S | could | stub | not started | feature flag, rule-based |
-| M10 | MCP-style endpoint for outside AI apps | S | could | stub | not started | A6; service account token, local only |
-| M10 | Smart fields, summaries, status drafts, editing help | ? | could | stub | not started | A7; rule-based text |
+| milestone | feature | tag | priority | effort | ceiling | state | note |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| M1 | View-only seats | E | must | 2 | done | not started | A4, no billing |
+| M1 | Workspaces, users, roles, password sign-in | C | must | 8 | done | not started | implied by the suggested build order |
+| M1 | Mobile-friendly web app | C | must | 3 | done | not started | responsive web; native apps skipped |
+| M1 | Native mobile apps | C | could | 0 | skip | skipped | out of scope per the list |
+| M2 | Unlimited free guests | C | must | 3 | done | not started | A5 |
+| M2 | Per-project admin controls | E | should | 2 | done | not started |  |
+| M2 | Projects with sections | C | must | 3 | done | not started |  |
+| M2 | Project templates (custom) | C | should | 3 | done | not started |  |
+| M2 | Task fields: owner, assignee, due date, start date, status, description | C | must | 3 | done | not started |  |
+| M2 | Comments on tasks | C | must | 2 | done | not started |  |
+| M2 | Attachments on tasks | C | should | 3 | done | not started | local disk, size and type limits |
+| M2 | Subtasks | C | must | 2 | done | not started |  |
+| M2 | Task dependencies | C | should | 3 | done | not started |  |
+| M2 | Milestones | C | should | 1 | done | not started |  |
+| M2 | List view | C | must | 3 | done | not started |  |
+| M3 | Custom fields: text, number, date, single and multi select | C | must | 5 | done | not started | A2 |
+| M3 | Forms that create tasks | C | must | 5 | done | not started |  |
+| M3 | Form branching logic | C | should | 3 | done | not started |  |
+| M3 | Form customisation | C | could | 2 | done | not started |  |
+| M3 | Board view | C | must | 3 | done | not started |  |
+| M3 | Calendar view | C | must | 3 | done | not started |  |
+| M3 | Timeline view (Gantt-style) | C | should | 5 | done | not started |  |
+| M4 | Rules automation: trigger, condition, action | C | must | 8 | done | not started | A2 triggers and conditions |
+| M4 | Project status updates | C | should | 2 | done | not started |  |
+| M4 | Time tracking: estimated vs actual | C | should | 3 | done | not started |  |
+| M5 | Approvals | C | should | 3 | done | not started |  |
+| M5 | Proofing: review and sign-off on a piece of work | C | could | 2 | done | not started | comment and decision on an attachment |
+| M5 | Organisation-wide resource and capacity planning | C | could | 3 | done | not started | A3, kept simple |
+| M5 | Goals linked to projects and portfolios | C | should | 3 | done | not started |  |
+| M5 | Portfolios: roll-up of projects with status and progress | C | should | 5 | done | not started |  |
+| M5 | Workload and resource management in a portfolio | C | should | 3 | done | not started |  |
+| M5 | Reporting dashboards with custom charts | C | must | 8 | done | not started |  |
+| M5 | Universal reporting across projects and teams | C | should | 3 | done | not started | kept simple |
+| M6 | Service accounts | E | should | 3 | done | not started |  |
+| M6 | Audit log of admin and user actions | E | must | 5 | done | not started |  |
+| M6 | Audit API suited to SIEM export | E | must | 3 | done | not started | JSON and NDJSON, cursor paging |
+| M7 | Control who can invite guests | E | should | 1 | done | not started |  |
+| M7 | Trusted guest domains | E | should | 2 | done | not started |  |
+| M7 | Admin console: teams | E | must | 3 | done | not started |  |
+| M7 | Admin console: settings and access | E | must | 5 | done | not started |  |
+| M7 | Approved workspaces | E | should | 2 | done | not started |  |
+| M7 | Admin control over which apps connect | E | should | 2 | done | not started |  |
+| M7 | SCIM provisioning | E | must | 5 | mock | not started | SCIM 2.0 against a local test client |
+| M7 | SCIM deprovisioning | E | must | 2 | mock | not started | deactivation ends sessions |
+| M7 | Custom password requirements | E | should | 2 | done | not started |  |
+| M7 | SAML single sign-on | E | must | 8 | mock | not started | local mock IdP only |
+| M8 | Custom onboarding | E | should | 2 | done | not started |  |
+| M8 | Custom branding | E | should | 2 | done | not started |  |
+| M8 | Workflow bundles | E | should | 3 | done | not started |  |
+| M8 | Cross-region backup | E | could | 2 | stub | not started | local backup to a second directory; simulation, no real region |
+| M9 | Data residency selection | S | could | 1 | setting only | not started | not certified, no real regions |
+| M9 | Enterprise key management | S | could | 1 | setting only | not started | not certified, no real key custody |
+| M9 | DLP, archiving and eDiscovery integration points | S | could | 2 | stub | not started | A1; hooks and export endpoints only |
+| M9 | Dedicated workspace tier | S | could | 1 | setting only | not started | not certified |
+| M9 | Certifications documented as not certified | S | could | 1 | setting only | not started | documents say not certified |
+| M9 | Integrations plugin interface | C | should | 3 | done | not started |  |
+| M9 | 2 or 3 sample connectors | C | could | 3 | stub | not started | outbound webhook, CSV import/export, calendar-file feed; no account needed |
+| M9 | Catalogue of 100+ connectors | C | could | 0 | skip | skipped | the owner's catalogue is not part of the product to rebuild |
+| M9 | Priority and 24/7 support contact page | S | could | 1 | stub | not started | placeholder contact details, no staffing claim |
+| M10 | AI teammates (agents) | S | could | 2 | stub | not started | feature flag, rule-based |
+| M10 | No-code AI builder for automations | S | could | 2 | stub | not started | keyword and template matching, usage credits shown as a number only |
+| M10 | AI planning assistant | S | could | 1 | stub | not started | feature flag, rule-based |
+| M10 | MCP-style endpoint for outside AI apps | S | could | 2 | stub | not started | A6; service account token, local only |
+| M10 | Smart fields, summaries, status drafts, editing help | ? | could | 1 | stub | not started | A7; rule-based text |
 
 Legend: done = works and is tested; done (local mock) = real protocol against a local stand-in; stubbed = interface exists, nothing real behind it; setting only = labelled setting and document, not certified; skipped = deliberately not built.

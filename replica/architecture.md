@@ -133,27 +133,38 @@ pick changes in one place.
 
 ## Build order, effort, and tests (milestones for Run)
 
-Effort: S about 1 to 2 commits and a small slice of budget, M about 3, L about 4 to 5.
+Effort is in points: one point is a small tested feature (a few routes, one screen state, its
+tests). The scale is 1, 2, 3, 5 or 8 per feature; 183 points in all across 62 features (2 are
+skipped). Per-feature points are in `replica/features.csv` and shown in `STATUS.md`, with each
+milestone's share of Run (Run is about 55% of the session). The points are my estimate, not a
+meter: after M1 I will report estimated against actual so you can resize the rest.
 Each milestone ends with its tests green before the next starts.
 
-| M | scope | size | commits | test that gates it |
-| --- | --- | --- | --- | --- |
-| M1 | Data model and roles: migrations, workspaces, users, memberships, password sign-in and sessions, `can()`, `mutate()` and audit chain, seed, app shell | L | 4 | walking authz test, audit-per-write test, sign-in and lockout tests |
-| M2 | Tasks and projects: projects, sections, tasks, subtasks, comments, attachments, dependencies, milestones, templates, guests and view-only, list view and task drawer | L | 5 | API tests per entity, view-only and guest rejections |
-| M3 | Views and forms: board, calendar, timeline, custom fields, forms with branching, public form | L | 4 | view-data tests, branching tests, Playwright: create project, move a card |
-| M4 | Automation: rules engine, due-date scheduler, status updates, time tracking | M | 3 | rule tests incl. loop guard, scheduler test with a fake clock |
-| M5 | Reporting and goals: dashboards, portfolios, goals, workload, capacity, approvals, cross-project reports | L | 4 | roll-up math tests, approval flow test |
-| M6 | Audit log screen and SIEM API, service accounts and scoped tokens, chain verify | M | 2 | cursor paging, NDJSON, bad-scope tests, tamper test |
-| M7 | Admin console, security settings, SAML SSO with the mock IdP, SCIM | L | 4 | SAML bad-signature and replay tests, SCIM lifecycle test |
-| M8 | Workflow bundles, branding and onboarding, backup simulation | M | 2 | bundle round trip, backup checksum test |
-| M9 | Integrations as stubs (plugin interface, 3 sample connectors, DLP and archive hooks), compliance settings and documents, support page | M | 2 | plugin interface test, wording test |
-| M10 | AI as flagged stubs (assistant, agents, builder, smart fields, MCP-style endpoint) | S | 1 | flag-off returns 404, flag-on returns labelled stub |
+| M | scope | size | commits | points | test that gates it |
+| --- | --- | --- | --- | --- | --- |
+| M1 | Data model and roles: migrations, workspaces, users, memberships, password sign-in and sessions, `can()`, `mutate()` and audit chain, seed, app shell | L | 4 | 13 | walking authz test, audit-per-write test, sign-in and lockout tests |
+| M2 | Tasks and projects: projects, sections, tasks, subtasks, comments, attachments, dependencies, milestones, templates, guests and view-only, list view and task drawer | L | 5 | 28 | API tests per entity, view-only and guest rejections |
+| M3 | Views and forms: board, calendar, timeline, custom fields, forms with branching, public form | L | 4 | 26 | view-data tests, branching tests, Playwright: create project, move a card |
+| M4 | Automation: rules engine, due-date scheduler, status updates, time tracking | M | 3 | 13 | rule tests incl. loop guard, scheduler test with a fake clock |
+| M5 | Reporting and goals: dashboards, portfolios, goals, workload, capacity, approvals, cross-project reports | L | 4 | 30 | roll-up math tests, approval flow test |
+| M6 | Audit log screen and SIEM API, service accounts and scoped tokens, chain verify | M | 2 | 11 | cursor paging, NDJSON, bad-scope tests, tamper test |
+| M7 | Admin console, security settings, SAML SSO with the mock IdP, SCIM | L | 4 | 32 | SAML bad-signature and replay tests, SCIM lifecycle test |
+| M8 | Workflow bundles, branding and onboarding, backup simulation | M | 2 | 9 | bundle round trip, backup checksum test |
+| M9 | Integrations as stubs (plugin interface, 3 sample connectors, DLP and archive hooks), compliance settings and documents, support page | M | 2 | 13 | plugin interface test, wording test |
+| M10 | AI as flagged stubs (assistant, agents, builder, smart fields, MCP-style endpoint) | S | 1 | 8 | flag-off returns 404, flag-on returns labelled stub |
 
 Total about 31 commits. That is more than the 15 to 25 in the frame: the
 list is wide and I would rather commit small. **If you want a smaller app**,
 the cut line is: M10, then M9's extra connectors, then M8's backup, then
 capacity planning in M5. Cutting all four leaves about 24 commits and still
 satisfies every [C] and [E] must-have.
+
+The order follows yours: data model and roles, tasks and projects, views and forms, automation,
+reporting and goals, audit log, SSO and provisioning, integrations as stubs, AI last. Two
+placements to know about: the audit machinery (`mutate()` and the hash chain) is built inside M1 so
+every later change is audited from its first commit, with its screen and SIEM API in M6; and
+bundles, branding and backup (M8) sit between SSO and integrations because bundles reuse rules and
+forms from M3 and M4.
 
 Run rules: after each feature run its test and fix before moving on;
 `STATUS.md` is regenerated on every commit by `python3 tools/status.py`.

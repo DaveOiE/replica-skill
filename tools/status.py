@@ -15,6 +15,8 @@ import os
 import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+RUN_SHARE_OF_SESSION = 55  # percent of the session budget set aside for Run (replica/frame.md)
+BUILT = ("done", "done (local mock)", "stubbed", "setting only")
 
 
 def read(path):
@@ -34,6 +36,13 @@ def state(row):
     if clone == "skip":
         return "skipped"
     return "not started"
+
+
+def points(row):
+    try:
+        return int(row.get("effort") or 0)
+    except ValueError:
+        return 0
 
 
 def milestone_state(feats):
@@ -61,20 +70,29 @@ def render(features, milestones, today=None):
     for s in order:
         if s in counts:
             out.append("| %s | %d |" % (s, counts[s]))
+    total_pts = sum(points(f) for f in features)
+    built_pts = sum(points(f) for f in features if state(f) in BUILT)
+    pct = (100.0 * built_pts / total_pts) if total_pts else 0.0
     out += ["| **total** | **%d** |" % len(features), "",
-            "## Milestones", "", "| id | milestone | size | planned commits | state | features done |",
-            "| --- | --- | --- | --- | --- | --- |"]
+            "Effort built: **%d of %d points (%.0f%%)**. One point is a small tested feature "
+            "(a few routes, one screen state, its tests)." % (built_pts, total_pts, pct), "",
+            "## Milestones", "",
+            "| id | milestone | size | planned commits | effort (pts) | share of Run | about % of session | state | features built |",
+            "| --- | --- | --- | --- | --- | --- | --- | --- | --- |"]
     for m in milestones:
         fs = [f for f in features if f.get("milestone") == m["id"]]
-        done = sum(1 for f in fs if state(f) in ("done", "done (local mock)", "stubbed", "setting only"))
-        out.append("| %s | %s | %s | %s | %s | %d of %d |" % (
-            m["id"], m["name"], m["size"], m["planned_commits"], milestone_state(fs), done, len(fs)))
-    out += ["", "## Features", "", "| milestone | feature | tag | priority | ceiling | state | note |",
-            "| --- | --- | --- | --- | --- | --- | --- |"]
+        done = sum(1 for f in fs if state(f) in BUILT)
+        mp = sum(points(f) for f in fs)
+        share = (100.0 * mp / total_pts) if total_pts else 0.0
+        out.append("| %s | %s | %s | %s | %d | %.0f%% | %.1f%% | %s | %d of %d |" % (
+            m["id"], m["name"], m["size"], m["planned_commits"], mp, share,
+            share * RUN_SHARE_OF_SESSION / 100.0, milestone_state(fs), done, len(fs)))
+    out += ["", "## Features", "", "| milestone | feature | tag | priority | effort | ceiling | state | note |",
+            "| --- | --- | --- | --- | --- | --- | --- | --- |"]
     for f in sorted(features, key=lambda r: (int(r["milestone"][1:]) if r.get("milestone") else 99, r["area"])):
-        out.append("| %s | %s | %s | %s | %s | %s | %s |" % (
+        out.append("| %s | %s | %s | %s | %s | %s | %s | %s |" % (
             f.get("milestone", ""), f["feature"], f.get("tag", ""), f["priority"],
-            f.get("ceiling", ""), state(f), f["notes"].replace("|", "/")))
+            points(f), f.get("ceiling", ""), state(f), f["notes"].replace("|", "/")))
     out += ["", "Legend: done = works and is tested; done (local mock) = real protocol "
             "against a local stand-in; stubbed = interface exists, nothing real behind it; "
             "setting only = labelled setting and document, not certified; "

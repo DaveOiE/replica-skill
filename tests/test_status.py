@@ -7,12 +7,12 @@ from _load import load
 status = load("tools", "status")
 
 FEATS = [
-    {"feature": "A", "area": "x", "priority": "must", "clone": "yes", "notes": "", "ceiling": "done", "milestone": "M1", "tag": "C"},
-    {"feature": "B", "area": "x", "priority": "must", "clone": "yes", "notes": "", "ceiling": "mock", "milestone": "M1", "tag": "E"},
-    {"feature": "C", "area": "y", "priority": "could", "clone": "partial", "notes": "", "ceiling": "stub", "milestone": "M2", "tag": "S"},
-    {"feature": "D", "area": "y", "priority": "could", "clone": "partial", "notes": "", "ceiling": "setting only", "milestone": "M2", "tag": "S"},
-    {"feature": "E", "area": "z", "priority": "must", "clone": "no", "notes": "", "ceiling": "done", "milestone": "M3", "tag": "C"},
-    {"feature": "F", "area": "z", "priority": "could", "clone": "skip", "notes": "why", "ceiling": "done", "milestone": "M3", "tag": "C"},
+    {"feature": "A", "area": "x", "priority": "must", "clone": "yes", "notes": "", "ceiling": "done", "milestone": "M1", "tag": "C", "effort": "3"},
+    {"feature": "B", "area": "x", "priority": "must", "clone": "yes", "notes": "", "ceiling": "mock", "milestone": "M1", "tag": "E", "effort": "5"},
+    {"feature": "C", "area": "y", "priority": "could", "clone": "partial", "notes": "", "ceiling": "stub", "milestone": "M2", "tag": "S", "effort": "2"},
+    {"feature": "D", "area": "y", "priority": "could", "clone": "partial", "notes": "", "ceiling": "setting only", "milestone": "M2", "tag": "S", "effort": "1"},
+    {"feature": "E", "area": "z", "priority": "must", "clone": "no", "notes": "", "ceiling": "done", "milestone": "M3", "tag": "C", "effort": "8"},
+    {"feature": "F", "area": "z", "priority": "could", "clone": "skip", "notes": "why", "ceiling": "done", "milestone": "M3", "tag": "C", "effort": "0"},
 ]
 
 
@@ -33,6 +33,18 @@ class StatusTests(unittest.TestCase):
         for f in FEATS:
             self.assertIn("| %s |" % f["feature"], out)
         self.assertIn("**6**", out)
+
+    def test_effort_totals_and_shares(self):
+        ms = [{"id": "M1", "name": "One", "size": "S", "planned_commits": "1"},
+              {"id": "M2", "name": "Two", "size": "S", "planned_commits": "1"},
+              {"id": "M3", "name": "Three", "size": "S", "planned_commits": "1"}]
+        out = status.render(FEATS, ms, today="2026-01-01")
+        # built = A 3 + B 5 + C 2 + D 1 = 11 of 19 points (E is 8, F is skipped at 0)
+        self.assertIn("**11 of 19 points (58%)**", out)
+        self.assertIn("| about % of session |", out)
+        self.assertNotIn("%%", out)
+        self.assertIn("| M1 | One | S | 1 | 8 | 42% |", out)
+        self.assertIn("| M3 | Three | S | 1 | 8 | 42% |", out)
 
     def test_check_detects_stale_file(self):
         with tempfile.TemporaryDirectory() as d:
