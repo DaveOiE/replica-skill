@@ -8,7 +8,10 @@
     "node": ">=22.13"
   },
   "scripts": {
-    "test": "node --no-warnings --test \"app/tests/**/*.test.js\""
+    "test": "node --no-warnings --test \"app/tests/**/*.test.js\"",
+    "start": "node --no-warnings app/server/index.js",
+    "seed": "node --no-warnings app/seed/seed.js",
+    "tokens": "python3 tools/tokens_css.py replica/design/tokens.json app/web/styles/tokens.css"
   },
   "license": "MIT",
   "dependencies": {

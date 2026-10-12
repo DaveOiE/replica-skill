@@ -10,6 +10,8 @@ const READ_ONLY_ROLES = ['view_only', 'guest'];
 /** action -> who may, and whether it changes anything. */
 export const ACTIONS = {
   'session:read': { roles: ALL, write: false },
+  // Signing out audits itself but changes no workspace data, so every role may do it (view-only included).
+  'session:signout': { roles: ALL, write: false },
   'workspace:read': { roles: ALL, write: false },
   'workspace:update': { roles: MANAGERS, write: true },
   'members:read': { roles: MANAGERS, write: false },
