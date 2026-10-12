@@ -16,6 +16,7 @@ test('authz matrix: every role against every action', () => {
     'members:update_role': { owner: 1, admin: 1, member: 0, view_only: 0, guest: 0 },
     'session:signout': { owner: 1, admin: 1, member: 1, view_only: 1, guest: 1 },
     'members:create': { owner: 1, admin: 1, member: 0, view_only: 0, guest: 0 },
+    'session:password': { owner: 1, admin: 1, member: 1, view_only: 1, guest: 1 },
     'project:list': { owner: 1, admin: 1, member: 1, view_only: 1, guest: 1 },
     'project:create': { owner: 1, admin: 1, member: 1, view_only: 0, guest: 0 },
     'me:tasks': { owner: 1, admin: 1, member: 1, view_only: 1, guest: 1 },

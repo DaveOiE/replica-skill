@@ -40,7 +40,7 @@ test('route table: every API route is declared once, has a known action, and a s
 test('walk: signed-out callers get 401 on every protected route', async () => {
   const { app, creds } = await freshApp();
   for (const r of app.routeTable.filter((x) => !x.public)) {
-    const s = r.sample({ creds });
+    const s = r.sample({ creds, who: creds.owner });
     assert.equal((await app.inject({ method: r.method, url: s.url, payload: s.payload })).statusCode, 401, `${r.method} ${r.url}`);
   }
 });
@@ -49,7 +49,7 @@ for (const role of ROLES) {
   test(`walk: ${role} gets exactly what the permission rules say on every route`, async () => {
     const { app, db, creds, call } = await freshApp();
     for (const r of order(app.routeTable.filter((x) => !x.public))) {
-      const s = r.sample({ creds });
+      const s = r.sample({ creds, who: creds[ROLE_KEY[role]] });
       const want = expected(db, creds, ROLE_KEY[role], r, s.url);
       const before = auditCount(db);
       const res = await call(ROLE_KEY[role], r.method, s.url, s.payload);
@@ -68,12 +68,13 @@ for (const role of ROLES) {
 
 test('walk: view-only gets no successful write anywhere; guests only write tasks and comments in projects they were added to', async () => {
   const { app, creds, call } = await freshApp();
-  for (const r of order(app.routeTable.filter((x) => x.write && !x.public && x.action !== 'session:signout'))) {
-    const s = r.sample({ creds });
+  for (const r of order(app.routeTable.filter((x) => x.write && !x.public && !['session:signout', 'session:password'].includes(x.action)))) {
+    const s = r.sample({ creds, who: creds.viewonly });
     const vo = await call('viewonly', r.method, s.url, s.payload);
     assert.ok(vo.statusCode === 403 || vo.statusCode === 404, `view-only ${r.method} ${s.url} -> ${vo.statusCode}`);
-    const g = await call('guest', r.method, s.url, s.payload);
-    if (!['task:write', 'task:comment'].includes(r.action)) assert.ok(g.statusCode === 403 || g.statusCode === 404, `guest ${r.method} ${s.url} -> ${g.statusCode}`);
+    const sg = r.sample({ creds, who: creds.guest });
+    const g = await call('guest', r.method, sg.url, sg.payload);
+    if (!['task:write', 'task:comment'].includes(r.action)) assert.ok(g.statusCode === 403 || g.statusCode === 404, `guest ${r.method} ${sg.url} -> ${g.statusCode}`);
   }
 });
 
@@ -93,7 +94,7 @@ test('tenancy: another workspace sees none of this workspace and cannot reach it
 
 test('audit: no secret ever lands in the trail, whatever the routes did', async () => {
   const { app, db, creds, call } = await freshApp();
-  for (const r of order(app.routeTable.filter((x) => !x.public))) { const s = r.sample({ creds }); await call('owner', r.method, s.url, s.payload); }
+  for (const r of order(app.routeTable.filter((x) => !x.public))) { const s = r.sample({ creds, who: creds.owner }); await call('owner', r.method, s.url, s.payload); }
   const dump = JSON.stringify(db.prepare('select * from audit_events').all());
   assert.ok(!dump.includes('scrypt$'));
   for (const c of Object.values(creds).filter((x) => x.password)) assert.ok(!dump.includes(c.password));

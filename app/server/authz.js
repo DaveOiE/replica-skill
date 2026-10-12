@@ -19,6 +19,8 @@ export const ACTIONS = {
   'members:read': { roles: MANAGERS, write: false },
   'members:update_role': { roles: MANAGERS, write: true },
   'members:create': { roles: MANAGERS, write: true },
+  // Changing your own password is self-service, so every role may, view-only and guest included.
+  'session:password': { roles: ALL, write: false },
   'project:list': { roles: ALL, write: false },
   'project:create': { roles: ['owner', 'admin', 'member'], write: true },
   // Project actions: `project` is the lowest project role allowed. The route layer works out the actor's
