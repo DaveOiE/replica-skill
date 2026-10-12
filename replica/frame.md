@@ -2,156 +2,118 @@
 
 Date: 2026-10-12
 Branch: `claude/dreamy-mendel-jczq11`
-Status: framed, waiting on one blocker (public-source access, see Blockers)
+Source of truth: `replica/screens/feature-list.md` (owner-written, public information only)
+Status: framed, waiting for "go" to start Organize
 
 ## Goal
 
-A working web app with the capabilities of an enterprise work-management
-platform, built for a small IT support business. It runs end to end in a demo
-workspace with seed data, has passing tests, and gets a parity score against
-the public feature list.
+A clean-room, original work-management app for small teams, with enterprise
+administration features. The [C] and [E] features in the feature list run end
+to end in a seeded demo workspace. Tests pass. A parity report says what is
+built, stubbed or missing. A smaller working app beats a big unfinished one.
 
-## Rules (binding on every later phase)
+## Rules (binding on every phase)
 
 1. **Clean room.** Rebuild what the product does, never what it owns. No
-   original name, logo, copy, icons, screenshots, or code. The app gets its own
-   name and brand (replica-brand, phase O). Screenshots, if any, stay in
-   `replica/screens/` as reference and are never shipped.
-2. **Public sources only.** Pricing pages, feature pages, public help docs,
-   public API docs, store listings. No sign-in to any account, ours or anyone
-   else's. No scraping loops, no reading JS bundles or private endpoints.
-3. **No compliance claims.** HIPAA, SOC 2, data residency and key management
-   are shown only as clearly labelled configurable settings plus documentation.
-   Nothing in the UI, README or marketing text says "compliant", "certified" or
-   "HIPAA-ready".
-4. **Ask first** before anything needing an account, a key, or a payment.
-   Never type or request real passwords, keys or card numbers. All secrets are
-   env vars; `.env*` is gitignored; `.env.example` lists names only.
-5. **Small steps.** One commit per step, on this branch only. Each phase ends
-   with a stop and a report.
+   third-party names, logos, wording, icons or code. The app gets its own
+   name and brand (replica-brand, phase O). Open icon set only.
+2. **No web access.** This session cannot browse, and I will not try. The
+   feature list is the only source. Anything it does not answer becomes an
+   open question below plus a labelled assumption, and work continues.
+3. **No compliance claims.** Certifications, data residency and key
+   management appear only as settings and documents, each labelled
+   "not certified" (or "setting only, no real regions / no real key
+   custody"). No wording like compliant, certified or ready.
+4. **Secrets.** Never type or request real passwords, keys or card numbers.
+   Secrets are env vars, `.env*` is gitignored, `.env.example` has names
+   only, seed data is fake. Ask before anything needing an account, key or
+   payment (so: no real LLM, no real Salesforce-style link, no payments).
+5. **Small steps.** One feature per commit, on this branch. Each feature's
+   test runs and passes before the next. `STATUS.md` tracks every feature as
+   done, stubbed or not started.
 
-## What "runs end to end" means (status vocabulary)
+## Status vocabulary (used in STATUS.md, README, `features.csv`)
 
-Every capability gets exactly one of these labels, in the UI, the README and
-`features.csv`. This is how we avoid overclaiming.
-
-| label | meaning | parity.py `clone` value |
+| label | meaning | `parity.py` value |
 | --- | --- | --- |
-| **real** | Fully working locally, tested | `yes` |
-| **mock** | Real protocol and logic against a local stand-in (e.g. our own SAML IdP) | `yes`, note says "local mock" |
-| **stub** | UI and API contract exist, no real external system behind it | `partial` |
-| **setting only** | A labelled configuration field and documentation, no enforcement | `partial`, note says "setting only" |
-| **not implemented** | Absent | `no` |
-| **skip** | Cannot or should not be cloned, with a reason | `skip` |
+| **done** | Works locally and is tested | `yes` |
+| **mock** | Real protocol and logic against a local stand-in (own SAML IdP, SCIM test client) | `yes`, note "local mock" |
+| **stub** | UI and API contract exist, no real system behind it | `partial` |
+| **setting only** | Labelled setting and document, nothing enforced | `partial`, note "setting only" |
+| **not started / not built** | Absent | `no` |
+| **skip** | Cannot or should not be built, with reason | `skip` |
 
-## Scope and honest ceiling
+## Scope from the feature list
 
-Priorities are my first guess. replica-recon re-derives them from the public
-sources in phase O and may change them.
-
-### Core
-
-| capability | proposed priority | ceiling |
+| area | tag | ceiling |
 | --- | --- | --- |
-| Tasks (subtasks, assignees, due dates, comments, dependencies) | must | real |
-| Projects and sections | must | real |
-| List, board, calendar and timeline views | must | real |
-| Custom fields | must | real |
-| Forms (intake to task) | should | real |
-| Approvals | should | real |
-| Goals | should | real |
-| Portfolios | should | real |
-| Reporting dashboards | must | real |
-| Time tracking | should | real |
-| Automations (trigger, condition, action rules) | should | real |
+| 1 Core work management (tasks, subtasks, projects, sections, project templates, list/board/calendar/timeline, custom fields, dependencies, milestones, forms with branching, automation rules, status updates, time tracking, guests, responsive web) | C | done |
+| 1 Integrations | C | plugin interface done, 2 or 3 sample connectors that need no account (outbound webhook, CSV import/export, calendar-file feed); no catalogue of 100+ |
+| 2 Dashboards, portfolios, goals, workload, capacity planning, approvals, universal reporting | C | done (capacity and "universal" reporting kept simple) |
+| 3 SAML SSO, SCIM, admin console, service accounts, view-only seats, guest controls and trusted domains, approved workspaces and app control, password rules, onboarding and branding, workflow bundles | E | done / mock (SAML and SCIM against the local mock IdP) |
+| 3 Cross-region backup | E | done as a local backup to a second directory; labelled a simulation, no real region |
+| 4 Audit log and SIEM-suited API | E | done (JSON and NDJSON, cursor paging, time and actor filters) |
+| 4 Data residency, key management, dedicated tier, certifications | S | setting only, "not certified" |
+| 4 DLP, archiving, eDiscovery hooks, 24/7 support page | S | stub (hooks and export endpoints; page uses placeholder contact details) |
+| 5 AI teammates, AI builder, planning assistant, MCP-style endpoint, smart fields | S | stub, behind a feature flag, built last, no model calls |
 
-### Enterprise
+## Labelled assumptions (continue-with, to confirm)
 
-| capability | proposed priority | ceiling |
-| --- | --- | --- |
-| SAML single sign-on | must | **mock**: SAML 2.0 against a local mock IdP, no real IdP |
-| SCIM user provisioning | must | **mock**: SCIM 2.0 endpoints, tested by a local client |
-| Audit log + SIEM-suited API | must | real (JSON and NDJSON, cursor pagination, time filters) |
-| Cross-region backup | could | **setting only** plus a local simulation (backup to a second directory); no real second region |
-| View-only teams | must | real (server-enforced role) |
-| Salesforce, Tableau, Power BI connectors | could | **stub**: connector UI, config and a real export feed (CSV/JSON) those tools could read. No live link |
-| Custom onboarding and branding | should | real |
-| Workflow bundles (export/import of rules, forms, fields) | should | real |
-| Service accounts | should | real (hashed tokens, scoped, rotatable) |
-| 24/7 support contact page | could | real page; uses contact details the owner supplies; no staffing claim |
+- **A1.** DLP, archiving and eDiscovery tier is unclear in the source: built
+  as [S] stubs only.
+- **A2.** Field types: text, number, date, single select, multi select.
+  Views, automation triggers (task created, field changed, due date reached,
+  moved to section) and conditions (field equals or is empty) come from the
+  list's headings and general knowledge; unconfirmed against help pages.
+- **A3.** "Universal resource management" is one organisation-wide view of
+  assigned hours versus capacity per person per week, using task estimates.
+- **A4.** "View-only seats" is a role with no write access, enforced on the
+  server. No billing or licence counting (no payments).
+- **A5.** Guests are an unlimited external role, limited to projects they are
+  added to, and invitable only from trusted guest domains when that setting
+  is on.
+- **A6.** "MCP-style" means a small local tool endpoint that lists, reads and
+  creates tasks, authenticated by a service account. Labelled stub.
+- **A7.** Smart fields and summaries [?] are rule-based text, not generated
+  by a model.
 
-### Enterprise+
+## Open questions for you (none block Organize)
 
-| capability | proposed priority | ceiling |
-| --- | --- | --- |
-| AI assist (summaries, suggestions) | could | **stub**: local rule-based, no model call |
-| AI builder for workflows (text to workflow bundle) | could | **stub**: keyword and template matching |
-| DLP and archiving integration points | could | **stub**: outbound hook and export endpoints only |
-| Approved workspaces | should | real (allow-list enforced) |
-| Trusted guest domains | should | real (enforced on invite) |
-| Admin app management (allow/deny integrations) | should | real |
-| Custom password rules | should | real (enforced server-side) |
-| Data residency | could | **setting only** |
-| HIPAA mode, SOC 2 evidence, key management | could | **setting only** plus documentation |
+- **Q1.** Business name or colour preferences for the brand, or my pick from
+  five candidates? (Trademark and domain checks stay "to run", I cannot run
+  them without web access.)
+- **Q2.** Real contact details for the 24/7 support page? Placeholder until
+  given.
+- **Q3.** OK to confirm views, field types and automation conditions (A2)
+  against the help-centre pages later, by you pasting them, or accept A2?
 
-### Out of scope (skip, with reason)
+## Success criteria
 
-- Real Salesforce, Tableau, Power BI links: need the owner's accounts and keys.
-- Any compliance certification: not something code can grant.
-- Original's marketplace, templates library, brand, and content: owned by them.
-- Real LLM calls: need an API key. Only on request, and I will ask first.
-- Native mobile apps and email-to-task inbound: out of this build.
+1. Every [C] and [E] row in the list runs in the seeded demo workspace, or
+   is labelled with why not.
+2. `parity.py` feature score >= 80 and no must-have missing.
+3. All tests pass. No open S1 or S2 bug in `replica/bugs.md`.
+4. Tests prove: roles enforced on the server (view-only user, guest and a
+   second workspace are rejected), an audit entry for every state change,
+   no secrets in the repo, seed data is fake.
+5. `sweep.py` clean against the avoid list. README labels every stub.
 
-## Success criteria (measurable)
+## Environment (checked)
 
-1. Every Enterprise-list capability above has a label and either runs in the
-   demo workspace or is a clearly labelled stub or setting.
-2. `python3 replica-diff/parity.py replica/features.csv` reports feature
-   score >= 80, all must-haves done, none missing.
-3. All automated tests pass; no open S1 or S2 bugs in `replica/bugs.md`.
-4. Security basics verified by test: roles enforced on the server (a
-   view-only user and a second tenant are rejected), an audit entry for every
-   state-changing request, no secrets in the repo (scanned).
-5. `sweep.py` finds nothing of the original left in the code.
-6. README lists every feature with its label; stubs and gaps are never hidden.
+Python 3.13 (with `cryptography`), Node 22 and npm registry reachable,
+PostgreSQL 16 and SQLite 3.45 available locally, skill-pack tests 57/57
+pass. No web access to the original product, by design.
 
-## Environment findings (checked 2026-10-12)
-
-| item | result |
-| --- | --- |
-| Python | 3.13.16; `cryptography` 50.0.1 present; no Flask, no signxml |
-| Node / npm | 22.22.0 / 10.9.4; npm registry reachable |
-| Database | PostgreSQL 16 client and server binaries present; SQLite 3.45.1 also available |
-| Baseline tests | 57/57 pass (the skill pack's own tool tests) |
-| Branch | `claude/dreamy-mendel-jczq11`, clean, branched from `main` |
-| Public sources | **BLOCKED**: `asana.com`, `help.asana.com` and `developers.asana.com` all return 403 on CONNECT from the sandbox egress policy (confirmed in the proxy log) |
-
-## Blockers
-
-**Public sources are unreachable from this sandbox.** Recon (phase O, step 1)
-needs the pricing page, plan comparison and public help docs. I will not
-route around the policy, and I will not fill the gap from memory and call it
-recon.
-
-Fix, in the environment's network settings: either a broader access level, or
-add `asana.com`, `help.asana.com` and `developers.asana.com` under Allowed
-domains (leave "Allow package managers" ticked). Steps:
-https://code.claude.com/docs/en/cloud-environments#network-access
-
-If you would rather not open the network, the alternative is that you paste the
-plan comparison and the relevant help pages into the chat, and I recon from
-that.
-
-## Phase budget (relative to this session; I cannot meter it exactly)
+## Effort by phase (relative to this session; not meterable exactly)
 
 | phase | work | share | commits |
 | --- | --- | --- | --- |
-| F Frame | this doc, feasibility checks | ~3% | 1 |
-| O Organize | recon map and matrix, architecture and schema, tokens, brand, backend plan | ~15% | 5 to 6 |
-| R Run | core, roles, audit, SSO, SCIM, reporting, stubs, AI | ~55% | 15 to 25 |
-| G Gauge | replica-test, parity, security pass, fixes | ~17% | 4 to 6 |
-| E Evolve | summary, README, next three improvements | ~10% | 1 to 2 |
+| F Frame | this doc | ~3% | 1 |
+| O Organize | recon map, architecture and schema, tokens, brand | ~15% | 4 to 5 |
+| R Run | the build, in the listed order | ~55% | 15 to 25 |
+| G Gauge | test, parity, security pass, fixes | ~17% | 4 to 6 |
+| E Evolve | README, summary, next three | ~10% | 1 to 2 |
 
-Run is the risk. If budget runs short, the cut order is: AI features, then
-connector stubs, then cross-region backup simulation, then portfolios and goals
-depth. The must-haves are protected.
+Cut line if budget tightens: AI stubs first, then sample connectors beyond
+one, then the backup simulation, then capacity planning. [C] and [E]
+must-haves are protected.
