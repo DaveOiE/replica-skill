@@ -26,7 +26,7 @@ test('the page the server sends has the product name from the one constant, and 
   const page = await app.inject('/');
   assert.match(page.body, new RegExp(`<title>${PRODUCT_NAME}</title>`));
   assert.ok(!page.body.includes('{{'));
-  for (const url of ['/styles/tokens.css', '/styles/app.css', '/app.js', '/dom.js', '/api.js', '/strings.js', '/views.js', '/views-public.js', '/views-jobs.js', '/shared/brand.js', '/shared/titles.js', '/favicon.svg'])
+  for (const url of ['/styles/tokens.css', '/styles/app.css', '/app.js', '/dom.js', '/api.js', '/strings.js', '/views.js', '/views-public.js', '/views-jobs.js', '/views-forms.js', '/shared/brand.js', '/shared/titles.js', '/favicon.svg'])
     assert.equal((await app.inject(url)).statusCode, 200, url);
   assert.equal((await app.inject('/../server/auth.js')).statusCode >= 400, true, 'server code is not served');
   assert.equal((await app.inject('/server/auth.js')).statusCode, 404);

@@ -8,17 +8,17 @@ Updated: 2026-10-12
 
 | state | features |
 | --- | --- |
-| done | 20 |
-| partly done | 2 |
-| later (deferred) | 48 |
+| done | 21 |
+| partly done | 3 |
+| later (deferred) | 46 |
 | skipped | 2 |
 | **total** | **72** |
 
-Demo scope: **61 of 68 points built (90%)**. Later pool: 137 points, not scheduled. One point is a small tested feature (a few routes, one screen state, its tests).
+Demo scope: **66 of 76 points built (87%)**. Later pool: 124 points, not scheduled. One point is a small tested feature (a few routes, one screen state, its tests).
 
 ## Budget
 
-Used so far (proxy): **50.6%**. Rate: **0.43% of session per point** (measured on the latest milestone). Stop line: **60%**.
+Used so far (proxy): **53.5%**. Rate: **0.31% of session per point** (measured on the latest milestone). Stop line: **60%**.
 
 ## Milestones
 
@@ -26,8 +26,8 @@ Used so far (proxy): **50.6%**. Rate: **0.43% of session per point** (measured o
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | M1 | Data model and roles | demo | 13 | 0 | 0 | done, 1 partial | 0.0% | - |
 | M2 | Tasks and projects (trimmed) | demo | 25 | 0 | 6 | done | 0.0% | - |
-| M3 | Board view (rest of views and forms later) | demo | 3 | 0 | 23 | done | 0.0% | - |
-| M4 | Automation | later | 0 | 0 | 13 | later | 0.0% | - |
+| M3 | Board view (rest of views and forms later) | demo | 3 | 0 | 18 | done | 0.0% | - |
+| M4 | Automation | later | 0 | 0 | 5 | later | 0.0% | - |
 | M5 | Simple dashboard (goals portfolios and approvals later) | demo | 4 | 0 | 22 | done, 1 partial | 0.0% | - |
 | M6 | Audit log screen and SIEM API and service accounts | later | 0 | 0 | 11 | later | 0.0% | - |
 | M7 | Admin console SSO and provisioning | later | 0 | 0 | 32 | later | 0.0% | - |
@@ -36,7 +36,7 @@ Used so far (proxy): **50.6%**. Rate: **0.43% of session per point** (measured o
 | M10 | AI flagged stubs | later | 0 | 0 | 8 | later | 0.0% | - |
 | P1 | Pilot 1: admin reset and unlock and invites | demo | 8 | 0 | 0 | done | 0.0% | - |
 | P2 | Pilot 2: Job Register importer and Jobs view | demo | 15 | 0 | 0 | done | 0.0% | - |
-| P3 | Pilot 3: public request form and one rule | demo | 0 | 0 | 0 | later | 0.0% | - |
+| P3 | Pilot 3: public request form and one rule | demo | 8 | 0 | 0 | done, 1 partial | 0.0% | - |
 
 Fits inside the 60% stop line at this rate: nothing.
 (Gauge and Evolve are extra: see replica/run-plan.md.)
@@ -68,14 +68,14 @@ Fits inside the 60% stop line at this rate: nothing.
 | M2 | Task dependencies | C | should | 3 | demo | done | M2: no loops; blocked tasks closable only by a project admin, and the audit says so |
 | M2 | Milestones | C | should | 1 | demo | done | M2: a flag on a task, shown as a badge |
 | M2 | List view | C | must | 3 | demo | done | M2: grouped by section with inline status, assignee and due date; read-only for view-only seats |
+| P3 | Rules automation: trigger, condition, action | C | must | 3 | demo | partly done | PILOT item 3: ONE rule type only, "assign new requests from a form to a chosen person"; every run is recorded; if the person loses access the task is still created, unassigned, and the problem is shown to admins. No conditions, no other triggers or actions |
 | M3 | Custom fields: text, number, date, single and multi select | C | must | 5 | later | later (deferred) | A2 |
-| M3 | Forms that create tasks | C | must | 5 | later | later (deferred) |  |
+| P3 | Forms that create tasks | C | must | 5 | demo | done | PILOT item 3: project admins build a request form (short text, long text, pick one; one question becomes the task title); a public link anyone can fill in; rate limited per address and per form, honeypot, strict validation, audited; the public page and its answers reveal nothing internal; unknown, closed and archived forms give the identical 404. Branching and customisation are NOT built |
 | M3 | Form branching logic | C | should | 3 | later | later (deferred) |  |
 | M3 | Form customisation | C | could | 2 | later | later (deferred) |  |
 | M3 | Board view | C | must | 3 | demo | done | Built: one column per section; drag a card or use its Move to menu (keyboard); read-only for view-only seats; opens the same task drawer |
 | M3 | Calendar view | C | must | 3 | later | later (deferred) |  |
 | M3 | Timeline view (Gantt-style) | C | should | 5 | later | later (deferred) |  |
-| M4 | Rules automation: trigger, condition, action | C | must | 8 | later | later (deferred) | A2 triggers and conditions |
 | M4 | Project status updates | C | should | 2 | later | later (deferred) |  |
 | M4 | Time tracking: estimated vs actual | C | should | 3 | later | later (deferred) |  |
 | M5 | Approvals | C | should | 3 | later | later (deferred) |  |

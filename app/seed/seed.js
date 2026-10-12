@@ -77,6 +77,19 @@ export function seedDemo(db) {
     db.prepare("insert into invites(id,workspace_id,email,role,token_hash,invited_by,expires_at,created_at) values (?,?,?,?,?,?,?,?)")
       .run(inv, demo, 'new.hire@example.test', 'member', newId() + newId(), creds.admin.userId, new Date(Date.now() + 7 * 86400000).toISOString(), now);
     creds.invites = { pending: inv };
+    const mkForm = (nm, slug) => {
+      const id = newId();
+      db.prepare('insert into forms(id,workspace_id,project_id,name,slug,target_section_id,created_by,created_at,updated_at) values (?,?,?,?,?,?,?,?,?)').run(id, demo, pub, nm, slug, sTodo, creds.admin.userId, now, now);
+      return id;
+    };
+    const supportForm = mkForm('IT support request', 'demo-support-form-slug-0001');
+    [['What do you need help with?', 'text', '[]', 1, 'title'], ['Tell us more', 'long_text', '[]', 0, 'description'], ['How urgent is it?', 'single_select', '["Low","Normal","Urgent"]', 0, 'description']]
+      .forEach(([label, kind, opts, req, maps], i) => db.prepare('insert into form_questions(id,form_id,label,kind,options_json,required,position,maps_to) values (?,?,?,?,?,?,?,?)').run(newId(), supportForm, label, kind, opts, req, i, maps));
+    db.prepare('insert into rules(id,workspace_id,project_id,name,trigger_json,conditions_json,actions_json,enabled,created_by,created_at,updated_at) values (?,?,?,?,?,?,?,?,?,?,?)')
+      .run(newId(), demo, pub, 'Assign IT support requests', JSON.stringify({ type: 'form_submitted', formId: supportForm }), '[]', JSON.stringify([{ type: 'assign', userId: creds.member.userId }]), 1, creds.admin.userId, now, now);
+    const scratchForm = mkForm('Scratch form', 'demo-scratch-form-slug-00002');
+    db.prepare('insert into form_questions(id,form_id,label,kind,options_json,required,position,maps_to) values (?,?,?,?,?,?,?,?)').run(newId(), scratchForm, 'Anything?', 'text', '[]', 0, 0, 'title');
+    creds.forms = { pub: supportForm, slug: 'demo-support-form-slug-0001', disposable: scratchForm };
     creds.projects = { pub, priv, otherProj };
     creds.sections = { todo: sTodo, doing: sDoing, done: sDone, disposable: sDisposable };
     creds.tasks = { a, b, sub, disposable, secret, otherTask };

@@ -4,6 +4,7 @@ import { S } from './strings.js';
 import { pageTitle } from '/shared/titles.js';
 import { inviteView, resetView } from './views-public.js';
 import { jobsView, importView } from './views-jobs.js';
+import { formsAdminView, publicFormView } from './views-forms.js';
 import { myTasksView, projectsView, reportsView, projectView, settingsView, peopleView, accountView } from './views.js';
 
 const root = document.getElementById('app');
@@ -67,6 +68,7 @@ async function route() {
   else if (hash === '#/reports') parts = await reportsView(ctx);
   else if (hash === '#/people') parts = await peopleView(ctx);
   else if (hash === '#/account') parts = await accountView(ctx);
+  else if ((parts = hash.match(/^#\/p\/([\w-]+)\/forms$/))) parts = await formsAdminView(ctx, parts[1]);
   else if ((parts = hash.match(/^#\/p\/([\w-]+)\/settings$/))) parts = await settingsView(ctx, parts[1]);
   else if ((parts = hash.match(/^#\/p\/([\w-]+)(\/board)?(?:\/t\/([\w-]+))?$/))) parts = await projectView(ctx, parts[1], parts[3], parts[2] ? 'board' : 'list');
   else parts = [h('div', { class: 'empty' }, h('p', {}, S.notFound))];
@@ -78,8 +80,8 @@ async function route() {
 function render(node, focus = true) { root.replaceChildren(node); if (focus) { const f = root.querySelector('input,[tabindex="-1"]'); if (f) f.focus({ preventScroll: true }); } }
 
 export async function start(notice = null) {
-  const pub = location.hash.match(/^#\/(invite|reset)\/([\w-]+)$/);
-  if (pub) { session = null; return render(pub[1] === 'invite' ? await inviteView(pub[2], () => start()) : await resetView(pub[2], (n) => start(n))); }
+  const pub = location.hash.match(/^#\/(invite|reset|f)\/([\w-]+)$/);
+  if (pub) { session = null; if (pub[1] === 'f') return render(await publicFormView(pub[2])); return render(pub[1] === 'invite' ? await inviteView(pub[2], () => start()) : await resetView(pub[2], (n) => start(n))); }
   const { status, data } = await api('GET', '/api/v1/auth/session');
   session = status === 200 ? data : null;
   if (!session) return render(signInView(false, notice));
@@ -91,5 +93,5 @@ document.addEventListener('keydown', (e) => { if (e.key !== 'Escape') return; co
 
 window.addEventListener('session-ended', () => { if (!session) return; session = null; location.hash = '#/'; render(signInView(false, S.signedOut)); });
 
-window.addEventListener('hashchange', () => { if (/^#\/(invite|reset)\//.test(location.hash)) start(); else if (session) route(); });
+window.addEventListener('hashchange', () => { if (/^#\/(invite|reset|f)\//.test(location.hash)) start(); else if (session) route(); });
 start();

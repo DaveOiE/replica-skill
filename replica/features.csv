@@ -13,10 +13,10 @@ Timeline view (Gantt-style),views,should,yes,no,,C,done,M3,5,later
 "Custom fields: text, number, date, single and multi select",custom fields,must,yes,no,A2,C,done,M3,5,later
 Task dependencies,tasks,should,yes,yes,"M2: no loops; blocked tasks closable only by a project admin, and the audit says so",C,done,M2,3,demo
 Milestones,tasks,should,yes,yes,"M2: a flag on a task, shown as a badge",C,done,M2,1,demo
-Forms that create tasks,forms,must,yes,no,,C,done,M3,5,later
+Forms that create tasks,forms,must,yes,yes,"PILOT item 3: project admins build a request form (short text, long text, pick one; one question becomes the task title); a public link anyone can fill in; rate limited per address and per form, honeypot, strict validation, audited; the public page and its answers reveal nothing internal; unknown, closed and archived forms give the identical 404. Branching and customisation are NOT built",C,done,P3,5,demo
 Form branching logic,forms,should,yes,no,,C,done,M3,3,later
 Form customisation,forms,could,yes,no,,C,done,M3,2,later
-"Rules automation: trigger, condition, action",automation,must,yes,no,A2 triggers and conditions,C,done,M4,8,later
+"Rules automation: trigger, condition, action",automation,must,yes,partial,"PILOT item 3: ONE rule type only, ""assign new requests from a form to a chosen person""; every run is recorded; if the person loses access the task is still created, unassigned, and the problem is shown to admins. No conditions, no other triggers or actions",C,done,P3,3,demo
 Project status updates,projects,should,yes,no,,C,done,M4,2,later
 Time tracking: estimated vs actual,time,should,yes,no,,C,done,M4,3,later
 Unlimited free guests,access,must,yes,yes,M2: guests see only projects they are added to; never project admin; no seat limit,C,done,M2,3,demo

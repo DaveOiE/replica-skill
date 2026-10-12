@@ -90,7 +90,7 @@ export async function projectView(ctx, id, taskId, view = 'list') {
   const tabs = h('nav', { class: 'tabs', 'aria-label': S.views }, link(`#/p/${id}`, S.viewList, 'tab'), link(`#/p/${id}/board`, S.viewBoard, 'tab'));
   tabs.querySelectorAll('a')[view === 'board' ? 1 : 0].setAttribute('aria-current', 'page');
   const base = view === 'board' ? `#/p/${id}/board` : `#/p/${id}`;
-  const body = [h('div', { class: 'page-head' }, h('h1', {}, proj.name), h('span', { class: 'badge' }, S.projectRoles[proj.myRole]), rank === 4 && link(`#/p/${id}/settings`, S.settings, 'btn btn-secondary')),
+  const body = [h('div', { class: 'page-head' }, h('h1', {}, proj.name), h('span', { class: 'badge' }, S.projectRoles[proj.myRole]), rank === 4 && link(`#/p/${id}/forms`, S.formsLink, 'btn btn-secondary'), rank === 4 && link(`#/p/${id}/settings`, S.settings, 'btn btn-secondary')),
     proj.archived && h('div', { class: 'banner', role: 'note' }, S.archivedBanner), tabs,
     ...(view === 'board' ? [canEdit && h('p', { class: 'muted' }, S.dragHint), h('div', { class: 'board' }, [...td.sections, { id: null, name: S.unsectioned }].map(column))]
       : [...td.sections, { id: null, name: S.unsectioned }].map(sectionBlock))];
