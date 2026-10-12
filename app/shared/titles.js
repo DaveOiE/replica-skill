@@ -38,6 +38,7 @@ export const SCREEN_TITLES = {
   S34: 'Mock identity provider',
   S35: 'Projects',
   S36: 'Account',
+  S37: 'Reset password',
 };
 
 /** "Detail · Screen title · Product name". `detail` is optional (a project or task name). */

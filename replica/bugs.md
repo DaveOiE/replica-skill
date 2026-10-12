@@ -3,7 +3,7 @@
 Severity: S1 data loss, security hole or core flow blocked. S2 a feature broken, no workaround.
 S3 broken with a workaround, or visibly wrong. S4 cosmetic. Only reproduced bugs are listed as bugs.
 
-**Open S1: 0. Open S2: 0. Open S3: 1. Open S4: 0.**
+**Open S1: 0. Open S2: 0. Open S3: 0. Open S4: 0.** (B-006 closed in pilot item 1, see below.)
 
 ## Found and fixed
 
@@ -13,6 +13,7 @@ S3 broken with a workaround, or visibly wrong. S4 cosmetic. Only reproduced bugs
 | B-002 | S3 | Escape stopped closing the task drawer after any save, because each save re-renders and focus was lost. | browser test | M2 `fd9d005` | m2 browser spec |
 | B-003 | S3 | At desktop width the drawer's rows collapsed to zero width, so subtasks were invisible. Phone width looked fine. | 1440px browser run | M2 `fd9d005` | m2 browser spec at 1440px |
 | B-004 | S3 | A fast double click on Add task created two tasks. | GAUGE-2 | Gauge commit | GAUGE-2 (forms ignore a second submit while one runs) |
+| B-006 | S3 | The sign-in and lockout messages told people to ask an admin to reset or unlock, but neither existed. | exploratory pass | pilot item 1 | `access.test.js` end-to-end reset and unlock tests, and a browser test of the same flow. The wording now stays because it is true. |
 | B-005 | S3 | When a session ended mid-use, an action showed an error toast on a stale page and never sent the person back to sign in. | GAUGE-1 | Gauge commit | GAUGE-1 (returns to sign-in with the plain message) |
 
 Test bugs, not product bugs, fixed on the way: a migration test that passed falsely because its
@@ -21,9 +22,7 @@ browser tests, one of which (waiting for the board to render) mirrors how a real
 
 ## Open
 
-| id | sev | what | steps | expected | actual |
-| --- | --- | --- | --- | --- | --- |
-| B-006 | S3 | The sign-in error and lockout messages tell people to "ask an admin to reset it" or "unlock you", but there is no admin password reset or unlock. | 1. Enter a wrong password. 2. Read the message. | The message points at something that exists. | The promised admin action is not built. Locks end by themselves after 15 minutes. |
+None.
 
 ## To check, not reproduced or by design (not counted as bugs)
 

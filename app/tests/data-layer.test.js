@@ -9,7 +9,7 @@ import { freshDb } from './helpers.js';
 
 test('migrations apply once, in order, and are recorded', () => {
   const db = openDb(':memory:');
-  assert.deepEqual(migrate(db), ['0001_init.sql']);
+  assert.deepEqual(migrate(db), readdirSync(MIGRATIONS_DIR).filter((f) => /^\d{4}_.+\.sql$/.test(f)).sort());
   assert.deepEqual(migrate(db), [], 'second run applies nothing');
   assert.equal(db.prepare("select count(*) n from sqlite_master where type = 'table'").get().n >= 46, true);
   assert.equal(db.prepare('pragma foreign_keys').get().foreign_keys, 1);

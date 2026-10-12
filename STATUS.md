@@ -8,17 +8,17 @@ Updated: 2026-10-12
 
 | state | features |
 | --- | --- |
-| done | 14 |
+| done | 17 |
 | partly done | 2 |
 | later (deferred) | 48 |
 | skipped | 2 |
-| **total** | **66** |
+| **total** | **69** |
 
-Demo scope: **38 of 45 points built (84%)**. Later pool: 137 points, not scheduled. One point is a small tested feature (a few routes, one screen state, its tests).
+Demo scope: **46 of 53 points built (87%)**. Later pool: 137 points, not scheduled. One point is a small tested feature (a few routes, one screen state, its tests).
 
 ## Budget
 
-Used so far (proxy): **41.4%**. Rate: **0.40% of session per point** (measured on the latest milestone). Stop line: **45%**.
+Used so far (proxy): **46.0%**. Rate: **0.56% of session per point** (measured on the latest milestone). Stop line: **60%**.
 
 ## Milestones
 
@@ -34,8 +34,11 @@ Used so far (proxy): **41.4%**. Rate: **0.40% of session per point** (measured o
 | M8 | Bundles branding and backup | later | 0 | 0 | 9 | later | 0.0% | - |
 | M9 | Integrations stubs and compliance docs | later | 0 | 0 | 13 | later | 0.0% | - |
 | M10 | AI flagged stubs | later | 0 | 0 | 8 | later | 0.0% | - |
+| P1 | Pilot 1: admin reset and unlock and invites | demo | 8 | 0 | 0 | done | 0.0% | - |
+| P2 | Pilot 2: Job Register importer and Jobs view | demo | 0 | 0 | 0 | later | 0.0% | - |
+| P3 | Pilot 3: public request form and one rule | demo | 0 | 0 | 0 | later | 0.0% | - |
 
-Fits inside the 45% stop line at this rate: nothing.
+Fits inside the 60% stop line at this rate: nothing.
 (Gauge and Evolve are extra: see replica/run-plan.md.)
 
 ## Features
@@ -43,7 +46,10 @@ Fits inside the 45% stop line at this rate: nothing.
 | milestone | feature | tag | priority | effort | scope | state | note |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | M1 | View-only seats | E | must | 2 | demo | done | M1: view-only and guest can never write; proven by route walk on every route. No billing or licence counting (A4) |
+| P1 | Invite by link (7 days, single use) with public join page | E | must | 4 | demo | done | PILOT item 1: admin sees the link once; no email is sent; the new person sets their own password under the 12-character rule; expired, used and invalid links look the same |
 | M1 | Workspaces, users, roles, password sign-in | C | must | 8 | demo | done | M1: scrypt sign-in, lockout, sessions, 5 roles, can(), hash-chained audit via mutate(), fake seed. Invites and password-rule settings come in M7 |
+| P1 | Admin password reset by one-time link (24 hours, single use) | E | must | 3 | demo | done | PILOT item 1: reset links never stored in the clear; ends all of the person's sessions and clears any lock; refused for yourself, for owners (unless you are one) and for anyone in more than one workspace |
+| P1 | Unlock a locked account (admin) | E | should | 1 | demo | done | PILOT item 1: clears the five-failure lock; audited |
 | M1 | Mobile-friendly web app | C | must | 3 | demo | partly done | M1 and M2: shell, sign-in, projects, list view and task drawer checked at 390px and 1440px in Chromium; later screens are checked as built |
 | M1 | Native mobile apps | C | could | 0 | skip | skipped | out of scope per the list |
 | M2 | Unlimited free guests | C | must | 3 | demo | done | M2: guests see only projects they are added to; never project admin; no seat limit |

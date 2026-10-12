@@ -7,6 +7,7 @@ import { buildApp } from '../server/app.js';
 const { db, creds } = freshDb();
 mkdirSync('.local', { recursive: true });
 writeFileSync('.local/e2e-credentials.json', JSON.stringify(creds), { mode: 0o600 });
-const app = await buildApp({ db });
+// The browser tests sign in far more than 30 times a minute from one address. The limiter itself is tested in the API suite.
+const app = await buildApp({ db, signinPerMinute: 10000, tokenPerMinute: 10000 });
 await app.listen({ port: 4010, host: '127.0.0.1' });
 console.log('e2e server ready on 4010');

@@ -19,6 +19,10 @@ export const ACTIONS = {
   'members:read': { roles: MANAGERS, write: false },
   'members:update_role': { roles: MANAGERS, write: true },
   'members:create': { roles: MANAGERS, write: true },
+  'members:unlock': { roles: MANAGERS, write: true },
+  'members:reset_password': { roles: MANAGERS, write: true },
+  'invites:read': { roles: MANAGERS, write: false },
+  'invites:manage': { roles: MANAGERS, write: true },
   // Changing your own password is self-service, so every role may, view-only and guest included.
   'session:password': { roles: ALL, write: false },
   'project:list': { roles: ALL, write: false },

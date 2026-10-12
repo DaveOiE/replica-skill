@@ -73,8 +73,8 @@ test('admin: adds a person and sees the temporary password once; the guest then 
   await signIn(page, 'admin');
   await page.getByRole('link', { name: 'People' }).click();
   await page.getByLabel('Name', { exact: true }).fill('Jamie Fox');
-  await page.getByLabel('Email').fill('jamie.fox@example.test');
-  await page.getByLabel('Role', { exact: true }).selectOption('guest');
+  await page.locator('#n-email').fill('jamie.fox@example.test');
+  await page.locator('#n-role').selectOption('guest');
   await page.getByRole('button', { name: 'Add person' }).click();
   const secret = page.locator('code.secret');
   await expect(secret).toBeVisible();

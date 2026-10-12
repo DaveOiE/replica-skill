@@ -161,11 +161,12 @@ export async function settingsView(ctx, id) {
       : h('p', { class: 'muted' }, S.onlyAdminsAdd)];
 }
 
+let reveal = null; // a one-time link, shown on the next People render and then forgotten
 export async function peopleView(ctx) {
   document.title = pageTitle('S20');
   const { status, data } = await api('GET', '/api/v1/members');
   if (status !== 200) return [notFound()];
-  let reveal = null;
+  
   const nameI = field('n-name', S.name, { maxlength: '100', required: true }), emailI = field('n-email', S.email, { type: 'email', required: true });
   const roleS = select('n-role', S.role, Object.entries(S.roles).filter(([k]) => k !== 'owner'), 'member');
   const out = h('div', { 'aria-live': 'polite' });
@@ -176,9 +177,24 @@ export async function peopleView(ctx) {
     out.replaceChildren(h('div', { class: 'card reveal' }, h('h3', {}, `${S.tempPasswordTitle}: ${r.data.email}`), h('code', { class: 'secret' }, r.data.temporaryPassword), h('p', { class: 'muted' }, S.tempPasswordNote)));
     form.reset();
   }) }, h('h2', {}, S.addPerson), nameI, emailI, roleS, h('button', { class: 'btn btn-primary', type: 'submit' }, S.createPerson));
+  const linkCard = (title, link, note) => h('div', { class: 'card reveal' }, h('h3', {}, title), h('code', { class: 'secret' }, `${location.origin}${link}`), h('p', { class: 'muted' }, note));
+  if (reveal) { out.append(linkCard(reveal.title, reveal.link, reveal.note)); reveal = null; }
+  const act = (label, who, fn) => h('button', { class: 'btn btn-secondary', type: 'button', 'aria-label': `${label}: ${who}`, onclick: fn }, label);
   const rows = data.members.map((m) => h('li', { class: 'row' }, h('span', { class: 'row-main' }, `${m.name} `, h('span', { class: 'muted' }, m.email)),
-    select(`role-${m.userId}`, `${S.role}: ${m.name}`, Object.entries(S.roles), m.role, async (v) => { const r = await api('PATCH', `/api/v1/members/${m.userId}/role`, { role: v }); r.status === 200 ? toast(S.saved) : fail(r); ctx.refresh(); })));
-  return [h('h1', {}, S.peopleHeading), h('ul', { class: 'list' }, rows), form, out];
+    select(`role-${m.userId}`, `${S.role}: ${m.name}`, Object.entries(S.roles), m.role, async (v) => { const r = await api('PATCH', `/api/v1/members/${m.userId}/role`, { role: v }); r.status === 200 ? toast(S.saved) : fail(r); ctx.refresh(); }),
+    m.userId !== ctx.session.user.id && h('div', { class: 'actions' },
+      act(S.unlock, m.name, async () => { const r = await api('POST', `/api/v1/members/${m.userId}/unlock`); r.status === 200 ? toast(S.unlocked) : fail(r); }),
+      act(S.resetPassword, m.name, async () => { const r = await api('POST', `/api/v1/members/${m.userId}/reset`); if (r.status !== 201) return fail(r); reveal = { title: `${S.resetPassword}: ${r.data.email}`, link: r.data.link, note: S.linkNoteReset }; ctx.refresh(); }))));
+  const inv = await api('GET', '/api/v1/invites');
+  const iEmail = field('i-email', S.email, { type: 'email', required: true }), iRole = select('i-role', S.role, Object.entries(S.roles).filter(([k]) => k !== 'owner'), 'member');
+  const inviteForm = h('form', { class: 'card', onsubmit: once(async () => {
+    const r = await api('POST', '/api/v1/invites', { email: iEmail.querySelector('input').value.trim(), role: iRole.querySelector('select').value });
+    if (r.status !== 201) return fail(r);
+    reveal = { title: `${S.inviteHeading}: ${r.data.email}`, link: r.data.link, note: S.linkNoteInvite }; ctx.refresh();
+  }) }, h('h2', {}, S.inviteHeading), iEmail, iRole, h('button', { class: 'btn btn-primary', type: 'submit' }, S.inviteButton));
+  const pending = inv.data.invites.map((i) => h('li', { class: 'row' }, h('span', { class: 'row-main' }, `${i.email} `, h('span', { class: 'muted' }, `${S.roles[i.role]}, until ${i.expiresAt.slice(0, 10)}`)),
+    act(S.revoke, i.email, async () => { const r = await api('DELETE', `/api/v1/invites/${i.id}`); r.status === 200 ? ctx.refresh() : fail(r); })));
+  return [h('h1', {}, S.peopleHeading), h('ul', { class: 'list' }, rows), form, inviteForm, h('h2', {}, S.pendingInvites), pending.length ? h('ul', { class: 'list' }, pending) : h('p', { class: 'muted' }, S.noInvites), out];
 }
 
 export async function accountView(ctx) {

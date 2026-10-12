@@ -8,6 +8,7 @@ import { projectRoutes } from './routes-projects.js';
 import { taskRoutes } from './routes-tasks.js';
 import { peopleRoutes } from './routes-people.js';
 import { reportRoutes } from './routes-reports.js';
+import { accessRoutes } from './routes-access.js';
 import { nowIso } from './db.js';
 
 const SESSION_COOKIE = 'session';
@@ -82,6 +83,7 @@ export function registerRoutes(app, { db, config, limiters }) {
   taskRoutes(define, db);
   peopleRoutes(define, db);
   reportRoutes(define, db);
+  accessRoutes(define, db, limiters);
 
   const workspaceRow = (id) => db.prepare('select id, name, slug, accent from workspaces where id = ?').get(id);
 

@@ -2,6 +2,7 @@ import { h, field } from './dom.js';
 import { api } from './api.js';
 import { S } from './strings.js';
 import { pageTitle } from '/shared/titles.js';
+import { inviteView, resetView } from './views-public.js';
 import { myTasksView, projectsView, reportsView, projectView, settingsView, peopleView, accountView } from './views.js';
 
 const root = document.getElementById('app');
@@ -73,10 +74,12 @@ async function route() {
 
 function render(node, focus = true) { root.replaceChildren(node); if (focus) { const f = root.querySelector('input,[tabindex="-1"]'); if (f) f.focus({ preventScroll: true }); } }
 
-export async function start() {
+export async function start(notice = null) {
+  const pub = location.hash.match(/^#\/(invite|reset)\/([\w-]+)$/);
+  if (pub) { session = null; return render(pub[1] === 'invite' ? await inviteView(pub[2], () => start()) : await resetView(pub[2], (n) => start(n))); }
   const { status, data } = await api('GET', '/api/v1/auth/session');
   session = status === 200 ? data : null;
-  if (!session) return render(signInView());
+  if (!session) return render(signInView(false, notice));
   await route();
 }
 
@@ -85,5 +88,5 @@ document.addEventListener('keydown', (e) => { if (e.key !== 'Escape') return; co
 
 window.addEventListener('session-ended', () => { if (!session) return; session = null; location.hash = '#/'; render(signInView(false, S.signedOut)); });
 
-window.addEventListener('hashchange', () => { if (session) route(); });
+window.addEventListener('hashchange', () => { if (/^#\/(invite|reset)\//.test(location.hash)) start(); else if (session) route(); });
 start();

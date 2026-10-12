@@ -73,6 +73,10 @@ export function seedDemo(db) {
     db.prepare('insert into project_members(id,project_id,user_id,role) values (?,?,?,?)').run(newId(), pub, creds.guest.userId, 'editor');
     const otherProj = mkProject(other, creds.outsider.userId, 'Other Co onboarding', 'Belongs to another workspace.', 'workspace');
     const otherTask = mkTask(other, otherProj, null, creds.outsider.userId, 'Other Co task');
+    const inv = newId();
+    db.prepare("insert into invites(id,workspace_id,email,role,token_hash,invited_by,expires_at,created_at) values (?,?,?,?,?,?,?,?)")
+      .run(inv, demo, 'new.hire@example.test', 'member', newId() + newId(), creds.admin.userId, new Date(Date.now() + 7 * 86400000).toISOString(), now);
+    creds.invites = { pending: inv };
     creds.projects = { pub, priv, otherProj };
     creds.sections = { todo: sTodo, doing: sDoing, done: sDone, disposable: sDisposable };
     creds.tasks = { a, b, sub, disposable, secret, otherTask };

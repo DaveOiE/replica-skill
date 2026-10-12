@@ -61,6 +61,7 @@ admin controls who gets in and can prove what changed.
 | S33 | Documents | `/docs/compliance` | "not certified" document pages | prose | static |
 | S35 | Projects | `/projects` | list and create projects | list, form | empty, filled |
 | S36 | Account | `/account` | change own password | form | wrong current, too short |
+| S37 | Reset password | `/reset/:token` | set a new password from an admin-issued link | form | valid, expired or used |
 | S34 | Mock IdP (separate app) | `localhost:4001` | local SAML identity provider and fake directory | login, user list | dev only |
 
 ## Flows
