@@ -1,9 +1,9 @@
-# Bugs (Gauge, 2026-10-12)
+# Bugs (Gauge, pilot version)
 
 Severity: S1 data loss, security hole or core flow blocked. S2 a feature broken, no workaround.
 S3 broken with a workaround, or visibly wrong. S4 cosmetic. Only reproduced bugs are listed as bugs.
 
-**Open S1: 0. Open S2: 0. Open S3: 0. Open S4: 0.** (B-006 closed in pilot item 1, see below.)
+**Open S1: 0. Open S2: 0. Open S3: 0. Open S4: 0.** Seven bugs found and fixed so far (B-001 to B-007). The pilot Gauge pass (accessibility scan of every new screen, exploratory tests of the new public surfaces) found nothing new.
 
 ## Found and fixed
 
@@ -27,8 +27,9 @@ None.
 
 ## To check, not reproduced or by design (not counted as bugs)
 
+- The public request form and the Job Register import have no server-side duplicate protection either: a double click is stopped in the screen, but two tabs or a replayed call can still send twice (an import is idempotent by job number, so only the form can duplicate).
 - Task creation has no server-side duplicate protection. B-004 is fixed in the screen only. Two tabs or a replayed API call can still duplicate.
-- The lockout counter for unknown emails and the sign-in rate limit live in memory and reset when the server restarts.
+- The lockout counter for unknown emails, the sign-in, link and public-form rate limits live in memory and reset when the server restarts.
 - The session cookie's Secure flag is off by default for localhost (`COOKIE_SECURE=true` behind HTTPS).
 - Reads are not audited, and refused calls (403 or 404) are not audited because they change nothing. Failed sign-ins are.
 - Team-visible projects work in the API but there is no UI to create a team.

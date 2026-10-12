@@ -1,4 +1,4 @@
-# What worked, what to cut, what next (Evolve, 2026-10-12)
+# What worked, what to cut, what next (Evolve, pilot version)
 
 ## What worked
 
@@ -13,6 +13,19 @@
   session per point) instead of trusting the first estimate.
 - **Clean-room discipline cost almost nothing:** one name constant with a guard test, a sweep gate in the suite,
   a voice guide, invented seed people on a reserved domain.
+
+## What the pilot round added and taught
+
+- **Eight points of reset, unlock and invites, fifteen of the Job Register, eight of the request form.** The cost per
+  point fell from 0.56 to 0.43 to 0.31 percent of session as the guardrails got reused, so the third item was the
+  cheapest even though it had the most security surface.
+- **Privacy tests earned their keep.** A test that checks the server logs for the invented client names found that
+  typed search terms reached the logs through the request URL. That would not have shown up in any screen or any
+  functional test, and it is now fixed and guarded.
+- **Two budget gates did their job.** The audit screen, export and service accounts did not fit under the 52 percent
+  gate and moved to the later list instead of being squeezed in. Nothing needing an account, key or payment was added.
+- **Testing mistakes cost more than product bugs.** Shared cookie jars, a shared rate limit and re-render races in
+  the browser tests cost many tokens. Isolated request contexts and waiting for the page to settle are now habits.
 
 ## What to cut or do differently
 
@@ -29,16 +42,17 @@
 - **Cut from the product:** nothing built should be cut. If budget is tight again, the cheapest things to drop
   are the custom chart builder and the second and third sample connectors.
 
-## Next three improvements, by value to a small IT support business
+## Next three improvements, by value to this small team (none needs an account, key or payment)
 
-1. **Request intake: a public form that creates a task, plus one simple rule** (for example, when a task is
-   moved to Done, notify and close). Support work arrives as requests; this is the feature that makes the app
-   useful on day one. About 7 points, roughly 2.5% of a session at the current rate.
-2. **Audit log screen with filters and verify-chain, then the SIEM export and service accounts.** The trail is
-   already recorded and tamper-evident; only the screen and the export are missing, so this is the cheapest way
-   to show the enterprise story honestly. About 8 points, roughly 3%.
-3. **Admin password reset and unlock, then invites by link** (closes bug B-006 and removes the need to hand over
-   temporary passwords). About 5 points, roughly 2%.
+1. **Edit jobs in the app.** Let people change a job's status, next action, due date and note on the Jobs screen, so the
+   register can be kept in the app and the spreadsheet can retire. This is what makes the import a one-off instead of
+   a weekly chore. About 5 points, roughly 1.6% of a session at the current rate.
+2. **Audit log screen with filters and verify-chain, then JSON and NDJSON export and service accounts.** The trail is
+   already recorded and tamper-evident. About 11 points, roughly 3.5%.
+3. **Attachments on tasks and project templates** (so a repeatable job, like onboarding a client, starts from a
+   template with its files). About 6 points, roughly 2%.
 
-Only after those: SAML and SCIM against a local mock identity provider (about 15 points, the biggest single
-item), then calendar and timeline views.
+Needs your decision first, because each needs an account or a key: **sending email** (invites, resets and new-request
+alerts would stop being copy-and-paste; needs an email service), and **time tracking with a push-only Toggl
+connector** (needs a Toggl account and token, stored encrypted; I would estimate points and wait for your go, and
+test against a mock first). After those: calendar and timeline views, SAML and SCIM against a local mock provider.

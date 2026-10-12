@@ -81,3 +81,7 @@ or about 17 points.
 
 After each milestone I report: points built, tokens used, the measured rate, session % used, and
 what changed. STATUS.md, the sweep and every test suite stay green at every commit.
+
+## Pilot round (after the first Gauge and Evolve pass)
+
+Built in order: admin reset, unlock and invites (8 points); Job Register importer and Jobs view (15); public request form plus one assignment rule (8). The audit screen with export and service accounts was moved to the later list (percent above the 52 gate) and time tracking with a Toggl connector was skipped (default, and above the 50 gate). See `STATUS.md`, `parity.md` and `summary.md`.

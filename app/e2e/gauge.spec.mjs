@@ -85,3 +85,71 @@ for (const [name, who, go] of screens) {
     expect(r.violations.map((v) => `${v.id}: ${v.help} (${v.nodes.length}) ${v.nodes[0]?.target?.join(' ')}`)).toEqual([]);
   });
 }
+
+// ---- pilot additions: new screens and the new public surfaces
+const REG_HEADER = 'Job No,Job Title / Folder,Start Date,Estimated Completion,Estimated Completion,Next Action Due,Client,Status,Team,Comment / Update / Action,Misc,Estimated Completion Date,Closed Date';
+const REG = [REG_HEADER, 'J7001G,Gauge sample job,01-Jul-24,2,Week(s),,Gauge Test Client,Work in Progress,Sam Okafor,A note,gauge,31-Aug-24,',
+  'J7002G,Markup job,,,,,<img src=x onerror=alert(1)> Client,Quoted,,,,,'].join('\n');
+const importViaApi = async (page) => { const r = await page.request.post(`${base}/api/v1/jobs/import`, { data: { csv: REG, visibility: 'workspace' } }); expect(r.status()).toBe(200); };
+
+const pilotScreens = [
+  ['jobs', async (p) => { await importViaApi(p); await p.getByRole('link', { name: 'Jobs' }).click(); await expect(p.getByRole('link', { name: 'Gauge sample job' })).toBeVisible(); }],
+  ['import (with a preview showing)', async (p) => { await p.goto(`${base}/#/import`); await p.locator('#imp-file').setInputFiles({ name: 'r.csv', mimeType: 'text/csv', buffer: Buffer.from(REG) }); await p.getByRole('button', { name: 'Preview' }).click(); await expect(p.getByRole('heading', { name: 'Preview' })).toBeVisible(); }],
+  ['forms admin', async (p) => { await openProject(p); await p.getByRole('link', { name: 'Forms', exact: true }).click(); await expect(p.getByRole('heading', { name: /Request forms/ })).toBeVisible(); }],
+  ['people with invites and reset', async (p) => { await p.getByRole('link', { name: 'People' }).click(); await p.locator('#i-email').fill('scan.me@example.test'); await p.getByRole('button', { name: 'Create invite link' }).click(); await expect(p.locator('code.secret')).toBeVisible(); }],
+];
+for (const [name, go] of pilotScreens) {
+  test(`GAUGE-A11Y ${name}: no axe violations`, async ({ page }) => {
+    await signIn(page, 'admin');
+    await go(page);
+    const r = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']).analyze();
+    expect(r.violations.map((v) => `${v.id}: ${v.help} (${v.nodes.length}) ${v.nodes[0]?.target?.join(' ')}`)).toEqual([]);
+  });
+}
+test('GAUGE-A11Y public form, join page and reset page: no axe violations', async ({ page, browser }) => {
+  await signIn(page, 'admin');
+  const inv = await (await page.request.post(`${base}/api/v1/invites`, { data: { email: 'axe.join@example.test', role: 'guest' } })).json();
+  const rst = await (await page.request.post(`${base}/api/v1/members/${creds.viewonly.userId}/reset`)).json();
+  for (const url of [`${base}/#/f/demo-support-form-slug-0001`, `${base}${inv.link}`, `${base}${rst.link}`]) {
+    const ctx = await browser.newContext(); const v = await ctx.newPage(); await v.goto(url);
+    await expect(v.getByRole('heading').first()).toBeVisible();
+    const r = await new AxeBuilder({ page: v }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']).analyze();
+    expect(r.violations.map((x) => `${x.id}: ${x.help} ${x.nodes[0]?.target?.join(' ')}`), url.replace(/\/#\/.*/, '')).toEqual([]);
+    await ctx.close();
+  }
+});
+
+test('GAUGE-6 public form: a double click sends one request; the hidden trap box is skipped by keyboard and screen readers', async ({ page, browser }) => {
+  await signIn(page, 'admin');
+  const v = await browser.newPage(); await v.goto(`${base}/#/f/demo-support-form-slug-0001`);
+  await expect(v.locator('.hp')).toHaveAttribute('aria-hidden', 'true');
+  await expect(v.locator('#pq-website')).toHaveAttribute('tabindex', '-1');
+  await v.getByLabel(/What do you need help with/).fill('Sent once only');
+  await v.getByRole('button', { name: 'Send request' }).dblclick();
+  await expect(v.getByRole('heading', { name: 'Thanks, your request was sent.' })).toBeVisible();
+  await v.close();
+  const tasks = await (await page.request.get(`${base}/api/v1/projects/${(await (await page.request.get(`${base}/api/v1/projects`)).json()).projects.find((p) => p.name === 'Website refresh').id}/tasks`)).json();
+  expect(tasks.tasks.filter((t) => t.title === 'Sent once only')).toHaveLength(1);
+});
+
+test('GAUGE-7 jobs: markup in a client name is shown as text, and odd search text does not break the page', async ({ page }) => {
+  const errors = []; page.on('pageerror', (e) => errors.push(String(e))); page.on('dialog', (d) => { errors.push('dialog ' + d.message()); d.dismiss(); });
+  await signIn(page, 'member');
+  await page.getByRole('link', { name: 'Jobs' }).click();
+  await expect(page.locator('li.job').getByText('<img src=x onerror=alert(1)> Client')).toBeVisible();
+  for (const odd of ["O'Brien \"quoted\"", '🚀 %_\\', 'x'.repeat(100)]) {
+    await page.getByLabel('Search by job number or title').fill(odd);
+    await page.getByRole('button', { name: 'Search' }).click();
+    await expect(page.getByText('No jobs match')).toBeVisible();
+  }
+  expect(errors).toEqual([]);
+});
+
+test('GAUGE-8 import: a file that is not a register gets a plain reason and nothing is changed', async ({ page }) => {
+  await signIn(page, 'admin');
+  await page.goto(`${base}/#/import`);
+  await page.locator('#imp-file').setInputFiles({ name: 'photo.csv', mimeType: 'text/csv', buffer: Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0xff]) });
+  await page.getByRole('button', { name: 'Preview' }).click();
+  await expect(page.getByRole('alert')).toContainText(/header row has|file is empty/);
+  await expect(page.getByRole('button', { name: /^Import \d+/ })).toHaveCount(0);
+});

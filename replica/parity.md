@@ -1,37 +1,34 @@
-# Parity report (Gauge, 2026-10-12)
+# Parity report (Gauge, pilot version)
 
-Two honest numbers, because the build was cut to a demo on purpose.
+Two honest numbers, because the build was cut to a demo and then a pilot on purpose.
 
 | scored against | feature score | must-haves done | what it means |
 | --- | --- | --- | --- |
-| **the full public feature list** (62 counted rows) | **27.7 / 100** | 9 of 22 | The app is a small part of the list. Not shippable as a product. |
-| **the demo scope** (14 counted rows) | **92.3 / 100** | 9 of 11 | Demo-ready. The two missing must-haves are partial: the custom chart builder, and the mobile checks on later screens. |
+| **the full public feature list** (62 counted rows) | **31.2 / 100** | 10 of 22 | A small part of the list. Not shippable as an enterprise product. |
+| **the demo and pilot scope** (16 counted rows) | **90.0 / 100** | 10 of 13 | Pilot-ready for a small team. The three partial must-haves are: dashboards (fixed widgets, no chart builder), automation (one rule type only) and the mobile checks on later screens. |
 
-The layout score is **not measured**: this was a clean-room build and no reference screenshots of the
-original were captured, so `imgdiff.py` had nothing to compare. Behaviour differences against the original
-were not compared either.
+The layout score is **not measured**: this was a clean-room build and no reference screenshots of the original were captured.
 
-Verdict by the pack's rule (shippable needs every must-have done and 80 or more): **not shippable** against
-the full list. As a demo build: **demo-ready**, with no open S1 or S2 bug.
+Verdict by the pack's rule (shippable needs every must-have done and 80 or more): **not shippable** against the full list.
+As a pilot for a small team: **pilot-ready**, with no open S1, S2 or S3 bug. The pilot items (reset, unlock, invites, the Job
+Register importer and Jobs view, the request form) are extras the original list does not name, so they are not scored.
 
-## What is built, stubbed, or missing (full list)
+## Built, partial, stubbed, missing
 
-- **Built and tested (done):** workspaces, roles and password sign-in; task fields; comments; subtasks; projects and sections; list view; board view; dependencies; milestones; unlimited guests; per-project admin controls; view-only seats. Added beyond the list (not scored): add a person with a one-time password, change own password.
-- **Partly built:** dashboards (fixed widgets only, no chart builder); mobile-friendly web app (checked on the screens built so far).
-- **Stubs and mocks: none.** Nothing in the demo scope is a stub. SAML, SCIM and every connector, hook and AI feature are **not built**, not faked.
-- **Not built, on the later list (129 points):** calendar and timeline views, custom fields, forms, rules, time tracking, status updates, portfolios, goals, workload and capacity, approvals and proofing, universal reporting, the audit log screen and SIEM API, service accounts, SAML, SCIM, the admin console and security settings, bundles, branding and onboarding, backup, integrations, DLP and archiving hooks, support page, compliance documents (all labelled not certified), AI features, attachments, project templates.
+- **Built and tested:** workspaces, roles and password sign-in; task fields, comments, subtasks, milestones, dependencies; projects and sections; list and board views; unlimited guests; per-project admin controls; view-only seats; **forms that create tasks** (no branching, no customisation). Extras: add a person, change own password, admin password reset and unlock, invites by link, Job Register import, Jobs view, public request form.
+- **Partly built:** dashboards (fixed widgets only); rules automation (one rule type: assign new form requests to a chosen person); mobile-friendly web app (every screen built is checked at 390px and 1440px).
+- **Stubs and mocks: none.** Nothing is faked. SAML, SCIM, connectors, hooks and AI features are **not built**.
+- **Not built, later list (124 points):** the audit log screen, JSON and NDJSON export and service accounts (moved here from the pilot because the budget gate failed); calendar and timeline views; custom fields; form branching and customisation; time tracking; status updates; portfolios; goals; workload and capacity; approvals and proofing; universal reporting; SAML and SCIM; the admin console and security settings; bundles; branding and onboarding; backup; integrations; DLP and archiving hooks; support page; compliance documents (all would be labelled not certified); AI features; attachments; project templates; the Toggl connector and time tracking (skipped by default).
 - **Left out on purpose (not scored):** a catalogue of 100+ connectors; native mobile apps.
 
 ## The tool's own output, full list
 
-features 27.7  (62 counted, must-haves 9 of 22 done)
+features 31.2  (62 counted, must-haves 10 of 22 done)
 
-Not shippable yet: 13 must-have features are not done.
+Not shippable yet: 12 must-have features are not done.
 
 ## By area, weakest first
 - custom fields                  0.0  (1 features)
-- forms                          0.0  (3 features)
-- automation                     0.0  (1 features)
 - time                           0.0  (1 features)
 - integrations                   0.0  (2 features)
 - portfolios                     0.0  (2 features)
@@ -49,6 +46,8 @@ Not shippable yet: 13 must-have features are not done.
 - admin                         10.0  (9 features)
 - reporting                     30.0  (2 features)
 - projects                      42.9  (3 features)
+- forms                         50.0  (3 features)
+- automation                    50.0  (1 features)
 - shell                         50.0  (1 features)
 - views                         54.5  (4 features)
 - access                        60.0  (4 features)
@@ -60,13 +59,12 @@ Not shippable yet: 13 must-have features are not done.
 - [must] admin: Admin console: teams, no
 - [must] audit: Audit API suited to SIEM export, no  (JSON and NDJSON, cursor paging)
 - [must] audit: Audit log of admin and user actions, no  (demo slice: admin screen with filters, before/after, verify chain; SIEM export API and service accounts are later (deferred 2026-10-12 to hold the 45% line with the Gauge and Evolve reserve; the audit trail itself is recorded and verifiable today, only the screen is later))
-- [must] automation: Rules automation: trigger, condition, action, no  (A2 triggers and conditions)
 - [must] custom fields: Custom fields: text, number, date, single and multi select, no  (A2)
-- [must] forms: Forms that create tasks, no
 - [must] provisioning: SCIM deprovisioning, no  (deactivation ends sessions)
 - [must] provisioning: SCIM provisioning, no  (SCIM 2.0 against a local test client)
 - [must] sso: SAML single sign-on, no  (local mock IdP only)
 - [must] views: Calendar view, no
+- [must] automation: Rules automation: trigger, condition, action, partial  (PILOT item 3: ONE rule type only, "assign new requests from a form to a chosen person"; every run is recorded; if the person loses access the task is still created, unassigned, and the problem is shown to admins. No conditions, no other triggers or actions)
 - [must] reporting: Reporting dashboards with custom charts, partial  (Demo slice built: four number tiles, tasks by status, open tasks by person, progress by project, each chart with a numbers table, counting only projects the viewer can see. NOT built: choosing or building your own charts (custom chart builder is later))
 - [must] shell: Mobile-friendly web app, partial  (M1 and M2: shell, sign-in, projects, list view and task drawer checked at 390px and 1440px in Chromium; later screens are checked as built)
 - [should] access: Control who can invite guests, no
@@ -114,24 +112,33 @@ Not shippable yet: 13 must-have features are not done.
 ## Yours, not in the original (not scored)
 - Add a person (admin creates a teammate or guest; temporary password shown once)
 - Change own password (needed because new people get a temporary one)
+- Admin password reset by one-time link (24 hours, single use)
+- Unlock a locked account (admin)
+- Invite by link (7 days, single use) with public join page
+- Job Register CSV importer (admin only, preview then confirm, idempotent by job number)
+- Jobs view: search by job number or title, filters for status, client and team, Completed and Lost hidden by default
+- Extra project fields: job number, client, status, owner name, start, due and closed dates, tags, latest note
 
-## The tool's own output, demo scope
+## The tool's own output, demo and pilot scope
 
-features 92.3  (14 counted, must-haves 9 of 11 done)
+features 90.0  (16 counted, must-haves 10 of 13 done)
 
-Not shippable yet: 2 must-have features are not done.
+Not shippable yet: 3 must-have features are not done.
 
 ## By area, weakest first
+- automation                    50.0  (1 features)
 - shell                         50.0  (1 features)
 - reporting                     50.0  (1 features)
 - foundation                   100.0  (1 features)
 - tasks                        100.0  (5 features)
 - projects                     100.0  (1 features)
 - views                        100.0  (2 features)
+- forms                        100.0  (1 features)
 - access                       100.0  (2 features)
 - admin                        100.0  (1 features)
 
 ## Missing, in build order
+- [must] automation: Rules automation: trigger, condition, action, partial  (PILOT item 3: ONE rule type only, "assign new requests from a form to a chosen person"; every run is recorded; if the person loses access the task is still created, unassigned, and the problem is shown to admins. No conditions, no other triggers or actions)
 - [must] reporting: Reporting dashboards with custom charts, partial  (Demo slice built: four number tiles, tasks by status, open tasks by person, progress by project, each chart with a numbers table, counting only projects the viewer can see. NOT built: choosing or building your own charts (custom chart builder is later))
 - [must] shell: Mobile-friendly web app, partial  (M1 and M2: shell, sign-in, projects, list view and task drawer checked at 390px and 1440px in Chromium; later screens are checked as built)
 
@@ -142,3 +149,9 @@ Not shippable yet: 2 must-have features are not done.
 ## Yours, not in the original (not scored)
 - Add a person (admin creates a teammate or guest; temporary password shown once)
 - Change own password (needed because new people get a temporary one)
+- Admin password reset by one-time link (24 hours, single use)
+- Unlock a locked account (admin)
+- Invite by link (7 days, single use) with public join page
+- Job Register CSV importer (admin only, preview then confirm, idempotent by job number)
+- Jobs view: search by job number or title, filters for status, client and team, Completed and Lost hidden by default
+- Extra project fields: job number, client, status, owner name, start, due and closed dates, tags, latest note

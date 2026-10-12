@@ -18,7 +18,7 @@ Demo scope: **66 of 76 points built (87%)**. Later pool: 124 points, not schedul
 
 ## Budget
 
-Used so far (proxy): **53.5%**. Rate: **0.31% of session per point** (measured on the latest milestone). Stop line: **60%**.
+Used so far (proxy): **56.0%**. Rate: **0.31% of session per point** (measured on the latest milestone). Stop line: **60%**.
 
 ## Milestones
 

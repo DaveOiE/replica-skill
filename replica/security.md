@@ -1,4 +1,4 @@
-# Security basics (Gauge, 2026-10-12)
+# Security basics (Gauge, pilot version)
 
 Each line is something checked by a test that is in the suite, not a statement of intent. This is a
 demo build. It is **not certified** to any standard and makes no compliance claim.
@@ -16,6 +16,9 @@ demo build. It is **not certified** to any standard and makes no compliance clai
 | Input validated on the server | **pass** | Every route with a body uses a strict schema; unknown fields are refused. |
 | Stored text cannot run | **pass** | No `innerHTML` anywhere (test); markup typed as a title is shown as text (browser test). |
 | Sessions, sign-in abuse | **pass** | HTTP-only same-site cookie; sessions stored as hashes; sign-out and password change end sessions on the server; lockout after 5 failures that treats unknown emails the same; sign-in rate limit; cross-site writes refused. |
+| Links and tokens (invites, resets) | **pass** | Only a hash is stored; shown once; single use; expire; invalid, expired and used links give the identical answer; public routes are rate limited; the audit trail never holds a token (tests). Resets are refused for yourself, for owners (unless you are one) and for anyone in more than one workspace (sabotage-checked). |
+| Public request form | **pass** | The public page and its answers reveal only the form's name and questions; unknown, closed and archived forms give the identical 404; strict validation; per-address and per-form rate limits; honeypot; audited without the answers; tested, and sabotage-checked by making it leak a project id. |
+| Client data in the Job Register import | **pass** | `*.csv` and `import/` are git-ignored and tested; all test data is invented; previews, results, the audit trail and the server logs contain counts, row numbers and field names, never values (tests). A log-privacy test found and fixed typed search terms reaching logs through the URL (B-007). |
 | Compliance wording | **pass** | Test: certification and residency words appear only next to "not certified" in the app and the README section. One screen title that broke the rule was fixed. |
 
 ## Not covered (be honest about these)
@@ -24,5 +27,6 @@ demo build. It is **not certified** to any standard and makes no compliance clai
 - No manual screen-reader pass; accessibility was checked with an automated scanner on 10 screens.
 - The rate limiter and the unknown-email lockout counter are in memory (one server process).
 - Sessions use a cookie without the Secure flag unless `COOKIE_SECURE=true` (needed behind HTTPS).
-- No password reset or unlock by an admin (B-006). No encryption of the database file at rest, no backup.
+- No encryption of the database file at rest, no backup. Invite and reset links are passed on by the admin by hand: no email is sent, so how they are shared is outside the app.
+- The public form has no CAPTCHA; the controls are rate limits and a honeypot. A determined spammer can still send up to the per-form hourly limit.
 - SAML, SCIM, audit export and key management are not built. Nothing here is certified to any standard.

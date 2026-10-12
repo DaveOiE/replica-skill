@@ -1,6 +1,6 @@
 {
-  "used_percent": 53.5,
+  "used_percent": 56.0,
   "rate_percent_per_point": 0.31,
   "stop_line_percent": 60.0,
-  "note": "used_percent is a proxy (no usage meter): 41.5 after the first Gauge and Evolve pass; pilot 1 about 4.7; pilot 2 about 4.6; pilot 3 about 2.7 (8 points, about 27k tokens). Hard stop 60. The audit screen and export and service accounts (item 4) moved to the later list because the percent is above the 52 gate."
+  "note": "used_percent is a proxy (no usage meter): 41.5 after the first Gauge and Evolve pass; pilot 1 about 4.7; pilot 2 about 4.6; pilot 3 about 2.7; pilot Gauge and Evolve about 2.5. Hard stop 60 held."
 }

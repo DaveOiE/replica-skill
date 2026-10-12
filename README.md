@@ -17,12 +17,13 @@ clean-room style. Not its code, its logo, its copy or its content. The
 fine print is at the bottom, and the skills enforce it.
 
 <!-- app:start -->
-## Built with these skills: Deskrail, a small work manager (demo build)
+## Built with these skills: Deskrail, a small work manager (pilot version)
 
 The skills were used end to end on one real build: a clean-room work-management app for a small IT support
-team. It is a **demo**, not an enterprise platform. Scored against the full public feature list it is
-**27.7 of 100** (9 of 22 must-haves). Scored against the demo scope it is **92.3 of 100**. There are **174
-passing tests** and **no open S1 or S2 bugs**. Not certified to any standard; it makes no claim of compliance.
+team. It is a **pilot-ready small work manager**, not an enterprise platform. Scored against the full public
+feature list it is **31.2 of 100** (10 of 22 must-haves). Scored against the demo and pilot scope it is **90.0
+of 100**. There are **216 passing tests** and **no open S1, S2 or S3 bugs**. Not certified to any standard; it
+makes no claim of compliance.
 
 ### Run it
 
@@ -34,20 +35,30 @@ npm start        # http://127.0.0.1:3000
 
 Needs Node 22.13 or newer (Python 3.8 or newer for the pack's tools). No account, key or paid service.
 Seed passwords are random each time and live only in the gitignored file. Tests:
-`npm test`, `python3 -m unittest discover -s tests`, `npx playwright test`.
+`npm test`, `python3 -m unittest discover -s tests`, `npx playwright test`. No email is sent by the app: invite
+and reset links are shown once to the admin, who passes them on.
 
 ### What works (built and tested)
 
 | area | what you can do |
 | --- | --- |
-| People and roles | password sign-in with lockout; roles owner, admin, member, view-only and guest, enforced on the server; admins add a person and see a one-time temporary password; change your own password |
-| Projects | create, sections, archive, private or workspace-wide, per-project admins, guests only where added |
-| Tasks | fields, subtasks, comments, milestones, dependencies (no loops), blocked tasks closable only by a project admin |
+| People and roles | password sign-in with lockout; roles owner, admin, member, view-only and guest, enforced on the server; admins add a person, invite by link, reset a password by link, and unlock an account; change your own password |
+| Projects and tasks | create, sections, archive, private or workspace-wide, per-project admins, guests only where added; task fields, subtasks, comments, milestones, dependencies (no loops) |
 | Views | list with inline editing, board with drag or a Move to menu, My tasks |
+| Job Register | admins import a CSV from a spreadsheet (preview, then confirm; safe to repeat); everyone with access searches and filters the Jobs screen |
+| Request forms | project admins build a form; anyone with the public link sends a request that becomes a task, optionally assigned to a chosen person |
 | Dashboard | task counts, tasks by status, open tasks by person, progress by project (fixed widgets) |
 | Accountability | every change is recorded in a tamper-evident audit trail; permissions and the trail are tested on every route |
 
-### Job Register import (pilot)
+### Partly built
+
+- **Dashboard:** fixed widgets only. You cannot build your own charts.
+- **Automation:** one rule only, "assign new form requests to a chosen person". No other triggers, conditions or actions.
+- **Forms:** short text, long text and pick-one questions. No branching or styling options.
+- **Mobile-friendly web app:** every screen built is checked at phone and desktop width.
+- The audit trail is recorded and verifiable, but **there is no screen or export for it yet**.
+
+### Job Register import
 
 Admins can import a Job Register CSV exported from a spreadsheet, then everyone with access can search it on the
 Jobs screen. **Run the real import only on your own computer, never in a cloud session.** Real client data must
@@ -58,21 +69,15 @@ and never duplicates them. Job numbers are kept exactly as written (for example 
 a suffix. The project due date comes from "Estimated Completion Date"; "Next Action Due" and the duration are kept
 in the description. All test data is invented.
 
-### Partly built
-
-- **Dashboard:** fixed widgets only. You cannot build your own charts.
-- **Mobile-friendly web app:** checked at phone and desktop width on every screen built so far.
-- The audit trail is recorded and verifiable, but **there is no screen or export for it yet**.
-
 ### Not built (nothing is faked)
 
-There are **no stubs and no mocks** in this build. These are simply not built: SAML sign-in, SCIM
-provisioning, the admin console and security settings, service accounts, the audit log screen and SIEM
-export, calendar and timeline views, custom fields, forms, rules, time tracking, status updates, portfolios,
-goals, capacity, approvals, workflow bundles, branding and onboarding, backup, integrations, DLP and
-archiving hooks, a support page, compliance documents (they would be labelled not certified) and all AI
-features. Attachments and project templates are not built either. Native mobile apps and a catalogue of
-100+ connectors are out of scope on purpose.
+There are **no stubs and no mocks** in this build. These are simply not built: SAML sign-in, SCIM provisioning,
+the admin console and security settings, service accounts, the audit log screen and its JSON or NDJSON export,
+calendar and timeline views, custom fields, form branching, time tracking and any Toggl connector, status
+updates, portfolios, goals, capacity, approvals, workflow bundles, branding and onboarding, backup,
+integrations, DLP and archiving hooks, a support page, compliance documents (they would be labelled not
+certified) and all AI features. Attachments and project templates are not built either. Native mobile apps and a
+catalogue of 100+ connectors are out of scope on purpose.
 
 ### Not certified
 
