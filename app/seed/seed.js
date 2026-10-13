@@ -1,7 +1,7 @@
 import { writeFileSync, mkdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { newId, nowIso, openDb, migrate, transaction } from '../server/db.js';
+import { newId, nowIso, openDb, openDbOrExplain, migrate, transaction } from '../server/db.js';
 import { hashPassword, randomPassword } from '../server/password.js';
 import { appendAudit } from '../server/audit.js';
 
@@ -107,8 +107,8 @@ if (process.argv[1] && process.argv[1].endsWith('seed.js')) {
   const dbPath = process.env.DB_PATH || join(root, 'data', 'app.db');
   const { rmSync } = await import('node:fs');
   for (const suffix of ['', '-wal', '-shm']) rmSync(dbPath + suffix, { force: true });
-  const db = openDb(dbPath);
-  migrate(db);
+  let db;
+  try { db = openDbOrExplain(dbPath); migrate(db); } catch (e) { console.error(`\n${e.message}\n`); process.exit(1); }
   const creds = seedDemo(db);
   const lines = ['Demo sign-ins (fake accounts; workspace slug "demo"; passwords change every seed run)', ''];
   for (const [k, v] of Object.entries(creds)) if (v.email) lines.push(`${k.padEnd(9)} ${v.role.padEnd(10)} ${v.email}  ${v.password}`);

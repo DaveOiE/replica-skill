@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync, readdirSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
-import { openDb, migrate, transaction, MIGRATIONS_DIR, nowIso, newId } from '../server/db.js';
+import { openDb, openDbOrExplain, migrate, transaction, MIGRATIONS_DIR, nowIso, newId } from '../server/db.js';
 import { hashPassword, verifyPassword, checkPasswordRules } from '../server/password.js';
 import { appendAudit, verifyChain, mutate, redact, GENESIS } from '../server/audit.js';
 import { freshDb } from './helpers.js';
@@ -99,4 +99,13 @@ test('mutate: change and audit row commit together, or neither does', () => {
   assert.equal(count(), before + 1, 'no audit row for a failed change');
   assert.equal(db.prepare('select name from workspaces where id = ?').get(ctx.actor.workspaceId).name, 'Renamed');
   assert.throws(() => transaction(db, async () => {}), /synchronous/);
+});
+
+test('a database folder that cannot be used gives a plain explanation, not a bare database error', () => {
+  const blocker = join(MIGRATIONS_DIR, '..', '..', '.local', 'not-a-folder');
+  mkdirSync(join(blocker, '..'), { recursive: true });
+  writeFileSync(blocker, 'a file where a folder should be');
+  try {
+    assert.throws(() => openDbOrExplain(join(blocker, 'app.db')), (e) => /Could not open the database at/.test(e.message) && /folder is one you can write to/.test(e.message) && /System32/.test(e.message) && /DB_PATH/.test(e.message));
+  } finally { rmSync(blocker, { force: true }); }
 });

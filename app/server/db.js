@@ -53,3 +53,10 @@ export function transaction(db, fn) {
     throw e;
   }
 }
+
+/** openDb for the command line: if the folder cannot be written (a system folder, a read-only drive), say so in plain words instead of a database error. */
+export function openDbOrExplain(path) {
+  try { return openDb(path); } catch (e) {
+    throw new Error(`Could not open the database at ${path}\n(${e.message})\nMake sure that folder is one you can write to. Avoid system folders such as C:\\Windows\\System32, or set DB_PATH to a folder you own.`);
+  }
+}
