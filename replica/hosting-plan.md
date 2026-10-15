@@ -1,25 +1,47 @@
 # Hosting plan: one small VM (plan only)
 
 Status: **a plan. Nothing here has been built, bought, signed up for or deployed.** No account, key or payment is needed to read it, and
-none should be created until the owner decides. Prices are rough planning figures from general knowledge, not live quotes (no web
+none should be created until the owner decides. Updated after the Playbook check (see "Playbook alignment" below). Prices are rough planning figures from general knowledge, not live quotes (no web
 access in this build), so check them with the chosen provider before committing. Deskrail is not certified to any standard and has not
 been penetration tested; this plan does not change that.
 
+## Decisions from the Playbook check
+
+1. **Stay on SQLite (WAL mode), one VM, one persistent disk.** The Playbook sets no database for the task system. ADL-062 applies only to Zen's
+   own database, so it does not bind Deskrail. No Postgres port now (the touch-list is kept at the end for reference only).
+2. **Hosting location is NOT STATED in the Playbook.** This plan therefore does not assume `oie-zen-core` or any existing project. It is
+   written for a **separate GCP project dedicated to Deskrail**. Minimum acceptable fallback: a separate service account with no access to
+   the Credential Service or the Reseller key. Which of the two, and the project name, is the owner's call.
+3. **Backups:** daily, encrypted, off the machine, restore tested, plus a backup before every migration. Counts kept are in the Backups section.
+4. **Forget-me:** not ruled by the Playbook (Blockers #7). The forget-me section describes what would be involved and what exists today.
+
 ## Shape
 
-One Linux VM with a persistent disk. Deskrail (Node 22) listens on 127.0.0.1 only, as it does today. A small reverse proxy on the same
-VM terminates HTTPS and forwards to it. SQLite stays, in WAL mode. Zen reaches Deskrail over HTTPS with a token. Nothing else connects.
+One Compute Engine VM (Linux) with a persistent disk, in the dedicated project. Deskrail (Node 22) listens on 127.0.0.1 only, as it does
+today. A small reverse proxy on the same VM terminates HTTPS and forwards to it. SQLite stays, in WAL mode. Zen reaches Deskrail over HTTPS
+with a token. Deskrail makes no outgoing calls.
 
 ```
 internet -> :443 reverse proxy (certificates renewed automatically)
               -> 127.0.0.1:3000 Deskrail (node, run by systemd, own unprivileged user)
                     -> /var/lib/deskrail/app.db  (+ app.db-wal, app.db-shm), on the persistent disk
-backup timer -> consistent copy -> encrypted -> off-machine storage
+backup timer (daily, and before each migration) -> consistent copy -> encrypted -> storage bucket in a different project
 ```
 
 Sizing: 1 to 2 vCPU, 2 GB memory, 20 to 40 GB disk is plenty for a few staff and Zen's task traffic. SQLite writes are serialised, which
-is fine at this scale.
+is fine at this scale. GCP names (Compute Engine, a Cloud Storage bucket, a service account) are used because the owner mentioned GCP; none of
+them exists yet and nothing here needs them to be created now.
 
+## Isolation from the rest of the Zen estate
+
+- Own GCP project, own billing line, own service accounts. Deskrail's VM service account has **no roles** on any other project, and none on
+  the Credential Service or the Reseller key. It holds no secret that belongs to another system.
+- If a shared project is chosen instead (not recommended): a dedicated service account for the VM, no Secret Manager access to other
+  systems' secrets, no access to the Credential Service, firewall rules tagged to this VM only. The owner must confirm that is acceptable.
+- Deskrail needs no credentials for Toggl, QuickBooks, Drive, Gmail, Calendar, Reseller or TPP (the connection rule: Zen only), so the VM
+  should be unable to reach them by identity even by accident.
+- The backup bucket is in a **second project** (or at least a second account), writable by the VM's backup identity but not readable or
+  deletable by it.
 ## Before it can be hosted: three small code items (not built)
 
 These were found while writing the plan. Each is small and each needs its own tested commit and the owner's go.
@@ -56,20 +78,49 @@ These were found while writing the plan. Each is small and each needs its own te
 
 ## Backups off the machine, and a tested restore
 
-| what | how often | where | kept |
+| what | when | where | kept |
 | --- | --- | --- | --- |
-| consistent copy of the database (backup command above) | hourly while staff work, plus nightly | object storage in a **different** provider account or region than the VM | 24 hourly, 30 daily, 12 monthly |
-| provider disk snapshot (belt and braces, not the main backup) | nightly | provider | 7 |
+| **daily** consistent copy of the database (backup command, below), encrypted | every night | storage bucket in the second project | **30 daily backups, plus 12 monthly (the first of each month), so at most 42** |
+| **pre-migration** backup, taken by the deploy step before any migration runs | before every deploy that adds a migration | same bucket, separate folder | **the last 5**, never deleted by the daily clean-up |
+| disk snapshot (extra safety, not the main backup) | nightly | GCP snapshot schedule | 7 |
 
-- The copy is encrypted before it leaves the VM (for example with `age`), using a key whose private half is kept off the VM by the owner. The
-  upload credential on the VM can add files but not delete or read them (append-only), so a break-in cannot erase the history.
-- **Restore is tested, not assumed.** Monthly, and once before go-live: fetch the latest backup to a scratch machine, decrypt, run the
-  integrity check and `verifyChain`, start the app on it, sign in as a fake test user, and read the audit log. Write the date and result in
-  `replica/ops-log.md`. A backup that has never been restored counts as no backup.
-- Targets: lose at most one hour of data; be running again from a backup in under two hours. Both are goals to be proven by the restore
-  test, not promises.
-- Alert if the newest backup is older than 3 hours (the backup job pings a free check-in monitor; no data goes in the ping).
+So at any time there are up to 47 off-machine backups. Older ones are removed by a bucket lifecycle rule, not by the VM.
 
+- The copy is encrypted before it leaves the VM (for example with `age`), to a key whose private half is held by the owner off the VM. The
+  VM's backup identity can add objects but not read, overwrite or delete them (use bucket retention or object versioning), so a break-in
+  cannot erase the history.
+- **Restore is tested, not assumed:** once before go-live and monthly after. Fetch the latest backup to a scratch machine, decrypt, run the
+  integrity check and `verifyChain`, start the app on it, sign in as a fake test user, read the audit log. Record date and result in
+  `replica/ops-log.md` (created when hosting is actually built). A backup that has never been restored counts as no backup.
+- **Honest recovery goal:** with daily backups, a failure could lose up to one day of changes. Whether Zen can safely re-send a day of
+  ingestion (ingest is idempotent on its key, so a replay creates no duplicates, but staff edits and comments in that day would be lost) is
+  **NOT STATED** in the Playbook. If a day is too much, hourly copies can be added; that is a decision for the owner, not assumed here.
+- Alert if the newest backup is older than 30 hours (a check-in ping carrying no data).
+- Deleting data interacts with backups; see the forget-me section.
+## Forget-me: what deleting a client's data would involve
+
+**The Playbook has not ruled whether a forget-me request removes tasks (Blockers #7).** Nothing below is a recommendation to delete or to
+keep; it describes the work for each place data sits, what exists today, and what would have to be built. Nothing here is built by this plan.
+
+| where client data sits | what is there | exists today | would need building |
+| --- | --- | --- | --- |
+| **Tasks** | title, description, assignee, dates, job number, lane, client slug, source call id, context | `DELETE /api/v1/tasks/:id` removes one task and its subtasks (staff with edit access), audited | a "delete everything for client X" action by client slug that finds every task (ingested and hand-made), previews counts, asks for confirmation, runs in one transaction, and is owner/admin only |
+| **Client project** (one per client, named after the client) | the project name is the client's name; sections; members | there is **no project delete**, only archive | a project delete (cascades to sections, tasks and comments by the schema) or an anonymise-rename; also decide what happens to the Sales and Internal projects, which hold prospects' tasks |
+| **Comments** | free text written by staff, may name people | removed automatically when their task is deleted (schema cascade) | nothing, but comments on an *unrelated* task that mention the client would not be found |
+| **Form submissions** | the submitter's email and every answer, kept as raw text | removed only when the whole form is deleted. **Deleting a task leaves its submission row behind** (the link is set to empty, the answers stay) | delete submissions with the task, and a way to find submissions by email or content; this is a real gap today |
+| **Imported job projects** | client name, job number, notes, description from the Job Register import | same as projects: archive only | covered by the project delete above; the import file itself is never stored |
+| **Audit trail** | who changed what. **Task deletion writes the task title into the audit summary and "before" values**; staff edits record before and after values for changed fields; project names appear in summaries | append-only by design: the database blocks edits and deletes, and the hash chain would break if a row changed | a decision first. Options: (a) keep the trail and accept that titles remain, (b) stop recording titles and values for client-linked events from now on, (c) a redaction method that blanks values and records the redaction while keeping the chain verifiable (needs design and care, since it touches the tamper-evidence claim). Not decided here |
+| **Backups** | every copy contains everything as it was that day | nothing removes data from a backup | the plan must state an expiry: data deleted today persists in up to 42 daily and monthly backups, so up to about 12 months at the monthly tier. Either accept and document that window, or shorten the monthly tier, or re-encrypt and purge on request. The owner and the Playbook must rule which |
+| **Logs** | request ids and paths, no bodies, no query strings | already free of client content by test | nothing |
+| **Zen's own copy** | Zen reads tasks live and keeps its own records | out of scope for Deskrail | Zen must be part of any forget-me process; **NOT STATED** how |
+
+What a forget-me run would look like once the Playbook rules: confirm identity and scope (client slug, job numbers, email addresses), preview counts, take a
+fresh backup first (so a mistake can be undone), delete in one transaction, write an audit event that records counts and the requester but not the
+deleted content, then verify nothing remains by searching tasks, comments, submissions and projects. A restored backup must be re-run through the same
+deletions, so keep a short list of forget-me requests (ids and dates only, no personal data) to replay after any restore.
+
+Today the honest answer to "can you delete a client from Deskrail?" is: one task at a time, with leftovers in form submissions, the audit trail
+and backups, and no project delete.
 ## Token rotation
 
 - Zen's write token and read token are separate tokens on separate service accounts (already supported). Rotate each every 90 days, and at once
@@ -135,15 +186,37 @@ Add 10 percent for tax and exchange rate. Expect roughly USD 15 a month for a co
 USD 15 to 30 a month on its own, which is one reason to stay on SQLite until it hurts. One-off: my build time for the three code items and
 the runbook is about 60 to 90 thousand tokens, plus the owner's time to create the accounts.
 
+## Playbook alignment: where this plan rests on something the Playbook does NOT state
+
+| item | status in the Playbook | what this plan does about it |
+| --- | --- | --- |
+| Database for the task system | not set (ADL-062 is Zen's own database only) | SQLite chosen as a Deskrail decision, recorded here; revisit if the Playbook sets one |
+| Hosting location | **NOT STATED** | separate GCP project proposed; the choice of project and cloud is the owner's. The plan does not assume `oie-zen-core` |
+| Cloud provider itself | **NOT STATED** | GCP used for wording only, because the owner named it; nothing depends on it except bucket and identity wording |
+| Backup frequency and retention | **NOT STATED** | daily, 30 daily plus 12 monthly plus the last 5 pre-migration is **this plan's proposal**, not a rule |
+| Recovery point and time targets | **NOT STATED** | a day of possible loss is stated plainly, not hidden |
+| Whether Zen can replay a lost day | **NOT STATED** | not assumed; idempotent ingest makes a replay safe but does not recover staff edits |
+| Forget-me scope, audit retention, backup expiry for deleted data | **NOT STATED** (Blockers #7) | described, not decided |
+| Domain name and DNS control | **NOT STATED** | left open |
+| Network path from Zen (public HTTPS or private) | **NOT STATED** | public HTTPS with tokens is the default here; a private path is possible |
+| Who holds the backup key and runs the restore test | **NOT STATED** | left open |
+| Region and data location | **NOT STATED** | a preference for an Australian region is noted, not a compliance claim |
+| Token rotation interval (90 days) and expiry policy | **NOT STATED** | proposal only |
+| Staff access (anywhere or VPN) | **NOT STATED** | left open |
+
+Anything in this document phrased as a number (90 days, 30 daily backups, USD cost) is a proposal for the owner to accept or change.
 ## Open decisions for the owner (do not guess)
 
-1. Provider and region (Australian data location matters for a Sydney business; this is a preference, not a compliance claim).
-2. The domain name and who controls its DNS.
-3. Who holds the backup private key, and who gets the monthly restore test.
-4. Whether Zen runs on the same network (then a private address or allow-list at the proxy is possible) or elsewhere (then HTTPS and tokens only).
-5. Whether staff reach the screens from anywhere or only through a VPN or an allow-list.
+1. Which GCP project (a new dedicated one is proposed) or, at minimum, a dedicated service account with no access to the Credential Service or the Reseller key.
+2. Region.
+3. The domain name and who controls its DNS.
+4. Backup retention (the 30 + 12 + 5 proposal) and who holds the backup key and runs the monthly restore test.
+5. Whether a day of possible data loss is acceptable, or hourly copies are wanted.
+6. The forget-me ruling (Blockers #7), including audit-trail handling and how long deleted data may sit in backups.
+7. Whether Zen reaches Deskrail over public HTTPS or a private path, and whether staff need a VPN.
+## Postgres: not planned (reference only)
 
-## What a later move to Postgres would touch
+**Decision: no Postgres port now.** The Playbook sets no database for the task system, and SQLite on one VM covers the need. The list below is kept only so the cost is known if that changes.
 
 Do it only if one of these becomes true: more than one app process is needed, writes start to queue, or a managed database with
 point-in-time recovery is wanted. Sizes are rough token counts for my work (reading, editing, testing), not dollars.
