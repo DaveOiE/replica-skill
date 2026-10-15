@@ -12,6 +12,7 @@
     "start": "node --no-warnings app/server/index.js",
     "seed": "node --no-warnings app/seed/seed.js",
     "first-owner": "node --no-warnings app/cli/first-owner.js",
+    "break-glass": "node --no-warnings app/cli/break-glass.js",
     "backup": "node --no-warnings app/cli/backup.js backup",
     "backup:list": "node --no-warnings app/cli/backup.js list",
     "backup:keygen": "node --no-warnings app/cli/backup.js keygen",

@@ -30,6 +30,7 @@ makes no claim of compliance.
 ```bash
 npm install
 npm run seed     # creates data/app.db with invented people; sign-ins are written to .local/demo-credentials.txt
+                 # (it refuses if data/app.db already exists; `npm run seed -- --force` deletes it and starts again)
 npm start        # http://127.0.0.1:3000
 ```
 
@@ -42,6 +43,8 @@ Backups: `npm run backup:keygen` once (keep a copy of the key somewhere other th
 checks it, and stores it; `npm run restore -- --from <name> --to <path>` checks the backup before it puts anything in place and
 keeps any existing file aside. Only a folder destination is built; a cloud store would need a small driver and an account, which
 this build does not create. There is no automatic scheduling or clean-up of old backups in the app.
+
+A person added by an admin gets a temporary password that must be replaced at their first sign-in (and stops working after 7 days if unused). Admins can deactivate a person on People: they are signed out at once. If the only owner is locked out or loses their password, someone with shell access to the server runs `npm run break-glass -- unlock --email ...` or `-- reset --email ...`.
 
 Sessions end after 12 hours, or after 2 hours unused (`SESSION_IDLE_MINUTES`). Passwords must be 12 characters and not a common one.
 

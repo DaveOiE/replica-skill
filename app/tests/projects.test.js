@@ -66,7 +66,7 @@ test('team rules: a view-only team caps its members at viewer; a team project re
 test('people on a project: only those who can see it, names only', async () => {
   const { call, creds } = await freshApp();
   const names = async (key, id) => (await call(key, 'GET', `/api/v1/projects/${id}/people`)).json().people?.map((x) => x.name).sort();
-  assert.deepEqual(await names('member', creds.projects.pub), ['Avery Quinn', 'Casey Dunn', 'Jordan Reyes', 'Morgan Lee', 'Priya Nair', 'Sam Okafor']);
+  assert.deepEqual(await names('member', creds.projects.pub), ['Avery Quinn', 'Casey Dunn', 'Ellis Marsh', 'Jordan Reyes', 'Morgan Lee', 'Priya Nair', 'Sam Okafor']);
   assert.deepEqual(await names('admin', creds.projects.priv), ['Avery Quinn', 'Jordan Reyes'], 'private project: only owner and admin');
   assert.equal((await call('member', 'GET', `/api/v1/projects/${creds.projects.priv}/people`)).statusCode, 404);
   assert.ok(!JSON.stringify((await call('member', 'GET', `/api/v1/projects/${creds.projects.pub}/people`)).json()).includes('@'), 'no email addresses');

@@ -47,6 +47,7 @@ function shell(content) {
   const here = location.hash || '#/';
   const item = (href, text, on) => h('a', { href, 'aria-current': on ? 'page' : false }, text);
   const admin = ['owner', 'admin'].includes(session.role);
+  if (session.mustChangePassword) return h('div', { class: 'shell' }, h('a', { class: 'skip', href: '#main' }, S.skipToContent), h('header', { class: 'topbar' }, h('strong', { class: 'workspace-name' }, session.workspace.name), h('span', { class: 'who' }, session.user.name), signOut), h('main', { id: 'main', class: 'content', tabindex: '-1' }, content), h('div', { id: 'toasts', class: 'toasts', role: 'status', 'aria-live': 'polite' }));
   return h('div', { class: 'shell' },
     h('a', { class: 'skip', href: '#main' }, S.skipToContent),
     h('header', { class: 'topbar' }, h('strong', { class: 'workspace-name' }, session.workspace.name), h('span', { class: 'badge' }, roleLabel), h('span', { class: 'who' }, session.user.name), signOut),
@@ -59,7 +60,9 @@ function shell(content) {
 }
 
 async function route() {
-  const ctx = { session, refresh: route };
+  const ctx = { session, refresh: route, restart: () => start() };
+  // A person on a temporary password sees only the page where they choose their own.
+  if (session.mustChangePassword && location.hash !== '#/account') location.hash = '#/account';
   const hash = location.hash || '#/';
   let parts;
   if (hash === '#/') parts = await myTasksView(ctx);

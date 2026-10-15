@@ -44,6 +44,7 @@ Honest summary: this is a pilot-ready small work manager, not an enterprise plat
 - **Sign-in hardening: folded failure audit, async stronger hashing with upgrade, idle timeout and session clean-up, common-password rule** (an extra, not on the original list): Pre-hosting second pass: one audit row per account and address per window with a count; scrypt N=65536 off the main thread, capped, upgraded on sign-in; idle timeout 120 minutes; old sessions deleted; plain 404; Permissions-Policy; common-password check. Lockout redesign and __Host- cookie prefix deliberately skipped
 - **Runbook for one VM (settings, first start, backups, restore drill, updates, routine)** (an extra, not on the original list): Pre-hosting: replica/runbook.md with the pinned Node version (.nvmrc), TRUST_PROXY and PUBLIC_URL, first-owner and backup steps; a test ties it to the code. Written, not yet used on any machine
 - **Deployment kit as files (systemd, Caddy, backup timers and upload, restore drill, firewall, log retention)** (an extra, not on the original list): Pre-hosting: replica/deploy/ with a README giving the exact order; linted and run against fakes by 18 tests; backup upload by rclone or gsutil with a create-only credential, 3-hour freshness alert, drill that cannot touch the live database. Nothing run on a real machine; no account, no deploy
+- **Independent review, batch 1: audit trail integrity, lock-out race, offboarding, break-glass, forced password change** (an extra, not on the original list): Batch 1 of the independent review: workspace for failures comes from membership, folded and bounded audit rows, route pattern in logs, restore keeps the write-ahead log, atomic lock-out shared with password change, deactivate and reset end sessions, token ids in audit rows, break-glass unlock and reset, seed refuses without --force, temporary passwords must be replaced and expire
 
 ### Partly built
 
@@ -135,6 +136,7 @@ Workspace roles: owner, admin, member, view-only (a read-only seat), and guest (
 | jobs:list | no | yes | yes | yes | yes | yes |
 | me:tasks | no | yes | yes | yes | yes | yes |
 | members:create | yes | yes | yes | - | - | - |
+| members:deactivate | yes | yes | yes | - | - | - |
 | members:read | no | yes | yes | - | - | - |
 | members:reset_password | yes | yes | yes | - | - | - |
 | members:unlock | yes | yes | yes | - | - | - |
@@ -187,6 +189,8 @@ Who exists, how they sign in, what they may do.
 - locked_until
 - created_at
 - updated_at
+- must_change_password
+- password_expires_at
 
 **memberships** (used today)
 
@@ -723,7 +727,7 @@ Every change to data writes an audit entry in the same database transaction as t
 
 ## 6. The API (how another system could talk to this)
 
-The web app is a thin page over a JSON API at /api/v1 (60 routes). **Today the API accepts browser session cookies from a person who signed in, and bearer tokens from service accounts. A token carries a scope (tasks:write or tasks:read) and may call only routes that name its scope. The write token can create tasks through POST /api/v1/ingest/tasks (idempotent, routed by the Zen rules) and both tokens can call /api/v1/service/whoami to check they work. The read token can read tasks and projects through GET /api/v1/read/tasks and /read/projects, but only those made by ingestion (Sales, Internal and client projects), never imported or staff projects and never the people directory. There are no outgoing webhooks and no MCP-style endpoint.** Public routes (no sign-in) exist only for invite links, reset links and the public request form, and they are rate limited.
+The web app is a thin page over a JSON API at /api/v1 (61 routes). **Today the API accepts browser session cookies from a person who signed in, and bearer tokens from service accounts. A token carries a scope (tasks:write or tasks:read) and may call only routes that name its scope. The write token can create tasks through POST /api/v1/ingest/tasks (idempotent, routed by the Zen rules) and both tokens can call /api/v1/service/whoami to check they work. The read token can read tasks and projects through GET /api/v1/read/tasks and /read/projects, but only those made by ingestion (Sales, Internal and client projects), never imported or staff projects and never the people directory. There are no outgoing webhooks and no MCP-style endpoint.** Public routes (no sign-in) exist only for invite links, reset links and the public request form, and they are rate limited.
 
 | Method | Path | Who may call it | Changes data |
 | --- | --- | --- | --- |
@@ -748,6 +752,7 @@ The web app is a thin page over a JSON API at /api/v1 (60 routes). **Today the A
 | GET | /api/v1/me/tasks | owner, admin, member, view_only, guest | no |
 | GET | /api/v1/members | owner, admin | no |
 | POST | /api/v1/members | owner, admin | yes |
+| POST | /api/v1/members/:userId/deactivate | owner, admin | yes |
 | POST | /api/v1/members/:userId/reset | owner, admin | yes |
 | PATCH | /api/v1/members/:userId/role | owner, admin | yes |
 | POST | /api/v1/members/:userId/unlock | owner, admin | yes |

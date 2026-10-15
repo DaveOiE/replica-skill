@@ -4,6 +4,8 @@ import { mutate } from './audit.js';
 import { newId, nowIso } from './db.js';
 import { canAssignRole } from './authz.js';
 import { hashPasswordAsync, checkPasswordRules } from './password.js';
+import { createReset } from './store-access.js';
+import { revokeUserSessions } from './auth.js';
 
 const sha256 = (s) => createHash('sha256').update(s).digest('hex');
 const newToken = () => randomBytes(32).toString('base64url');
@@ -40,12 +42,12 @@ export function accessRoutes(define, db, limiters) {
       // A password belongs to the person, not to one workspace. If they are in another workspace too, an admin here must not be able to set it.
       if (db.prepare('select count(*) n from memberships where user_id = ?').get(t.id).n > 1)
         return reply.code(409).send({ error: 'This person is in more than one workspace, so a reset here could affect the others. They can change their own password under Account.' });
-      const token = newToken(), expires = inHours(24);
-      mutate(ctx, { action: 'member.reset_issued', targetType: 'user', targetId: t.id, summary: 'Password reset link issued (valid 24 hours)', after: { expiresAt: expires } }, () => {
-        db.prepare('delete from password_resets where user_id = ? and used_at is null').run(t.id);
-        db.prepare('insert into password_resets(id,workspace_id,user_id,token_hash,created_by,expires_at,created_at) values (?,?,?,?,?,?,?)').run(newId(), actor.workspaceId, t.id, sha256(token), actor.userId, expires, nowIso());
+      // Issuing a reset also ends the person's sessions: a reset is what an admin does when an account may be in someone else's hands.
+      const made = mutate(ctx, (r) => ({ action: 'member.reset_issued', targetType: 'user', targetId: t.id, summary: 'Password reset link issued (valid 24 hours); their sessions ended', after: { expiresAt: r.expires } }), () => {
+        revokeUserSessions(db, t.id);
+        return createReset(db, { workspaceId: actor.workspaceId, userId: t.id, createdBy: actor.userId });
       });
-      return reply.code(201).send({ link: `/#/reset/${token}`, expiresAt: expires, email: t.email }); // shown once, never stored in the clear
+      return reply.code(201).send({ link: `/#/reset/${made.token}`, expiresAt: made.expires, email: t.email }); // shown once, never stored in the clear
     } });
 
   // ---- public: finish a reset
@@ -72,6 +74,24 @@ export function accessRoutes(define, db, limiters) {
         db.prepare('update users set password_hash = ?, failed_logins = 0, locked_until = null, updated_at = ? where id = ?').run(hash, nowIso(), r.user_id);
         db.prepare('update sessions set revoked_at = ? where user_id = ? and revoked_at is null').run(nowIso(), r.user_id);
         db.prepare('update password_resets set used_at = ? where id = ?').run(nowIso(), r.id);
+      });
+      return { ok: true };
+    } });
+
+  // ---- admin: offboarding. The person can no longer sign in and every session ends at once. Their tasks and history stay.
+  define({ method: 'POST', url: '/api/v1/members/:userId/deactivate', action: 'members:deactivate', write: true,
+    sample: (fx) => ({ url: `/api/v1/members/${fx.creds.leaver.userId}/deactivate` }),
+    handler: async ({ ctx, req, actor, reply }) => {
+      const t = memberOf(actor.workspaceId, req.params.userId);
+      if (!t || t.kind !== 'human') return reply.code(404).send({ error: 'That person is not in this workspace.' });
+      if (t.id === actor.userId) return reply.code(400).send({ error: 'You cannot deactivate yourself.' });
+      if (actor.role === 'admin' && t.role === 'owner') return reply.code(403).send({ error: 'Only an owner can deactivate an owner.' });
+      if (db.prepare('select count(*) n from memberships where user_id = ?').get(t.id).n > 1)
+        return reply.code(409).send({ error: 'This person is in more than one workspace, so deactivating them here would lock them out of the others.' });
+      mutate(ctx, { action: 'member.deactivate', targetType: 'user', targetId: t.id, summary: 'Person deactivated; all their sessions ended', after: { role: t.role } }, () => {
+        db.prepare("update users set status = 'deactivated', updated_at = ? where id = ?").run(nowIso(), t.id);
+        revokeUserSessions(db, t.id);
+        db.prepare('delete from password_resets where user_id = ? and used_at is null').run(t.id);
       });
       return { ok: true };
     } });

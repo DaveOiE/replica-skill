@@ -16,6 +16,7 @@ const PEOPLE = [
   { key: 'member2', name: 'Priya Nair', email: 'priya.nair@example.test', role: 'member' },
   { key: 'viewonly', name: 'Morgan Lee', email: 'morgan.lee@example.test', role: 'view_only' },
   { key: 'guest', name: 'Casey Dunn', email: 'casey.dunn@example.test', role: 'guest' },
+  { key: 'leaver', name: 'Ellis Marsh', email: 'ellis.marsh@example.test', role: 'member' },   // someone to deactivate, in tests
 ];
 
 export function seedDemo(db) {
@@ -109,11 +110,16 @@ export function seedDemo(db) {
   return creds;
 }
 
-// CLI: npm run seed   (recreates data/app.db and writes .local/demo-credentials.txt)
+// CLI: npm run seed   (creates data/app.db; with --force, recreates it and writes .local/demo-credentials.txt)
 if (process.argv[1] && process.argv[1].endsWith('seed.js')) {
   const root = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
   const dbPath = process.env.DB_PATH || join(root, 'data', 'app.db');
-  const { rmSync } = await import('node:fs');
+  const { rmSync, existsSync } = await import('node:fs');
+  // This deletes the database it is pointed at, so it never does so by surprise: an existing file needs --force.
+  if (existsSync(dbPath) && !process.argv.includes('--force')) {
+    console.error(`\n${dbPath} already exists, so the seed did nothing.\nThe seed deletes that file and makes a demo database in its place. If that is what you want: npm run seed -- --force\n`);
+    process.exit(1);
+  }
   for (const suffix of ['', '-wal', '-shm']) rmSync(dbPath + suffix, { force: true });
   let db;
   try { db = openDbOrExplain(dbPath); migrate(db); } catch (e) { console.error(`\n${e.message}\n`); process.exit(1); }
@@ -121,7 +127,7 @@ if (process.argv[1] && process.argv[1].endsWith('seed.js')) {
   const lines = ['Demo sign-ins (fake accounts; workspace slug "demo"; passwords change every seed run)', ''];
   for (const [k, v] of Object.entries(creds.svc || {})) if (v.token) lines.push(`${('svc-' + k).padEnd(9)} token      ${v.token}`);
   for (const [k, v] of Object.entries(creds)) if (v.email) lines.push(`${k.padEnd(9)} ${v.role.padEnd(10)} ${v.email}  ${v.password}`);
-  const out = join(root, '.local', 'demo-credentials.txt');
+  const out = process.env.DEMO_CREDENTIALS_FILE || join(root, '.local', 'demo-credentials.txt');
   mkdirSync(dirname(out), { recursive: true });
   writeFileSync(out, lines.join('\n') + '\n', { mode: 0o600 });
   console.log(`Seeded ${dbPath}. Demo sign-ins are in ${out} (gitignored).`);

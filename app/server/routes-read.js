@@ -29,7 +29,7 @@ export function readRoutes(define, db, config) {
       if (q.job_number === undefined && q.client_slug === undefined && !q.ids && !q.updated_since) return reply.code(400).send({ error: 'invalid_query', message: 'Give at least one of job_number, client_slug, ids or updated_since.' });
       let cursor = null;
       if (q.cursor) { cursor = decodeCursor(q.cursor); if (!cursor) return reply.code(400).send({ error: 'invalid_query', message: 'That cursor is not valid. Start again without it.' }); }
-      const { rows, more } = readTasks(db, actor.workspaceId, { jobNumber: q.job_number, clientSlug: q.client_slug, ids: q.ids, updatedSince: q.updated_since }, cursor, q.limit || 100);
+      const { rows, more } = readTasks(db, actor.workspaceId, { jobNumber: q.job_number, clientSlug: q.client_slug, ids: q.ids, updatedSince: q.updated_since && new Date(q.updated_since).toISOString() }, cursor, q.limit || 100);
       const last = rows.at(-1);
       return { tasks: rows.map(task), count: rows.length, next_cursor: more && last ? encodeCursor(last.updated_at, last.id) : null };
     } });

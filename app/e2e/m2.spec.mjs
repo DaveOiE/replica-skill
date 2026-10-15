@@ -91,6 +91,13 @@ test('admin: adds a person and sees the temporary password once; the guest then 
   await guest.getByLabel('Email').fill('jamie.fox@example.test');
   await guest.getByLabel('Password').fill(temp);
   await guest.getByRole('button', { name: 'Sign in' }).click();
+  // a temporary password only gets as far as choosing your own
+  await expect(guest.getByRole('heading', { name: 'Account' })).toBeVisible();
+  await expect(guest.getByText('Choose your own now')).toBeVisible();
+  await expect(guest.getByRole('link', { name: 'Projects' })).toHaveCount(0);
+  await guest.getByLabel('Current password').fill(temp);
+  await guest.getByLabel('New password').fill('my own chosen phrase 42');
+  await guest.getByRole('button', { name: 'Change password' }).click();
   await expect(guest.getByRole('heading', { name: 'My tasks' })).toBeVisible();
   await expect(guest.getByRole('link', { name: 'People' })).toHaveCount(0);
   await guest.getByRole('link', { name: 'Projects' }).click();

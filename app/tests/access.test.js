@@ -49,7 +49,7 @@ test('reset rules: not yourself, not an owner unless you are one, not someone in
   const { app, call, db, creds } = await freshApp();
   assert.equal((await call('admin', 'POST', `/api/v1/members/${creds.admin.userId}/reset`)).statusCode, 400);
   assert.equal((await call('admin', 'POST', `/api/v1/members/${creds.owner.userId}/reset`)).statusCode, 403);
-  assert.equal((await call('owner', 'POST', `/api/v1/members/${creds.admin.userId}/reset`)).statusCode, 201);
+  assert.equal((await call('owner', 'POST', `/api/v1/members/${creds.guest.userId}/reset`)).statusCode, 201);
   assert.equal((await call('member', 'POST', `/api/v1/members/${creds.member2.userId}/reset`)).statusCode, 403);
   assert.equal((await call('admin', 'POST', `/api/v1/members/${creds.outsider.userId}/reset`)).statusCode, 404);
   const first = tokenOf((await call('admin', 'POST', `/api/v1/members/${creds.member2.userId}/reset`)).json().link);

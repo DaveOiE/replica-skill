@@ -9,8 +9,10 @@ import { PRODUCT_NAME } from '../shared/brand.js';
 import { registerRoutes } from './routes.js';
 import { makeLimiter } from './rateLimit.js';
 import { appendAudit } from './audit.js';
+import { nowIso } from './db.js';
 import { BusyError } from './password.js';
-import { cleanupSessions, flushSignInFailures } from './auth.js';
+import { cleanupSessions } from './auth.js';
+import { foldOrRecord, flushFolds, takeAnonymousCount } from './audit-fold.js';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const webDir = join(here, '..', 'web');
@@ -21,6 +23,8 @@ export function loadConfig(env = process.env) {
   const publicUrl = (env.PUBLIC_URL || `http://127.0.0.1:${Number(env.PORT || 3000)}`).replace(/\/+$/, '');
   const https = publicUrl.startsWith('https://');
   // The session cookie is Secure whenever the public address is https, unless someone says otherwise on purpose.
+  // The service runs with NODE_ENV=production: there, an address that is missing or not https is a mistake to stop on, not to guess around.
+  if (env.NODE_ENV === 'production' && !https) throw new Error('NODE_ENV is production, so PUBLIC_URL must be set to the public https address (for example https://tasks.example.test).');
   if (https && env.COOKIE_SECURE === 'false') throw new Error('PUBLIC_URL is https but COOKIE_SECURE=false. A session cookie must be Secure on an https site: remove COOKIE_SECURE or set it to true.');
   return {
     port: Number(env.PORT || 3000), dbPath: env.DB_PATH || join(here, '..', '..', 'data', 'app.db'),
@@ -34,7 +38,8 @@ export function loadConfig(env = process.env) {
 export async function buildApp({ db, config = loadConfig(), logger = false, signinPerMinute = 30, tokenPerMinute = 30, formPerMinute = 10, formPerHour = 60, tokenCallsPerMinute = 600, housekeeping = true }) {
   const app = Fastify({ logger: logger ? { redact: ['req.headers.cookie', 'req.headers.authorization'],
     // Query strings can hold typed client names (job search), so only the path is logged.
-    serializers: { req: (req) => ({ method: req.method, url: String(req.url).split('?')[0], host: req.headers?.host, remoteAddress: req.ip }) },
+    // The route pattern, not the address: reset and invite links and public form addresses carry a secret in the path.
+    serializers: { req: (req) => ({ method: req.method, route: req.routeOptions?.url ?? '(no route)', host: req.headers?.host, remoteAddress: req.ip }) },
     ...(logger === true ? {} : logger) } : false, genReqId: () => randomUUID(), bodyLimit: 1_000_000,
     // The app only listens on this machine, so the only proxy it can trust is a local one; the right-most address that is not local is the caller.
     trustProxy: config.trustProxy ? ['127.0.0.1', '::1'] : false });
@@ -66,8 +71,12 @@ export async function buildApp({ db, config = loadConfig(), logger = false, sign
     const s = req.svc;
     if (!s || (s.spec.write && reply.statusCode < 400 && !s.audit)) return;   // s.audit is set for idempotent replays, which change nothing but are still recorded
     try {
-      appendAudit(db, { workspaceId: s.actor.workspaceId, actorId: s.actor.userId, actorKind: 'service', action: reply.statusCode >= 400 ? 'api.denied' : 'api.call', targetType: 'api', targetId: s.spec.url,
-        summary: `${s.spec.method} ${s.spec.url} answered ${reply.statusCode}`, after: { status: reply.statusCode, token: s.actor.tokenId }, ip: req.ip, requestId: req.id });
+      const action = reply.statusCode >= 400 ? 'api.denied' : 'api.call', now = nowIso();
+      // One row per token, route and status in each window; the rest are counted and summarised (a poller must not be able to fill the trail).
+      const first = foldOrRecord(db, `${action}|${s.actor.tokenId}|${s.spec.method} ${s.spec.url}|${reply.statusCode}`, { ws: s.actor.workspaceId, actorId: s.actor.userId, actorKind: 'service',
+        targetType: 'api', targetId: s.spec.url, summaryAction: 'api.calls_repeated', summary: `More ${s.spec.method} ${s.spec.url} calls with the same result in the same window`, countKey: 'moreCalls', afterBase: { status: reply.statusCode, tokenId: s.actor.tokenId } }, now, req.ip);
+      if (first) appendAudit(db, { workspaceId: s.actor.workspaceId, actorId: s.actor.userId, actorKind: 'service', action, targetType: 'api', targetId: s.spec.url,
+        summary: `${s.spec.method} ${s.spec.url} answered ${reply.statusCode}`, after: { status: reply.statusCode, tokenId: s.actor.tokenId }, ip: req.ip, requestId: req.id });
     } catch (e) { req.log.error({ err: { message: e.message } }, 'audit write failed'); }
   });
   app.setErrorHandler((err, req, reply) => {
@@ -84,11 +93,11 @@ export async function buildApp({ db, config = loadConfig(), logger = false, sign
   app.setNotFoundHandler((req, reply) => reply.code(404).send({ error: 'We could not find that.' }));
 
   // Housekeeping: old sessions are cleared at start and every six hours; failed-sign-in summaries are written when their window ends and on shutdown.
-  const tick = () => { try { cleanupSessions(db); flushSignInFailures(db); } catch (e) { app.log.error({ err: { message: e.message } }, 'housekeeping failed'); } };
+  const tick = () => { try { cleanupSessions(db); flushFolds(db); } catch (e) { app.log.error({ err: { message: e.message } }, 'housekeeping failed'); } };
   if (housekeeping) {
     tick();
-    const sessions = setInterval(tick, 6 * 3600000).unref(), flush = setInterval(() => { try { flushSignInFailures(db); } catch { /* next time */ } }, 60000).unref();
-    app.addHook('onClose', async () => { clearInterval(sessions); clearInterval(flush); try { flushSignInFailures(db, { all: true }); } catch { /* database already closed */ } });
+    const sessions = setInterval(tick, 6 * 3600000).unref(), flush = setInterval(() => { try { flushFolds(db); const n = takeAnonymousCount(db); if (n) app.log.warn({ failedSignInsUnknownAccounts: n }, 'failed sign-ins for accounts that do not exist since the last check'); } catch { /* next time */ } }, 60000).unref();
+    app.addHook('onClose', async () => { clearInterval(sessions); clearInterval(flush); try { flushFolds(db, { all: true }); } catch { /* database already closed */ } });
   }
 
   const indexHtml = readFileSync(join(webDir, 'index.html'), 'utf8').replaceAll('{{PRODUCT_NAME}}', escapeHtml(PRODUCT_NAME));

@@ -92,7 +92,7 @@ export function formRoutes(define, db, limiters) {
       if (!limiters.formSubmit.hit(req.ip)) return bad(reply, 'Too many requests from your connection. Wait a minute and try again.', 429);
       const f = findOpen(req.params.slug);
       if (!f) return bad(reply, NOT_AVAILABLE, 404);
-      if (!limiters.formHour.hit(f.id)) return bad(reply, 'This form is getting a lot of requests. Please try again later.', 429);
+      if (!limiters.formHour.peek(f.id)) return bad(reply, 'This form is getting a lot of requests. Please try again later.', 429);   // only accepted requests count toward this cap, below
       if (body.website) return { ok: true }; // honeypot: a person never sees or fills this box; pretend it worked, create nothing
       const qs = db.prepare('select * from form_questions where form_id = ? order by position').all(f.id);
       const ids = new Set(qs.map((q) => q.id));
@@ -108,6 +108,7 @@ export function formRoutes(define, db, limiters) {
       const titleA = answers.find((a) => a.q.maps_to === 'title');
       const title = (titleA ? titleA.v : f.name).slice(0, 300);
       const email = body.email ? clean(body.email) : '';
+      if (!limiters.formHour.hit(f.id)) return bad(reply, 'This form is getting a lot of requests. Please try again later.', 429);
       const description = [...answers.filter((a) => a !== titleA).map((a) => `${a.q.label}: ${a.v}`), email && `Submitted by: ${email}`, `Sent through the request form "${f.name}".`].filter(Boolean).join('\n\n');
       const taskId = newId(), now = nowIso();
       const log = (action, targetId, summary, after) => appendAudit(db, { workspaceId: f.workspace_id, actorKind: 'system', action, targetType: 'task', targetId, summary, after, ip: ctx.ip, requestId: ctx.requestId });

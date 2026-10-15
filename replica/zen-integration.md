@@ -30,7 +30,7 @@ JSON body, snake_case, unknown fields are rejected (400):
 | `context` | yes | `prospect`, `client_job` or `internal_job`. Which case this action is. **This is what the routing needs; it is the one field not on the original list** |
 | `title` | yes | 1 to 300 characters |
 | `description` | no | up to 20000 characters |
-| `assignee` | no | an email, a full name (any case), or a first name only one person has. Anything else leaves the task unassigned; the reason comes back in `warnings` |
+| `assignee` | no | an email, a full name (any case), or a first name only one person has. Anything else leaves the task unassigned; `warnings` then holds one generic entry, `{ field: "assignee", problem: "unresolved" }`. The reason (no such person, two people match, the person cannot see the project) is recorded in the audit trail for admins and is deliberately not returned, so a create-only token cannot map the staff directory (independent review A10). The response still says whether the assignee matched (`assigned`), because Zen needs that |
 | `promised_date`, `due_date` | no | `YYYY-MM-DD`, a real date. Kept separate |
 | `estimate_minutes` | no | whole number, 0 to 100000 |
 | `inferred` | no | boolean, default false: hedged on the call, not confirmed |
@@ -98,3 +98,9 @@ Time tracking or Toggl, any connector to QuickBooks, Drive, Gmail, Calendar, Res
 3. Lane vocabulary: nine lanes proposed, to be stored as editable text or a small settings list, never a hardcoded enum.
 4. Who creates a client's project first: upsert by client_slug on first ingest.
 5. The fourth user.
+
+## What a read token can see (independent review A11, a decision, not a fix)
+
+The read token reads **every project that ingestion created** (Sales, Internal, client projects), whatever the project's visibility is set to in the screens, and it returns every task in those projects,
+including tasks that staff wrote by hand, with assignee names and emails. Project visibility is a control for people; it does not limit the read token. **The control for the token is the token: revoking it (People, Service accounts) ends its access at once.**
+Create a separate read token for each consumer, give each an expiry, and revoke any that is not needed. The read token never reads imported job projects, staff projects or the people directory.

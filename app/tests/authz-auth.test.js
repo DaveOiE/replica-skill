@@ -26,6 +26,7 @@ test('authz matrix: every role against every action', () => {
     'members:create': { owner: 1, admin: 1, member: 0, view_only: 0, guest: 0 },
     'members:unlock': { owner: 1, admin: 1, member: 0, view_only: 0, guest: 0 },
     'members:reset_password': { owner: 1, admin: 1, member: 0, view_only: 0, guest: 0 },
+    'members:deactivate': { owner: 1, admin: 1, member: 0, view_only: 0, guest: 0 },
     'invites:read': { owner: 1, admin: 1, member: 0, view_only: 0, guest: 0 },
     'jobs:list': { owner: 1, admin: 1, member: 1, view_only: 1, guest: 1 },
     'jobs:import_preview': { owner: 1, admin: 1, member: 0, view_only: 0, guest: 0 },

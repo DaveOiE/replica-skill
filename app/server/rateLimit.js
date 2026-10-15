@@ -11,6 +11,8 @@ export function makeLimiter({ max, windowMs, now = () => Date.now() }) {
       e.count += 1;
       return e.count <= max;
     },
+    /** Would the next hit be allowed? Does not count. */
+    peek(key) { const e = seen.get(key); return !e || e.reset <= now() || e.count < max; },
     size: () => seen.size,
   };
 }

@@ -29,7 +29,8 @@ export function createFirstOwner(db, { workspace, name, email, slug }) {
     if (db.prepare("select 1 from memberships where role = 'owner'").get()) throw new RefusedError('This database already has an owner. Nothing was changed. To add people, sign in and use People; to start again, use a new database file (DB_PATH).');
     if (db.prepare('select 1 from users where email = ?').get(e)) throw new RefusedError('That email address already has an account. Nothing was changed.');
     db.prepare('insert into workspaces(id,name,slug,created_at,updated_at) values (?,?,?,?,?)').run(out.workspaceId, w, s, now, now);
-    db.prepare('insert into users(id,email,name,password_hash,created_at,updated_at) values (?,?,?,?,?,?)').run(out.userId, e, n, hash, now, now);
+    // the generated password is only for getting in once: the owner must choose their own at the first sign-in
+    db.prepare('insert into users(id,email,name,password_hash,must_change_password,created_at,updated_at) values (?,?,?,?,1,?,?)').run(out.userId, e, n, hash, now, now);
     db.prepare('insert into memberships(id,workspace_id,user_id,role,created_at,updated_at) values (?,?,?,?,?,?)').run(newId(), out.workspaceId, out.userId, 'owner', now, now);
     // ids and a fixed word only: no name, no email, no password
     appendAudit(db, { workspaceId: out.workspaceId, actorKind: 'system', action: 'workspace.first_owner', targetType: 'user', targetId: out.userId, summary: 'First owner created from the command line', after: { role: 'owner' } });

@@ -1,3 +1,4 @@
+import { flushFolds } from '../server/audit-fold.js';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { freshApp } from './helpers.js';
@@ -157,8 +158,10 @@ test('every read is audited under the service account by route pattern only: no 
   await get(app, R, '?job_number=J-SECRET-4471&client_slug=very-private-client');
   await app.inject({ url: '/api/v1/read/projects', headers: { authorization: `Bearer ${R}` } });
   await new Promise((r) => setTimeout(r, 50)); // the audit row is written just after the response is sent
-  const rows = db.prepare("select action, summary, actor_id from audit_events where actor_kind = 'service' order by seq").all();
-  assert.deepEqual(rows.map((r) => r.action), ['api.call', 'api.call', 'api.call'], 'one per read');
+  flushFolds(db, { all: true });
+  const rows = db.prepare("select action, summary, actor_id, after_json from audit_events where actor_kind = 'service' order by seq").all();
+  assert.deepEqual(rows.map((r) => r.action), ['api.call', 'api.call', 'api.calls_repeated'], 'the repeated read is folded into a count');
+  assert.deepEqual(JSON.parse(rows[2].after_json), { status: 200, tokenId: JSON.parse(rows[0].after_json).tokenId, moreCalls: 1, windowSeconds: 300 });
   assert.ok(rows.every((r) => r.actor_id === creds.svc.read.accountId));
   const dump = JSON.stringify(db.prepare('select * from audit_events').all()) + lines.join('');
   for (const s of ['J-SECRET-4471', 'very-private-client', R.slice(4)]) assert.ok(!dump.includes(s), `leaked ${s}`);

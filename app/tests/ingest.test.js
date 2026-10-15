@@ -123,18 +123,22 @@ test('the assignee is matched by email, full name, or a first name only one pers
   assert.deepEqual(await who(creds.member.email.toUpperCase()), [creds.member.userId, []]);
   assert.deepEqual(await who('sam okafor'), [creds.member.userId, []]);
   assert.deepEqual(await who('Priya'), [creds.member2.userId, []]);
-  assert.deepEqual(await who('Nobody Here'), [null, [{ field: 'assignee', problem: 'not_found' }]]);
+  assert.deepEqual(await who('Nobody Here'), [null, [{ field: 'assignee', problem: 'unresolved' }]]);
   db.prepare("insert into users(id,email,name,created_at,updated_at) values ('u-sam2','sam.other@example.test','Sam Other','t','t')").run();
   db.prepare("insert into memberships(id,workspace_id,user_id,role,created_at,updated_at) values ('m-sam2', ?, 'u-sam2', 'member','t','t')").run(creds.workspaces.demo);
-  assert.deepEqual(await who('Sam'), [null, [{ field: 'assignee', problem: 'ambiguous' }]], 'two Sams: no guessing');
+  assert.deepEqual(await who('Sam'), [null, [{ field: 'assignee', problem: 'unresolved' }]], 'two Sams: no guessing');
   assert.deepEqual(await who('Sam Other'), ['u-sam2', []]);
-  assert.deepEqual(await who(creds.outsider.email), [null, [{ field: 'assignee', problem: 'not_found' }]], 'a person in another workspace is not found');
+  assert.deepEqual(await who(creds.outsider.email), [null, [{ field: 'assignee', problem: 'unresolved' }]], 'a person in another workspace is not found');
   db.prepare("update users set status = 'deactivated' where id = ?").run(creds.member2.userId);
-  assert.deepEqual(await who('Priya'), [null, [{ field: 'assignee', problem: 'not_found' }]], 'deactivated people are not assigned');
+  assert.deepEqual(await who('Priya'), [null, [{ field: 'assignee', problem: 'unresolved' }]], 'deactivated people are not assigned');
+  // the caller only learns "unresolved"; the real reason (not found, ambiguous, cannot see the project) stays in the audit trail for admins
+  const reasons = db.prepare("select after_json from audit_events where action = 'task.ingest' order by seq").all().flatMap((r) => JSON.parse(r.after_json).warnings);
+  assert.ok(reasons.includes('not_found') && reasons.includes('ambiguous'), `audit keeps the reasons: ${reasons}`);
+  assert.doesNotMatch(JSON.stringify((await post(app, t, body({ assignee: creds.outsider.email }))).json()), /not_found|ambiguous|cannot_see/);
   const none = await post(app, t, body());
   assert.deepEqual([none.statusCode, none.json().assigned, none.json().warnings], [201, false, []]);
   const rec = db.prepare("select after_json from audit_events where action = 'task.ingest' order by seq").all().map((e) => JSON.parse(e.after_json).warnings);
-  assert.deepEqual(rec.filter((w) => w.length).map((w) => w[0]), ['not_found', 'ambiguous', 'not_found', 'not_found'], 'the problems are recorded in the audit trail');
+  assert.deepEqual(rec.filter((w) => w.length).map((w) => w[0]), ['not_found', 'ambiguous', 'not_found', 'not_found', 'not_found'], 'the problems are recorded in the audit trail');
 });
 
 test('exactly one audit entry per created task (plus one the first time a project is created); retries add none but a call record; nothing secret', async () => {

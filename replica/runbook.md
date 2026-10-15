@@ -85,7 +85,9 @@ Names look like `backup-hourly-20301231T235959Z.db.gz.enc`, with the kind first 
 ## 7. When something goes wrong
 
 - **The app will not start:** the message says why (a protected folder, `PUBLIC_URL` is https while `COOKIE_SECURE=false`, a migration failed and rolled back). Fix the setting; do not delete the database.
-- **A person is locked out:** an owner or admin uses People, then Unlock or Reset password. Locks also end after 15 minutes. If the only owner is locked, wait 15 minutes; there is no command-line unlock.
+- **A person is locked out:** an owner or admin uses People, then Unlock or Reset password. Locks also end after 15 minutes. If the only owner is locked out or has lost their password: on the server, as the service user with the same environment as the service, `npm run break-glass -- unlock --email <address>` or `npm run break-glass -- reset --email <address>` (the second prints a one-time link once, in a terminal; it also ends their sessions). Both are recorded in the audit trail as system actions.
+- **Someone leaves:** People, Deactivate. They are signed out at once and cannot sign in again; their tasks and history stay.
+- **The `npm run seed` command is for demos only.** It now refuses to touch an existing database without `--force`; never point it at a real one.
 - **A token leaked:** revoke it on People at once (effect is immediate), create a new one, and read the audit log for that service account's calls.
 - **The backup key is lost:** existing backups cannot be opened. Make a new key (`backup:keygen`), take a fresh backup straight away, and keep two copies this time.
 - **A backup check failed:** do not ignore it. It means the live database failed an integrity or audit-chain check: stop writes if you can, restore the newest good backup to a scratch file, and compare.

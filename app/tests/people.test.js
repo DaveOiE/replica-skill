@@ -19,7 +19,7 @@ test('add a person: admin creates a guest, sees a one-time temporary password, a
   const ev = db.prepare("select * from audit_events where action = 'member.create'").get();
   assert.equal(ev.actor_id, creds.admin.userId);
   assert.equal(ev.target_id, userId);
-  assert.equal((await call('admin', 'GET', '/api/v1/members')).json().members.length, 7, 'six seeded in this workspace plus the new guest');
+  assert.equal((await call('admin', 'GET', '/api/v1/members')).json().members.length, 8, 'seven seeded in this workspace plus the new guest');
 });
 
 test('add a person: rules on who and what', async () => {
@@ -38,6 +38,7 @@ test('a new guest sees nothing until added to a project, then only that project'
   const p = (await call('admin', 'POST', '/api/v1/members', newPerson())).json();
   const login = await app.inject({ method: 'POST', url: '/api/v1/auth/signin', payload: { email: p.email, password: p.temporaryPassword } });
   const headers = { cookie: login.cookies.map((c) => `${c.name}=${c.value}`).join('; ') };
+  assert.equal((await app.inject({ method: 'POST', url: '/api/v1/auth/password', payload: { current: p.temporaryPassword, next: 'my own chosen phrase 42' }, headers })).statusCode, 200, 'the temporary password has to be replaced before anything else works');
   const seen = async () => (await app.inject({ url: '/api/v1/projects', headers })).json().projects.map((x) => x.name);
   assert.deepEqual(await seen(), []);
   assert.equal((await app.inject({ url: '/api/v1/members', headers })).statusCode, 403, 'no staff directory for guests');

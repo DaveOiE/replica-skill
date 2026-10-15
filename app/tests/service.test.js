@@ -124,7 +124,7 @@ test('audit: every token call is recorded under the service account; refusals to
   const r4 = await asToken(app, t, 'GET', '/api/v1/service/whoami');
   const r5 = await asToken(app, t, 'GET', '/api/v1/service/whoami');
   assert.deepEqual([r4.statusCode, r5.statusCode, r5.headers['retry-after']], [200, 429, '60'], 'the per-token limit');
-  assert.equal(db.prepare("select count(*) n from audit_events where actor_kind = 'service'").get().n, 4, 'the rate-limited call is not audited, so a flood cannot fill the trail');
+  assert.equal(db.prepare("select count(*) n from audit_events where actor_kind = 'service'").get().n, 3, 'the repeat of an identical call is folded into a count and the rate-limited one is not audited, so a flood cannot fill the trail');
   assert.equal((await asToken(app, creds.svc.write.token, 'GET', '/api/v1/service/whoami')).statusCode, 200, 'another token is unaffected');
   const everything = JSON.stringify(db.prepare('select * from audit_events').all()) + lines.join('');
   assert.ok(lines.length > 0);

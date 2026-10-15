@@ -33,7 +33,7 @@ export function taskRoutes(define, db) {
   /** An assignee must be someone who can actually see the project. */
   const assigneeError = (workspaceId, projectId, userId) => {
     if (!userId) return null;
-    const m = db.prepare('select role from memberships where workspace_id = ? and user_id = ?').get(workspaceId, userId);
+    const m = db.prepare("select m.role from memberships m join users u on u.id = m.user_id where m.workspace_id = ? and m.user_id = ? and u.status = 'active'").get(workspaceId, userId);
     return m && projectAccess(db, { userId, workspaceId, role: m.role }, projectId) ? null : 'That person cannot see this project, so they cannot be assigned to it.';
   };
   const sectionError = (projectId, sectionId) => (!sectionId || db.prepare('select 1 from sections where id = ? and project_id = ?').get(sectionId, projectId) ? null : 'That section is not in this project.');

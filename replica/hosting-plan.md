@@ -54,7 +54,7 @@ These were found while writing the plan. Each is small and each needs its own te
    came from 127.0.0.1. The per-address sign-in limit, the bad-token guess limit and the public form limit would then share one bucket
    (one noisy visitor locks out everyone), and audit rows would record the proxy's address. Fixed with a `TRUST_PROXY=true` setting, tested with a
    forwarded header. The proxy should set the forwarded address header itself; the app also copes with a proxy that appends to it.
-2. **A first owner without the fake seed. DONE:** `npm run first-owner` (see the runbook). Before it, the only way to get an owner was `npm run seed`. Today the only way to get an owner is `npm run seed`, which makes the fake demo workspace. A
+2. **A first owner without the fake seed. DONE** (the owner must choose their own password at first sign-in; a shell-only `break-glass` command can unlock or reset them later): `npm run first-owner` (see the runbook). Before it, the only way to get an owner was `npm run seed`. Today the only way to get an owner is `npm run seed`, which makes the fake demo workspace. A
    real instance needs a one-off command that creates the workspace and the first owner, reading the password from a prompt (never from
    a file or the command line) and recording the event in the audit trail. Until then, do not host.
 3. **A backup command. DONE:** `npm run backup`, `npm run backup:list` and `npm run restore` (see the runbook). The app writes the encrypted copy to a local staging folder; uploading is done by the kit's `backup.sh` through rclone or gsutil with a create-only credential you make in your own account (the app has a folder driver only, and no cloud driver). The encryption key is symmetric and is held on the VM, so a

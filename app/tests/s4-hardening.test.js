@@ -25,15 +25,15 @@ test('failed sign-ins: one audit row per account and address per window, then a 
   await signIn(ctxOf(db, '198.51.100.9'), { email: creds.admin.email, password: pw, now: at(2) });
   await signIn(ctxOf(db, '198.51.100.10'), { email: creds.admin.email, password: pw, now: at(2.1) });
   assert.equal(rows(db, 'auth.signin_failed').length, 3, 'two more addresses, two more rows');
-  // unknown emails: the same attempt repeated is folded too
+  // unknown emails: not in the trail at all (only counted)
   for (let i = 0; i < 6; i++) await signIn(ctxOf(db, '192.0.2.77'), { email: 'ghost@example.test', password: pw, now: at(3 + i * 0.1) });
-  assert.equal(rows(db, 'auth.signin_failed').length, 4);
+  assert.equal(rows(db, 'auth.signin_failed').length, 3, 'attempts for an account that does not exist write nothing to the trail');
   // summaries: nothing is lost, the count says how many more there were
   flushSignInFailures(db, { all: true });
   const more = rows(db, 'auth.signin_repeated').map((r) => JSON.parse(r.after_json));
   const sum = (k) => more.filter((x) => x.attempted === k).reduce((n, x) => n + x.moreAttempts, 0);
   assert.equal(sum('signin_blocked'), 9, 'ten blocked = 1 row + 9 more');
-  assert.equal(sum('signin_failed'), 3 + 5, 'member 3 more, ghost 5 more');
+  assert.equal(sum('signin_failed'), 3, 'member: 3 more');
   assert.ok(more.every((x) => x.windowSeconds === FAILURE_WINDOW_MS / 1000));
   // a new window starts a new row, and the old window is summarised at that moment
   await signIn(ctxOf(db, '203.0.113.5'), { email: creds.viewonly.email, password: pw, now: at(10) });

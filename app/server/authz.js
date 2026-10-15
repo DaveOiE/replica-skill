@@ -30,6 +30,7 @@ export const ACTIONS = {
   'members:create': { roles: MANAGERS, write: true },
   'members:unlock': { roles: MANAGERS, write: true },
   'members:reset_password': { roles: MANAGERS, write: true },
+  'members:deactivate': { roles: MANAGERS, write: true },
   'invites:read': { roles: MANAGERS, write: false },
   // The Job Register: only owners and admins import; the list shows only jobs in projects the caller can already see.
   'jobs:list': { roles: ALL, write: false },

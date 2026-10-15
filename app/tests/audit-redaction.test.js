@@ -74,7 +74,10 @@ test('no audit row holds free text after any kind of change (projects, sections,
   await step('service account deactivate', async () => ok(await call('admin', 'DELETE', `/api/v1/service-accounts/${acct.id}`)));
 
   await step('workspace update', async () => ok(await call('admin', 'PATCH', '/api/v1/workspace', { name: word('Workspace name') })));
-  await step('failed sign-in, unknown email', async () => ok(await app.inject({ method: 'POST', url: '/api/v1/auth/signin', payload: { email: email('nobody'), password: 'not-a-real-password-1' } }), 401));
+  // an attempt for an account that does not exist is not written to any workspace's trail at all (it is only counted)
+  { const from = lastSeq(db);
+    ok(await app.inject({ method: 'POST', url: '/api/v1/auth/signin', payload: { email: email('nobody'), password: 'not-a-real-password-1', workspace: 'demo' } }), 401);
+    assert.equal(rowsSince(db, from).length, 0, 'unknown-account attempts leave no audit row'); }
   await step('failed sign-in, known email', async () => ok(await app.inject({ method: 'POST', url: '/api/v1/auth/signin', payload: { email: creds.viewonly.email, password: 'not-a-real-password-2' } }), 401));
 
   await step('ingest', async () => ok(await app.inject({ method: 'POST', url: '/api/v1/ingest/tasks', headers: { authorization: `Bearer ${creds.svc.write.token}` },

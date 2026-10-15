@@ -54,7 +54,7 @@ export function ingestRoutes(define, db, config) {
       if (target.reject) return reply.code(422).send({ error: 'unroutable', code: target.reject.code, message: target.reject.message });
       for (let attempt = 0; attempt < 2; attempt++) {
         try {
-          const made = mutate(ctx, (r) => ({ action: 'task.ingest', targetType: 'task', targetId: r.id, summary: 'Task created by ingestion', after: { project: r.project.id, kind: r.project.kind, assigned: !!r.assigneeId, warnings: r.warnings.map((w) => w.problem), inferred: !!body.inferred } }), () => {
+          const made = mutate(ctx, (r) => ({ action: 'task.ingest', targetType: 'task', targetId: r.id, summary: 'Task created by ingestion', after: { project: r.project.id, kind: r.project.kind, assigned: !!r.assigneeId, warnings: r.warnings.map((w) => w.reason), inferred: !!body.inferred } }), () => {
             let project = findProject(db, ws, target.kind, target.clientSlug);
             if (!project) {
               project = insertProject(db, ws, actor.userId, target.kind, target.clientSlug);
@@ -62,13 +62,13 @@ export function ingestRoutes(define, db, config) {
             }
             const warnings = [];
             let assigneeId = null;
-            if (body.assignee) { const a = findAssignee(ws, body.assignee, project); if (a.id) assigneeId = a.id; else warnings.push({ field: 'assignee', problem: a.problem }); }
+            if (body.assignee) { const a = findAssignee(ws, body.assignee, project); if (a.id) assigneeId = a.id; else warnings.push({ field: 'assignee', problem: 'unresolved', reason: a.problem }); }   // the reason stays in the audit trail; the caller only learns it was not matched
             const id = insertIngestedTask(db, ws, project, actor.userId, { title: body.title, description: body.description, assigneeId, dueDate: body.due_date, estimateMinutes: body.estimate_minutes, sourceCallId: body.source_call_id,
               clientSlug: body.client_slug, jobNumber: body.job_number, promisedDate: body.promised_date, inferred: body.inferred, lane: body.lane, idempotencyKey: body.idempotency_key, context: body.context });
             return { id, project, assigneeId, warnings };
           });
           const t = findTaskByKey(db, ws, body.idempotency_key);
-          return reply.code(201).send(shape(t, true, { warnings: made.warnings }));
+          return reply.code(201).send(shape(t, true, { warnings: made.warnings.map(({ field, problem }) => ({ field, problem })) }));
         } catch (e) {
           // Two calls racing to create the same first project or the same key: the loser looks again and uses what the winner made.
           if (attempt === 0 && /UNIQUE/i.test(e.message)) { if (replay()) return; continue; }

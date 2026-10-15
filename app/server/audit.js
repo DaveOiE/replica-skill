@@ -2,7 +2,8 @@ import { createHash } from 'node:crypto';
 import { nowIso, newId, transaction } from './db.js';
 
 export const GENESIS = '0'.repeat(64);
-const SECRET_KEY = /pass(word)?|token|secret|hash|signing_?key|cert_?pem|private/i;
+// 'tokenId' is a random id that names a token (so an incident can say which one); the token itself and its hash are never recorded.
+const SECRET_KEY = /pass(word)?|token(?!_?id$)|secret|hash|signing_?key|cert_?pem|private/i;
 
 /** Remove anything secret-looking before it can reach the audit trail. */
 export function redact(value) {

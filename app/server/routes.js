@@ -45,6 +45,8 @@ export function registerRoutes(app, { db, config, limiters }) {
         if (spec.action) {
           if (!actor) return reply.code(401).send({ error: 'Sign in to continue.' });
           let resource;
+          // A temporary password only gets a person as far as choosing their own: nothing else works until they have.
+          if (actor.mustChange && !['session:read', 'session:password', 'session:signout'].includes(spec.action)) return reply.code(403).send({ error: 'Choose your own password first (Account).', mustChangePassword: true });
           if (actor.kind === 'service' && !ACTIONS[spec.action]?.service) return reply.code(403).send({ error: 'This token cannot do that.' });
           if (spec.projectOf) {
             // Hidden and missing look the same (404) so nobody can probe for projects they cannot see.
@@ -83,7 +85,7 @@ export function registerRoutes(app, { db, config, limiters }) {
       const r = await signIn(ctx, { email: body.email, password: body.password, workspaceSlug: body.workspace, hours: config.sessionHours });
       if (!r.ok) return reply.code(r.status).send({ error: r.error, ...(r.workspaces ? { workspaces: r.workspaces } : {}) });
       setSessionCookie(reply, r.token);
-      return { user: { id: r.actor.userId, name: r.actor.name, email: r.actor.email }, role: r.actor.role };
+      return { user: { id: r.actor.userId, name: r.actor.name, email: r.actor.email }, role: r.actor.role, mustChangePassword: !!r.actor.mustChange };
     } });
 
   define({ method: 'POST', url: '/api/v1/auth/signout', action: 'session:signout', write: true,
@@ -110,7 +112,7 @@ export function registerRoutes(app, { db, config, limiters }) {
 
   define({ method: 'GET', url: '/api/v1/auth/session', action: 'session:read', write: false,
     sample: () => ({ url: '/api/v1/auth/session' }),
-    handler: async ({ actor }) => ({ user: { id: actor.userId, name: actor.name, email: actor.email }, role: actor.role, workspace: workspaceRow(actor.workspaceId) }) });
+    handler: async ({ actor }) => ({ user: { id: actor.userId, name: actor.name, email: actor.email }, role: actor.role, workspace: workspaceRow(actor.workspaceId), mustChangePassword: !!actor.mustChange }) });
 
   define({ method: 'GET', url: '/api/v1/workspace', action: 'workspace:read', write: false,
     sample: () => ({ url: '/api/v1/workspace' }),

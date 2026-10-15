@@ -21,6 +21,8 @@ export function keyFrom(value) {
   if (!v) throw new BackupError('BACKUP_KEY is not set. Generate one with "npm run backup:keygen" and keep a copy somewhere other than this machine.');
   const buf = /^[0-9a-fA-F]{64}$/.test(v) ? Buffer.from(v, 'hex') : Buffer.from(v, 'base64');
   if (buf.length !== 32) throw new BackupError('BACKUP_KEY must be 32 bytes, written as 64 hex characters or as base64.');
+  // A key such as all zeros or a short repeated pattern protects nothing. A random 32-byte key has around 30 different byte values.
+  if (new Set(buf).size < 16) throw new BackupError('BACKUP_KEY looks made up (too few different bytes). Make one with npm run backup:keygen.');
   return buf;
 }
 
@@ -149,7 +151,12 @@ export async function runRestore({ key, destination, from, to, replace = false, 
     mkdirSync(dirname(target), { recursive: true, mode: 0o700 });
     let kept = null;
     if (existsSync(target)) { kept = `${target}.before-restore-${now()}`; renameSync(target, kept); }
-    for (const ext of ['-wal', '-shm']) rmSync(`${target}${ext}`, { force: true });   // stale log files must not be replayed onto the restored file
+    // The write-ahead log holds the newest committed changes of a database that stopped without a clean shutdown. It moves aside WITH its file, so
+    // the kept copy is whole, and the restored file never inherits it.
+    for (const ext of ['-wal', '-shm']) {
+      if (!existsSync(`${target}${ext}`)) continue;
+      if (kept) renameSync(`${target}${ext}`, `${kept}${ext}`); else rmSync(`${target}${ext}`, { force: true });
+    }
     const staged = `${target}.restoring`;
     copyFileSync(plain, staged);
     renameSync(staged, target);

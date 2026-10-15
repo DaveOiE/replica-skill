@@ -185,11 +185,12 @@ export async function peopleView(ctx) {
   const linkCard = (title, link, note, raw) => h('div', { class: 'card reveal' }, h('h3', {}, title), h('code', { class: 'secret' }, raw ?? `${location.origin}${link}`), h('p', { class: 'muted' }, note));
   if (reveal) { out.append(linkCard(reveal.title, reveal.link, reveal.note, reveal.raw)); reveal = null; }
   const act = (label, who, fn) => h('button', { class: 'btn btn-secondary', type: 'button', 'aria-label': `${label}: ${who}`, onclick: fn }, label);
-  const rows = data.members.map((m) => h('li', { class: 'row' }, h('span', { class: 'row-main' }, `${m.name} `, h('span', { class: 'muted' }, m.email)),
+  const rows = data.members.map((m) => h('li', { class: 'row' }, h('span', { class: 'row-main' }, `${m.name} `, h('span', { class: 'muted' }, m.email), m.status !== 'active' && h('span', { class: 'badge' }, S.deactivatedBadge)),
     select(`role-${m.userId}`, `${S.role}: ${m.name}`, Object.entries(S.roles), m.role, async (v) => { const r = await api('PATCH', `/api/v1/members/${m.userId}/role`, { role: v }); r.status === 200 ? toast(S.saved) : fail(r); ctx.refresh(); }),
     m.userId !== ctx.session.user.id && h('div', { class: 'actions' },
-      act(S.unlock, m.name, async () => { const r = await api('POST', `/api/v1/members/${m.userId}/unlock`); r.status === 200 ? toast(S.unlocked) : fail(r); }),
-      act(S.resetPassword, m.name, async () => { const r = await api('POST', `/api/v1/members/${m.userId}/reset`); if (r.status !== 201) return fail(r); reveal = { title: `${S.resetPassword}: ${r.data.email}`, link: r.data.link, note: S.linkNoteReset }; ctx.refresh(); }))));
+      m.status === 'active' && act(S.unlock, m.name, async () => { const r = await api('POST', `/api/v1/members/${m.userId}/unlock`); r.status === 200 ? toast(S.unlocked) : fail(r); }),
+      m.status === 'active' && act(S.resetPassword, m.name, async () => { const r = await api('POST', `/api/v1/members/${m.userId}/reset`); if (r.status !== 201) return fail(r); reveal = { title: `${S.resetPassword}: ${r.data.email}`, link: r.data.link, note: S.linkNoteReset }; ctx.refresh(); }),
+      m.status === 'active' && act(S.deactivatePerson, m.name, async () => { if (!confirm(S.confirmDeactivatePerson)) return; const r = await api('POST', `/api/v1/members/${m.userId}/deactivate`); r.status === 200 ? (toast(S.deactivatedDone), ctx.refresh()) : fail(r); }))));
   const inv = await api('GET', '/api/v1/invites');
   const iEmail = field('i-email', S.email, { type: 'email', required: true }), iRole = select('i-role', S.role, Object.entries(S.roles).filter(([k]) => k !== 'owner'), 'member');
   const inviteForm = h('form', { class: 'card', onsubmit: once(async () => {
@@ -227,9 +228,11 @@ export async function accountView(ctx) {
   const cur = field('a-cur', S.currentPassword, { type: 'password', autocomplete: 'current-password' }), next = field('a-new', S.newPassword, { type: 'password', autocomplete: 'new-password' });
   const form = h('form', { class: 'card auth', onsubmit: once(async () => {
     const r = await api('POST', '/api/v1/auth/password', { current: cur.querySelector('input').value, next: next.querySelector('input').value });
-    r.status === 200 ? (toast(S.passwordChanged), form.reset()) : fail(r);
+    if (r.status !== 200) return fail(r);
+    toast(S.passwordChanged); form.reset();
+    if (ctx.session.mustChangePassword) { await ctx.restart(); location.hash = '#/'; }   // the forced change is done: load the real session
   }) }, cur, next, h('button', { class: 'btn btn-primary', type: 'submit' }, S.changePassword));
-  return [h('h1', {}, S.accountHeading), form];
+  return [h('h1', {}, S.accountHeading), ctx.session.mustChangePassword && h('div', { class: 'banner', role: 'note' }, S.mustChangeBanner), form];
 }
 
 // Width is set through the CSS object model: allowed under our Content-Security-Policy, unlike a style attribute.
