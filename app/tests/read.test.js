@@ -141,7 +141,7 @@ test('staff can set job number, promised date and lane on a task by hand; checke
   assert.equal(r.statusCode, 200);
   assert.deepEqual([r.json().jobNumber, r.json().promisedDate, r.json().lane, r.json().source], ['J9075P', '2026-11-06', 'Operations, finance and admin', 'manual']);
   const ev = db.prepare("select before_json, after_json from audit_events where action = 'task.update' order by seq desc limit 1").get();
-  assert.deepEqual([JSON.parse(ev.before_json), JSON.parse(ev.after_json)], [{ jobNumber: null, promisedDate: null, lane: null }, { jobNumber: 'J9075P', promisedDate: '2026-11-06', lane: 'Operations, finance and admin' }]);
+  assert.deepEqual([JSON.parse(ev.before_json), JSON.parse(ev.after_json)], [{ jobNumber: null, promisedDate: null, lane: null }, { jobNumber: '[not recorded]', promisedDate: '2026-11-06', lane: '[not recorded]' }]);
   assert.equal((await call('member', 'GET', url)).json().task.jobNumber, 'J9075P');
   assert.equal((await call('member', 'PATCH', url, { jobNumber: null, lane: null })).json().jobNumber, null, 'can be cleared');
   for (const bad of [{ jobNumber: ' J9075P' }, { jobNumber: 'J1\n2' }, { jobNumber: '' }, { promisedDate: '2026-02-31' }, { lane: 'x'.repeat(81) }, { clientSlug: 'brightwater-cafe' }, { source: 'ingestion' }]) assert.equal((await call('member', 'PATCH', url, bad)).statusCode, 400, JSON.stringify(bad));

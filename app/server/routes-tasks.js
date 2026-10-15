@@ -71,7 +71,7 @@ export function taskRoutes(define, db) {
       }
       const id = newId(), now = nowIso();
       const pos = db.prepare('select coalesce(max(position), 0) + 1 as n from tasks where project_id = ?').get(p.id).n;
-      mutate(ctx, { action: 'task.create', targetType: 'task', targetId: id, summary: `Task created: ${body.title}`, after: { ...body, project: p.id } }, () =>
+      mutate(ctx, { action: 'task.create', targetType: 'task', targetId: id, summary: 'Task created', after: { ...body, project: p.id } }, () =>
         db.prepare(`insert into tasks(id,workspace_id,project_id,section_id,parent_id,title,description,assignee_id,owner_id,status,start_date,due_date,is_milestone,estimate_minutes,position,completed_at,created_at,updated_at,client_slug)
           values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`).run(id, actor.workspaceId, p.id, body.sectionId ?? null, body.parentId ?? null, body.title, body.description ?? '', body.assigneeId ?? null,
           actor.userId, body.status ?? 'todo', body.startDate ?? null, body.dueDate ?? null, body.isMilestone ? 1 : 0, body.estimateMinutes ?? null, pos, body.status === 'done' ? now : null, now, now, p.kind === 'client' ? p.client_slug : null)); // a task made in a client's project carries that client's slug
@@ -123,7 +123,7 @@ export function taskRoutes(define, db) {
     handler: async ({ ctx, req }) => {
       const t = taskRow(req.params.id);
       const subs = db.prepare('select count(*) n from tasks where parent_id = ?').get(t.id).n;
-      mutate(ctx, { action: 'task.delete', targetType: 'task', targetId: t.id, summary: `Task deleted: ${t.title}${subs ? ` (and ${subs} subtasks)` : ''}`, before: { title: t.title, status: t.status, project: t.project_id } },
+      mutate(ctx, { action: 'task.delete', targetType: 'task', targetId: t.id, summary: subs ? `Task deleted (and ${subs} subtasks)` : 'Task deleted', before: { status: t.status, project: t.project_id } },
         () => db.prepare('delete from tasks where id = ?').run(t.id));
       return { ok: true };
     } });
@@ -146,7 +146,7 @@ export function taskRoutes(define, db) {
       if (!other || other.project_id !== t.project_id) return bad(reply, 'That task is not in this project.');
       if (other.id === t.id) return bad(reply, 'A task cannot wait on itself.');
       if (wouldCycle(t.id, other.id)) return bad(reply, 'That would make a loop: each task would be waiting on the other.', 409);
-      mutate(ctx, { action: 'dependency.add', targetType: 'task', targetId: t.id, summary: `"${t.title}" now waits on "${other.title}"`, after: { dependsOn: other.id } },
+      mutate(ctx, { action: 'dependency.add', targetType: 'task', targetId: t.id, summary: 'Dependency added', after: { dependsOn: other.id } },
         () => db.prepare('insert or ignore into task_dependencies(task_id, depends_on_id) values (?, ?)').run(t.id, other.id));
       return reply.code(201).send({ ok: true });
     } });

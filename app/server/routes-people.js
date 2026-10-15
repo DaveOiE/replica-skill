@@ -17,7 +17,7 @@ export function peopleRoutes(define, db) {
       if (!canAssignRole(actor, null, body.role)) return reply.code(403).send({ error: 'You do not have permission to give that role.' });
       if (db.prepare('select 1 from users where email = ?').get(body.email)) return reply.code(409).send({ error: 'That email already has an account.' });
       const id = newId(), now = nowIso(), temp = randomPassword();
-      mutate(ctx, { action: 'member.create', targetType: 'user', targetId: id, summary: `Added ${body.role === 'guest' ? 'guest' : 'person'}: ${body.email}`, after: { email: body.email, name: body.name, role: body.role } }, () => {
+      mutate(ctx, { action: 'member.create', targetType: 'user', targetId: id, summary: `Added ${body.role === 'guest' ? 'guest' : 'person'}`, after: { role: body.role } }, () => {
         db.prepare('insert into users(id,email,name,password_hash,created_at,updated_at) values (?,?,?,?,?,?)').run(id, body.email, body.name, hashPassword(temp), now, now);
         db.prepare('insert into memberships(id,workspace_id,user_id,role,created_at,updated_at) values (?,?,?,?,?,?)').run(newId(), actor.workspaceId, id, body.role, now, now);
       });

@@ -38,7 +38,7 @@ export function signIn(ctx, { email, password, workspaceSlug, hours = 12, now = 
   const ws = workspace ? workspace.id : 'none';
   const fail = (status, error, action, extra = {}) => ({ ok: false, status, error, ...extra, action });
   const audit = (action, summary, workspaceId = ws, actorId = null) =>
-    mutate({ ...ctx, actor: null }, { workspaceId, action, targetType: 'user', targetId: actorId, summary, after: { email: addr } }, () => {});
+    mutate({ ...ctx, actor: null }, { workspaceId, action, targetType: 'user', targetId: actorId, summary }, () => {});
 
   const usable = user && user.kind === 'human' && user.status === 'active' && user.password_hash;
   if (!usable) {
@@ -56,7 +56,7 @@ export function signIn(ctx, { email, password, workspaceSlug, hours = 12, now = 
     const failures = user.failed_logins + 1;
     const lock = failures >= MAX_FAILURES;
     mutate({ ...ctx, actor: null }, { workspaceId: ws, action: lock ? 'auth.locked' : 'auth.signin_failed', targetType: 'user', targetId: user.id,
-      summary: lock ? 'Account locked after repeated failures' : 'Sign-in failed', after: { email: addr, failures } }, () =>
+      summary: lock ? 'Account locked after repeated failures' : 'Sign-in failed', after: { failures } }, () =>
       ctx.db.prepare('update users set failed_logins = ?, locked_until = ?, updated_at = ? where id = ?')
         .run(lock ? 0 : failures, lock ? addMs(now, LOCK_MINUTES * 60000) : null, now, user.id));
     return lock ? fail(429, LOCKED_MESSAGE) : fail(401, GENERIC_FAILURE);

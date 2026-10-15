@@ -11,7 +11,7 @@ is generated from `features.csv`, `milestones.csv` and `budget.json`.
    project templates are deferred.
 2. **Board view** from M3 (3 pts).
 3. **Simple dashboard** (4 pts, fixed widgets) and **goals** (3 pts) from M5.
-4. **Audit log screen** from M6 (5 pts: filters, before and after, verify chain).
+4. **Audit log screen** from M6 (5 pts: filters, verify chain).
 
 One addition for the owner's OK: **Add a person** (2 pts). Without invites (deferred) there is no
 way to add a teammate or guest beyond the seed. An admin creates the person and sees a one-time

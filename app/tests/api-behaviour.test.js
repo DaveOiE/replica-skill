@@ -32,15 +32,17 @@ test('bad input gets a plain 400 with field messages; unknown keys are refused',
   assert.equal((await call('admin', 'PATCH', '/api/v1/workspace', {})).statusCode, 400);
 });
 
-test('workspace update by an admin is applied and audited with before and after', async () => {
+test('workspace update by an admin is applied and audited by field names', async () => {
   const { db, call, creds } = await freshApp();
   const r = await call('admin', 'PATCH', '/api/v1/workspace', { name: 'Renamed Co', accent: '#112233' });
   assert.equal(r.statusCode, 200);
   assert.equal((await call('member', 'GET', '/api/v1/workspace')).json().name, 'Renamed Co');
   const ev = db.prepare("select * from audit_events where action = 'workspace.update'").get();
   assert.equal(ev.actor_id, creds.admin.userId);
-  assert.equal(JSON.parse(ev.before_json).name, 'Brightside IT Support (demo)');
-  assert.equal(JSON.parse(ev.after_json).name, 'Renamed Co');
+  // field names only: the old and new names are text a person typed, so neither value is recorded
+  assert.equal(JSON.parse(ev.before_json).name, '[not recorded]');
+  assert.equal(JSON.parse(ev.after_json).name, '[not recorded]');
+  assert.doesNotMatch(`${ev.summary}${ev.before_json}${ev.after_json}`, /Renamed Co|Brightside/);
 });
 
 test('role changes: admins cannot mint owners or touch owners; the last owner is protected', async () => {

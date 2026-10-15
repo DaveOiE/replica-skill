@@ -49,7 +49,7 @@ export async function projectView(ctx, id, taskId, view = 'list') {
   if (!taskId) lastDrawerTask = null;
   const people = [['', S.unassigned], ...pp.people.map((x) => [x.userId, x.name])];
   const reload = () => ctx.refresh();
-  const patch = async (tid, body, quiet) => { const r = await api('PATCH', `/api/v1/tasks/${tid}`, body); if (r.status === 200) { if (!quiet) toast(S.saved); await reload(); } else { fail(r); await reload(); } };
+  const patch = async (tid, body, quiet) => { const r = await api('PATCH', `/api/v1/tasks/${tid}`, body); if (r.status === 200) { await reload(); if (!quiet) toast(S.saved); /* after the redraw, which would otherwise remove the toast */ } else { fail(r); await reload(); } };
   const subsOf = (t) => td.tasks.filter((x) => x.parentId === t.id);
 
   const taskRow = (t, sub) => h('li', { class: `row${sub ? ' sub' : ''}` },

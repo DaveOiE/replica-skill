@@ -9,7 +9,7 @@ Honest summary: this is a pilot-ready small work manager, not an enterprise plat
 ### Built and tested
 
 - **Workspaces, users, roles, password sign-in**: Sign-in with lockout, sessions, five roles enforced on the server, a tamper-evident audit trail written for every change, and fake seed data. Invites by link are built (see the pilot rows); custom password rules (an admin setting) are not built
-- **Task fields: owner, assignee, due date, start date, status, description**: M2: create, edit, delete; assignee must be able to see the project; dates validated; every change audited with before and after
+- **Task fields: owner, assignee, due date, start date, status, description**: M2: create, edit, delete; assignee must be able to see the project; dates validated; every change audited (field names and ids only, never the text)
 - **Comments on tasks**: M2: commenters and up; author and time set by the server
 - **Subtasks**: M2: one level; listed with the parent in the list view and drawer
 - **Projects with sections**: M2: create (default sections), rename, archive (read-only), visibility private or workspace; sections add and delete. Team-visible projects work in the API but there is no screen to create teams yet
@@ -34,9 +34,10 @@ Honest summary: this is a pilot-ready small work manager, not an enterprise plat
 - **Ingest endpoint for Zen: POST /api/v1/ingest/tasks (write token only)** (an extra, not on the original list): ZEN phase 2: strict validation; routes by ADL-066 (prospect to the one Sales project; client job to that client's project, created on first use by client_slug; internal job to Internal, or Sales when the subtype is business development); rejects unroutable input with a clear 422 and files nothing; idempotent on idempotency_key (a retry, even a simultaneous one, returns the original); assignee matched by email, full name, or a first name only one person has, else unassigned and the reason recorded; one audit entry per created task; returns a stable id and a canonical URL
 - **Task fields for Zen: source_call_id, client_slug, job_number (raw text), promised_date, inferred, lane (free text), idempotency_key, source** (an extra, not on the original list): ZEN phase 2: migration 0005; lanes are free text, never an enum; job number is stored exactly as sent and never minted here; tasks made by hand are source manual and by a form are source form
 - **Read API for Zen: GET /api/v1/read/tasks and /read/projects (read token only)** (an extra, not on the original list): ZEN phase 3: filters job_number, client_slug (all tasks in the client project, hand-made included), ids and updated_since; keyset paging (limit up to 500, cursor) with stable order; returns the agreed fields plus source, context and project kind, never the description; a read token sees only ingested projects (Sales, Internal, client), never imported or staff projects or the people directory; reads audited by route pattern only; no outgoing webhooks
-- **Staff can set job number, promised date and lane on a task by hand (API only, no screen yet)** (an extra, not on the original list): ZEN phase 3: checked, audited with before and after; client slug is inherited from a client project, not editable; migration 0006 stores the routing context and backfills slugs
+- **Staff can set job number, promised date and lane on a task by hand (API only, no screen yet)** (an extra, not on the original list): ZEN phase 3: checked, audited by field names; client slug is inherited from a client project, not editable; migration 0006 stores the routing context and backfills slugs
 - **"AI/service-created" badge on tasks** (an extra, not on the original list): ZEN phase 4a: tasks whose source is ingestion show a badge and their source call in the list, the board and the task drawer, plus an Inferred marker when the sending system guessed. Shown to anyone who can see the task
 - **Lane and promised date in the task drawer** (an extra, not on the original list): ZEN phase 4a: two fields in the drawer, editable by editors and admins through the existing task update route (the server enforces it). Lane is free text, never a fixed list
+- **Audit trail holds ids and field names only** (an extra, not on the original list): Pre-data hardening group A: no titles, descriptions, comment text, form answers, emails, names or project names in any audit write; deny-by-default in the single write path; scan test over every kind of change
 
 ### Partly built
 
@@ -542,8 +543,8 @@ The tamper-evident record of every change.
 - target_type
 - target_id
 - summary
-- before_json: values before a change, secrets removed
-- after_json: values after a change, secrets removed (the Job Register import records counts and field names only)
+- before_json: field names, and only non-text values (ids, numbers, true or false, dates, fixed words such as a status), before a change; typed text is never recorded
+- after_json: the same, after a change (the Job Register import records counts only)
 - ip: network address of the caller
 - request_id
 - prev_hash
@@ -711,7 +712,7 @@ The importer reads a 13-column CSV exported from a Google Sheet: Job No, Job Tit
 
 ## 5. The audit trail
 
-Every change to data writes an audit entry in the same database transaction as the change: who (a person, the system, or an anonymous visitor), what happened, which record, and which fields changed. Entries are chained by hashes, so tampering is detectable, and the database refuses edits and deletes. Failed sign-ins are recorded. Reads are not recorded. Refused requests are not recorded because they change nothing. Owners and admins have an **Audit log screen** with filters (who, action, date range), newest first, and a **CSV export**. The screen and the CSV show field names only, never the values before or after a change, and anything shaped like a token or password hash is removed again on the way out. Each export is itself recorded. A service token can never read the audit log. There is **no JSON feed for other systems and no verify-chain button yet**.
+Every change to data writes an audit entry in the same database transaction as the change: who (a person, the system, or an anonymous visitor), what happened, which record, and which fields changed (field names and ids only: titles, descriptions, comment text, form answers, email addresses, names and project names are never written to the trail). Entries are chained by hashes, so tampering is detectable, and the database refuses edits and deletes. Failed sign-ins are recorded. Reads are not recorded. Refused requests are not recorded because they change nothing. Owners and admins have an **Audit log screen** with filters (who, action, date range), newest first, and a **CSV export**. The screen and the CSV show field names only, never the values before or after a change, and anything shaped like a token or password hash is removed again on the way out. Each export is itself recorded. A service token can never read the audit log. There is **no JSON feed for other systems and no verify-chain button yet**.
 
 ## 6. The API (how another system could talk to this)
 

@@ -5,7 +5,7 @@ import { projectAccess } from './access.js';
 import { readRegister, HIDDEN_BY_DEFAULT } from './jobs-import.js';
 
 // Tiny invented sample used only by route tests: no real data lives in this repository.
-const SAMPLE_CSV = ['Job No,Job Title / Folder,Start Date,Estimated Completion,Estimated Completion,Next Action Due,Client,Status,Team,Comment / Update / Action,Misc,Estimated Completion Date,Closed Date',
+export const SAMPLE_CSV = ['Job No,Job Title / Folder,Start Date,Estimated Completion,Estimated Completion,Next Action Due,Client,Status,Team,Comment / Update / Action,Misc,Estimated Completion Date,Closed Date',
   'J0001T,Invented sample job,01-Jul-24,2,Week(s),,Example Client Pty,Lead,,A sample note,,,'].join('\n');
 const FIELDS = [['name', 'name'], ['client', 'client'], ['status', 'status'], ['owner_name', 'ownerName'], ['start_date', 'startDate'], ['due_date', 'dueDate'], ['closed_date', 'closedDate'], ['tags', 'tags'], ['latest_note', 'latestNote'], ['description', 'description']];
 const empty = (v) => v == null || v === '';

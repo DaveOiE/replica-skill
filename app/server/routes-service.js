@@ -17,7 +17,7 @@ export function serviceRoutes(define, db) {
     sample: () => ({ url: '/api/v1/service-accounts', payload: { name: 'Walk account' } }),
     handler: async ({ ctx, actor, body, reply }) => {
       let id;
-      mutate(ctx, (r) => ({ action: 'service_account.create', targetType: 'service_account', targetId: r, summary: `Service account created: ${body.name}`, after: { name: body.name } }), () => { id = createServiceAccount(db, actor.workspaceId, body.name, actor.userId); return id; });
+      mutate(ctx, (r) => ({ action: 'service_account.create', targetType: 'service_account', targetId: r, summary: 'Service account created' }), () => { id = createServiceAccount(db, actor.workspaceId, body.name, actor.userId); return id; });
       return reply.code(201).send({ id });
     } });
 
@@ -28,7 +28,7 @@ export function serviceRoutes(define, db) {
       const acct = accountIn(db, actor.workspaceId, req.params.id);
       if (!acct || acct.status !== 'active') return gone(reply);
       const scopes = [...new Set(body.scopes)], expiresAt = body.expiresInDays ? inDays(body.expiresInDays) : null;
-      const made = mutate(ctx, (r) => ({ action: 'service_token.create', targetType: 'service_account', targetId: acct.id, summary: `Token created for ${acct.name}: ${body.label}`, after: { tokenId: r.id, scopes, expiresAt } }),
+      const made = mutate(ctx, (r) => ({ action: 'service_token.create', targetType: 'service_account', targetId: acct.id, summary: 'Service token created', after: { tokenId: r.id, scopes, expiresAt } }),
         () => createToken(db, actor.workspaceId, acct.id, body.label, scopes, expiresAt));
       return reply.code(201).send({ id: made.id, token: made.token, scopes, expiresAt, note: 'Copy this token now. It is shown once and only a hash is stored.' });
     } });
@@ -39,7 +39,7 @@ export function serviceRoutes(define, db) {
       const acct = accountIn(db, actor.workspaceId, req.params.id);
       if (!acct) return gone(reply);
       if (!db.prepare('select 1 from api_tokens where id = ? and user_id = ? and workspace_id = ? and revoked_at is null').get(req.params.tokenId, acct.id, actor.workspaceId)) return reply.code(404).send({ error: 'We could not find that token, or it is already revoked.' });
-      mutate(ctx, { action: 'service_token.revoke', targetType: 'service_account', targetId: acct.id, summary: `Token revoked for ${acct.name}`, after: { tokenId: req.params.tokenId } }, () => revokeToken(db, actor.workspaceId, acct.id, req.params.tokenId));
+      mutate(ctx, { action: 'service_token.revoke', targetType: 'service_account', targetId: acct.id, summary: 'Service token revoked', after: { tokenId: req.params.tokenId } }, () => revokeToken(db, actor.workspaceId, acct.id, req.params.tokenId));
       return { ok: true };
     } });
 
@@ -48,7 +48,7 @@ export function serviceRoutes(define, db) {
     handler: async ({ ctx, req, actor, reply }) => {
       const acct = accountIn(db, actor.workspaceId, req.params.id);
       if (!acct) return gone(reply);
-      mutate(ctx, { action: 'service_account.deactivate', targetType: 'service_account', targetId: acct.id, summary: `Service account deactivated: ${acct.name} (all its tokens revoked)` }, () => deactivateAccount(db, actor.workspaceId, acct.id));
+      mutate(ctx, { action: 'service_account.deactivate', targetType: 'service_account', targetId: acct.id, summary: 'Service account deactivated (all its tokens revoked)' }, () => deactivateAccount(db, actor.workspaceId, acct.id));
       return { ok: true };
     } });
 

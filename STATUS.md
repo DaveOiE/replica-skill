@@ -8,13 +8,13 @@ Updated: 2026-10-15
 
 | state | features |
 | --- | --- |
-| done | 29 |
+| done | 30 |
 | partly done | 3 |
 | later (deferred) | 44 |
 | skipped | 2 |
-| **total** | **78** |
+| **total** | **79** |
 
-Demo scope: **96 of 106 points built (91%)**. Later pool: 116 points, not scheduled. One point is a small tested feature (a few routes, one screen state, its tests).
+Demo scope: **98 of 108 points built (91%)**. Later pool: 116 points, not scheduled. One point is a small tested feature (a few routes, one screen state, its tests).
 
 ## Budget
 
@@ -40,7 +40,7 @@ Used so far (proxy): **56.0%**. Rate: **0.31% of session per point** (measured o
 | Z1 | Zen phase 1: machine access (service accounts and tokens) | demo | 3 | 0 | 0 | done | 0.0% | - |
 | Z2 | Zen phase 2: ingest endpoint and task fields | demo | 10 | 0 | 0 | done | 0.0% | - |
 | Z3 | Zen phase 3: read API for Zen | demo | 10 | 0 | 0 | done | 0.0% | - |
-| Z4 | Zen phase 4a: badge, lane and promised date in the drawer, audit log screen with CSV export | demo | 7 | 0 | 0 | done | 0.0% | - |
+| Z4 | Zen phase 4a: badge, lane and promised date in the drawer, audit log screen with CSV export | demo | 9 | 0 | 0 | done | 0.0% | - |
 
 Fits inside the 60% stop line at this rate: nothing.
 (Gauge and Evolve are extra: see replica/run-plan.md.)
@@ -66,7 +66,7 @@ Fits inside the 60% stop line at this rate: nothing.
 | M2 | Projects with sections | C | must | 3 | demo | done | M2: create (default sections), rename, archive (read-only), visibility private or workspace; sections add and delete. Team-visible projects work in the API but there is no screen to create teams yet |
 | M2 | Project templates (custom) | C | should | 3 | later | later (deferred) |  |
 | M2 | Change own password (needed because new people get a temporary one) | E | must | 1 | demo | done | ADDED in M2: needs the current password, enforces the 12-character rule, ends other sessions |
-| M2 | Task fields: owner, assignee, due date, start date, status, description | C | must | 3 | demo | done | M2: create, edit, delete; assignee must be able to see the project; dates validated; every change audited with before and after |
+| M2 | Task fields: owner, assignee, due date, start date, status, description | C | must | 3 | demo | done | M2: create, edit, delete; assignee must be able to see the project; dates validated; every change audited (field names and ids only, never the text) |
 | M2 | Comments on tasks | C | must | 2 | demo | done | M2: commenters and up; author and time set by the server |
 | M2 | Attachments on tasks | C | should | 3 | later | later (deferred) | local disk, size and type limits |
 | M2 | Subtasks | C | must | 2 | demo | done | M2: one level; listed with the parent in the list view and drawer |
@@ -84,9 +84,10 @@ Fits inside the 60% stop line at this rate: nothing.
 | M3 | Calendar view | C | must | 3 | later | later (deferred) |  |
 | M3 | Timeline view (Gantt-style) | C | should | 5 | later | later (deferred) |  |
 | Z3 | Read API for Zen: GET /api/v1/read/tasks and /read/projects (read token only) | E | must | 8 | demo | done | ZEN phase 3: filters job_number, client_slug (all tasks in the client project, hand-made included), ids and updated_since; keyset paging (limit up to 500, cursor) with stable order; returns the agreed fields plus source, context and project kind, never the description; a read token sees only ingested projects (Sales, Internal, client), never imported or staff projects or the people directory; reads audited by route pattern only; no outgoing webhooks |
-| Z3 | Staff can set job number, promised date and lane on a task by hand (API only, no screen yet) | E | must | 2 | demo | done | ZEN phase 3: checked, audited with before and after; client slug is inherited from a client project, not editable; migration 0006 stores the routing context and backfills slugs |
+| Z3 | Staff can set job number, promised date and lane on a task by hand (API only, no screen yet) | E | must | 2 | demo | done | ZEN phase 3: checked, audited by field names; client slug is inherited from a client project, not editable; migration 0006 stores the routing context and backfills slugs |
 | Z4 | Audit log of admin and user actions | E | must | 5 | demo | done | ZEN phase 4a: owners and admins only. Screen with filters (who, action, from and to date), newest first, load-more paging; CSV export (fields only: seq, time, who, action, target, summary, names of changed fields, ip, request id; never before or after values, never secrets; formula-looking cells neutralised; capped at 50,000 rows). Each export is itself audited. SQL lives in store-audit.js. Verify-chain button, search box and a JSON or NDJSON feed for other systems are NOT built |
 | M4 | Project status updates | C | should | 2 | later | later (deferred) |  |
+| Z4 | Audit trail holds ids and field names only | E | must | 2 | demo | done | Pre-data hardening group A: no titles, descriptions, comment text, form answers, emails, names or project names in any audit write; deny-by-default in the single write path; scan test over every kind of change |
 | Z4 | "AI/service-created" badge on tasks | C | should | 1 | demo | done | ZEN phase 4a: tasks whose source is ingestion show a badge and their source call in the list, the board and the task drawer, plus an Inferred marker when the sending system guessed. Shown to anyone who can see the task |
 | Z4 | Lane and promised date in the task drawer | C | should | 1 | demo | done | ZEN phase 4a: two fields in the drawer, editable by editors and admins through the existing task update route (the server enforces it). Lane is free text, never a fixed list |
 | M4 | Time tracking: estimated vs actual | C | should | 3 | later | later (deferred) |  |

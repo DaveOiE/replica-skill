@@ -13,6 +13,32 @@ export function redact(value) {
   return value;
 }
 
+/**
+ * The audit trail records ids and field NAMES, never text a person typed. Deny by default: only numbers, booleans, ids, dates
+ * and a short list of fixed-vocabulary keys keep their value; every other field keeps its name and the value becomes NOT_RECORDED.
+ */
+export const NOT_RECORDED = '[not recorded]';
+const ENUM_KEYS = new Set(['status', 'role', 'visibility', 'kind', 'source']);
+const ID_KEY = /(^id$|Id$|_id$)|^(project|task|comment|dependsOn|section|user|form)$/;
+const DATE_KEY = /(Date|At|_at)$/;
+const isoDate = /^\d{4}-\d{2}-\d{2}(T[\d:.]+Z)?$/;
+const code = /^[a-z_:]{1,32}$/;
+export function fieldsOnly(value) {
+  if (Array.isArray(value)) return value.map((v) => (typeof v === 'string' ? (code.test(v) ? v : NOT_RECORDED) : fieldsOnly(v)));
+  if (!value || typeof value !== 'object') return value;
+  return Object.fromEntries(Object.entries(value).map(([k, v]) => {
+    if (v === null || typeof v === 'number' || typeof v === 'boolean') return [k, v];
+    if (Array.isArray(v)) return [k, v.every((x) => typeof x === 'string' && code.test(x)) ? v : NOT_RECORDED];
+    if (typeof v === 'object') return [k, fieldsOnly(v)];
+    if (typeof v === 'string') {
+      if (ID_KEY.test(k) && /^[\w-]{1,64}$/.test(v)) return [k, v];
+      if (ENUM_KEYS.has(k) && code.test(v)) return [k, v];
+      if (DATE_KEY.test(k) && isoDate.test(v)) return [k, v];
+    }
+    return [k, NOT_RECORDED];
+  }));
+}
+
 const fieldsOf = (e) => JSON.stringify([e.prevHash, e.workspaceId, e.ts, e.actorId ?? null, e.actorKind, e.action,
   e.targetType ?? null, e.targetId ?? null, e.summary, e.beforeJson ?? null, e.afterJson ?? null, e.ip ?? null, e.requestId ?? null]);
 const sha256 = (s) => createHash('sha256').update(s).digest('hex');
@@ -24,8 +50,8 @@ export function appendAudit(db, ev) {
     prevHash: prev ? prev.hash : GENESIS, workspaceId: ev.workspaceId, ts: ev.ts || nowIso(),
     actorId: ev.actorId ?? null, actorKind: ev.actorKind, action: ev.action,
     targetType: ev.targetType ?? null, targetId: ev.targetId ?? null, summary: ev.summary,
-    beforeJson: ev.before === undefined ? null : JSON.stringify(redact(ev.before)),
-    afterJson: ev.after === undefined ? null : JSON.stringify(redact(ev.after)),
+    beforeJson: ev.before === undefined ? null : JSON.stringify(fieldsOnly(redact(ev.before))),
+    afterJson: ev.after === undefined ? null : JSON.stringify(fieldsOnly(redact(ev.after))),
     ip: ev.ip ?? null, requestId: ev.requestId ?? null,
   };
   row.hash = sha256(fieldsOf(row));

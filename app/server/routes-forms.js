@@ -42,7 +42,7 @@ export function formRoutes(define, db, limiters) {
       for (const q of body.questions) if (q.kind === 'single_select' && (q.options?.length || 0) < 2) return bad(reply, `"${q.label}" needs at least two choices.`);
       const id = newId(), slug = randomBytes(16).toString('base64url'), now = nowIso();
       const section = body.targetSectionId ?? db.prepare('select id from sections where project_id = ? order by position limit 1').get(p.id)?.id ?? null;
-      mutate(ctx, { action: 'form.create', targetType: 'form', targetId: id, summary: `Request form created: ${body.name}`, after: { questions: body.questions.length, assigned: !!body.assigneeId } }, () => {
+      mutate(ctx, { action: 'form.create', targetType: 'form', targetId: id, summary: 'Request form created', after: { questions: body.questions.length, assigned: !!body.assigneeId } }, () => {
         db.prepare('insert into forms(id,workspace_id,project_id,name,slug,target_section_id,created_by,created_at,updated_at) values (?,?,?,?,?,?,?,?,?)').run(id, actor.workspaceId, p.id, body.name, slug, section, actor.userId, now, now);
         body.questions.forEach((q, i) => db.prepare('insert into form_questions(id,form_id,label,kind,options_json,required,position,maps_to) values (?,?,?,?,?,?,?,?)').run(newId(), id, q.label, q.kind, JSON.stringify(q.options || []), q.required ? 1 : 0, i, q.mapsTo || 'description'));
         setAssignRule({ id, workspace_id: actor.workspaceId, project_id: p.id, name: body.name }, body.assigneeId, actor.userId);
@@ -67,7 +67,7 @@ export function formRoutes(define, db, limiters) {
     sample: (fx) => ({ url: `/api/v1/forms/${fx.creds.forms.disposable}` }),
     handler: async ({ ctx, req }) => {
       const f = db.prepare('select name from forms where id = ?').get(req.params.id);
-      mutate(ctx, { action: 'form.delete', targetType: 'form', targetId: req.params.id, summary: `Request form deleted: ${f.name}`, before: { name: f.name } }, () => {
+      mutate(ctx, { action: 'form.delete', targetType: 'form', targetId: req.params.id, summary: 'Request form deleted', before: { name: f.name } }, () => {
         db.prepare("delete from rules where json_extract(trigger_json, '$.formId') = ?").run(req.params.id);
         db.prepare('delete from forms where id = ?').run(req.params.id);
       });

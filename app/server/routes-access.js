@@ -87,7 +87,7 @@ export function accessRoutes(define, db, limiters) {
       if (!canAssignRole(actor, null, body.role)) return reply.code(403).send({ error: 'You do not have permission to give that role.' });
       if (db.prepare('select 1 from users where email = ?').get(body.email)) return reply.code(409).send({ error: 'That email already has an account.' });
       const id = newId(), token = newToken(), expires = inHours(24 * 7);
-      mutate(ctx, { action: 'invite.create', targetType: 'invite', targetId: id, summary: `Invite created for ${body.email} as ${body.role}`, after: { email: body.email, role: body.role, expiresAt: expires } }, () => {
+      mutate(ctx, { action: 'invite.create', targetType: 'invite', targetId: id, summary: `Invite created as ${body.role}`, after: { role: body.role, expiresAt: expires } }, () => {
         db.prepare('delete from invites where workspace_id = ? and email = ? and accepted_at is null').run(actor.workspaceId, body.email); // a new invite replaces the old one
         db.prepare('insert into invites(id,workspace_id,email,role,token_hash,invited_by,expires_at,created_at) values (?,?,?,?,?,?,?,?)').run(id, actor.workspaceId, body.email, body.role, sha256(token), actor.userId, expires, nowIso());
       });
@@ -99,7 +99,7 @@ export function accessRoutes(define, db, limiters) {
     handler: async ({ ctx, req, actor, reply }) => {
       const inv = db.prepare('select email, role from invites where id = ? and workspace_id = ? and accepted_at is null').get(req.params.id, actor.workspaceId);
       if (!inv) return reply.code(404).send({ error: 'We could not find that invite.' });
-      mutate(ctx, { action: 'invite.revoke', targetType: 'invite', targetId: req.params.id, summary: `Invite revoked for ${inv.email}`, before: inv }, () => db.prepare('delete from invites where id = ?').run(req.params.id));
+      mutate(ctx, { action: 'invite.revoke', targetType: 'invite', targetId: req.params.id, summary: 'Invite revoked', before: { role: inv.role } }, () => db.prepare('delete from invites where id = ?').run(req.params.id));
       return { ok: true };
     } });
 
@@ -123,7 +123,7 @@ export function accessRoutes(define, db, limiters) {
       if (problems.length) return reply.code(400).send({ error: problems.join(' '), details: [{ field: 'password', message: problems.join(' ') }] });
       if (db.prepare('select 1 from users where email = ?').get(i.email)) return reply.code(409).send({ error: 'That email already has an account. Sign in instead.' });
       const uid = newId(), now = nowIso();
-      mutate({ ...ctx, actor: null }, { workspaceId: i.workspace_id, action: 'invite.accept', targetType: 'user', targetId: uid, summary: `Invite accepted by ${i.email} as ${i.role}`, after: { email: i.email, role: i.role } }, () => {
+      mutate({ ...ctx, actor: null }, { workspaceId: i.workspace_id, action: 'invite.accept', targetType: 'user', targetId: uid, summary: `Invite accepted as ${i.role}`, after: { role: i.role } }, () => {
         db.prepare('insert into users(id,email,name,password_hash,created_at,updated_at) values (?,?,?,?,?,?)').run(uid, i.email, body.name, hashPassword(body.password), now, now);
         db.prepare('insert into memberships(id,workspace_id,user_id,role,created_at,updated_at) values (?,?,?,?,?,?)').run(newId(), i.workspace_id, uid, i.role, now, now);
         db.prepare('update invites set accepted_at = ? where id = ?').run(now, i.id);

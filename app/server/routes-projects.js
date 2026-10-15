@@ -28,7 +28,7 @@ export function projectRoutes(define, db) {
     sample: () => ({ url: '/api/v1/projects', payload: { name: 'Walk test project' } }),
     handler: async ({ ctx, actor, body, reply }) => {
       const id = newId(), now = nowIso();
-      mutate(ctx, { action: 'project.create', targetType: 'project', targetId: id, summary: `Project created: ${body.name}`, after: { name: body.name, visibility: body.visibility || 'workspace' } }, () => {
+      mutate(ctx, { action: 'project.create', targetType: 'project', targetId: id, summary: 'Project created', after: { name: body.name, visibility: body.visibility || 'workspace' } }, () => {
         db.prepare('insert into projects(id,workspace_id,name,description,owner_id,visibility,created_at,updated_at) values (?,?,?,?,?,?,?,?)')
           .run(id, actor.workspaceId, body.name, body.description || '', actor.userId, body.visibility || 'workspace', now, now);
         db.prepare('insert into project_members(id,project_id,user_id,role) values (?,?,?,?)').run(newId(), id, actor.userId, 'admin');
@@ -62,7 +62,7 @@ export function projectRoutes(define, db) {
     handler: async ({ ctx, body, access, reply }) => {
       const id = newId();
       const pos = db.prepare('select coalesce(max(position), -1) + 1 as n from sections where project_id = ?').get(access.project.id).n;
-      mutate(ctx, { action: 'section.create', targetType: 'section', targetId: id, summary: `Section added: ${body.name}`, after: { name: body.name, project: access.project.id } },
+      mutate(ctx, { action: 'section.create', targetType: 'section', targetId: id, summary: 'Section added', after: { name: body.name, project: access.project.id } },
         () => db.prepare('insert into sections(id,project_id,name,position) values (?,?,?,?)').run(id, access.project.id, body.name, pos));
       return reply.code(201).send({ id });
     } });
@@ -81,7 +81,7 @@ export function projectRoutes(define, db) {
     sample: (fx) => ({ url: `/api/v1/sections/${fx.creds.sections.disposable}` }),
     handler: async ({ ctx, req }) => {
       const before = db.prepare('select name, project_id from sections where id = ?').get(req.params.id);
-      mutate(ctx, { action: 'section.delete', targetType: 'section', targetId: req.params.id, summary: `Section deleted: ${before.name}`, before },
+      mutate(ctx, { action: 'section.delete', targetType: 'section', targetId: req.params.id, summary: 'Section deleted', before },
         () => db.prepare('delete from sections where id = ?').run(req.params.id));
       return { ok: true };
     } });
