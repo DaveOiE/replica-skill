@@ -123,7 +123,7 @@ export async function runBackup(db, { key, destination, kind = 'manual', now = s
     const check = checkDatabase(plain);
     if (!check.ok) throw new BackupError(`The copy failed its check, so nothing was uploaded: ${check.problems.join(' | ')}`);
     await encryptFile(plain, enc, key);
-    const name = `backup-${now()}-${kind}.db.gz.enc`;
+    const name = `backup-${kind}-${now()}.db.gz.enc`;   // the kind comes first so a storage lifecycle rule can match a prefix such as backup-hourly-
     await destination.put(name, enc);
     return { name, kind, bytes: statSync(enc).size, counts: check.counts };
   } finally { rmSync(dir, { recursive: true, force: true }); }

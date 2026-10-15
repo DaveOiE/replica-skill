@@ -1,5 +1,7 @@
 # Hosting plan: one small VM (plan only)
 
+The step-by-step commands are in `runbook.md`. This file is the reasoning, the costs and the open decisions.
+
 Status: **a plan. Nothing here has been built, bought, signed up for or deployed.** No account, key or payment is needed to read it, and
 none should be created until the owner decides. Updated after the Playbook check (see "Playbook alignment" below). Prices are rough planning figures from general knowledge, not live quotes (no web
 access in this build), so check them with the chosen provider before committing. Deskrail is not certified to any standard and has not
@@ -25,7 +27,7 @@ with a token. Deskrail makes no outgoing calls.
 internet -> :443 reverse proxy (certificates renewed automatically)
               -> 127.0.0.1:3000 Deskrail (node, run by systemd, own unprivileged user)
                     -> /var/lib/deskrail/app.db  (+ app.db-wal, app.db-shm), on the persistent disk
-backup timer (hourly, plus before each migration; the daily and monthly sets are promoted from the hourly ones) -> consistent copy -> encrypted -> storage bucket in a different project
+backup timers (hourly, daily and monthly runs, plus one before each migration) -> consistent copy -> encrypted -> storage bucket in a different project
 ```
 
 Sizing: 1 to 2 vCPU, 2 GB memory, 20 to 40 GB disk is plenty for a few staff and Zen's task traffic. SQLite writes are serialised, which
@@ -82,8 +84,8 @@ These were found while writing the plan. Each is small and each needs its own te
 | what | when | where | kept |
 | --- | --- | --- | --- |
 | **hourly** consistent copy of the database (backup command, below), encrypted | every hour, all day | storage bucket in the second project | **the last 48** (two days) |
-| **daily** copy: the first hourly copy after midnight, kept longer | every night | same bucket, own folder | **the last 30** |
-| **monthly** copy: the first daily copy of each month | monthly | same bucket, own folder | **the last 12** |
+| **daily** copy | every night | same bucket, name prefix `backup-daily-` | **the last 30** |
+| **monthly** copy | the 1st of each month | same bucket, name prefix `backup-monthly-` | **the last 12** |
 | **pre-migration** backup, taken by the deploy step before any migration runs | before every deploy that adds a migration | same bucket, separate folder | **the last 5**, never deleted by the daily clean-up |
 | disk snapshot (extra safety, not the main backup) | nightly | GCP snapshot schedule | 7 |
 
@@ -94,7 +96,7 @@ So at any time there are up to 95 off-machine backups (48 + 30 + 12 + 5). Older 
   cannot erase the history.
 - **Restore is tested, not assumed:** once before go-live and monthly after. Fetch the latest backup to a scratch machine, decrypt, run the
   integrity check and `verifyChain`, start the app on it, sign in as a fake test user, read the audit log. Record date and result in
-  `replica/ops-log.md` (created when hosting is actually built). A backup that has never been restored counts as no backup.
+  `replica/ops-log.md` (created when hosting is actually built); the steps are in `runbook.md`. A backup that has never been restored counts as no backup.
 - **Honest recovery goal:** with hourly copies, a failure could lose up to about one hour of changes (plus the time the failure went
   unnoticed if the alert below is late). Whether Zen can safely re-send an hour of ingestion (ingest is idempotent on its key, so a replay
   creates no duplicates, but staff edits and comments in that hour would be lost) is **NOT STATED** in the Playbook, so it is not assumed.

@@ -1,8 +1,8 @@
 # Test plan and results (Gauge, after Zen phase 4a)
 
-Suites, all passing at the time of writing: **170 JavaScript** (API, permissions, data, importer, forms, web hygiene),
+Suites, all passing at the time of writing: **171 JavaScript** (API, permissions, data, importer, forms, web hygiene),
 **69 Python** (the pack's tools and the brand sweep gate), **52 browser** (real Chromium at 390px and 1440px, including an
-accessibility scan of the earlier screens plus the audit log screen and the badge views). Total 291. Run them: `npm test`, `python3 -m unittest discover -s tests`,
+accessibility scan of the earlier screens plus the audit log screen and the badge views). Total 292. Run them: `npm test`, `python3 -m unittest discover -s tests`,
 `npx playwright test`.
 
 ## Flows from the recon map
@@ -26,6 +26,7 @@ accessibility scan of the earlier screens plus the audit log screen and the badg
 | first owner command | CLI | **tested** | `first-owner.test.js` (5 tests): creates the owner, password works and is stored only as a hash, never in the audit trail or on disk, shown once, refuses when an owner exists (including demo data) and a pipe; sabotage-checked by removing the owner check and by putting the password in the audit summary |
 | backup and restore | CLI and library | **tested** | `backup.test.js` (7 tests): backup then restore to a new file with the same row counts in every table and a verified audit chain; app keeps writing during backups; encrypted file shows no plaintext; wrong key, changed byte, short or foreign file fail without touching the target; a copy with a broken chain is never uploaded; no silent overwrite and the old file kept aside; any destination object works; the CLI never prints the key. Sabotage-checked three ways. Not tested against a cloud store (none built) or at production size |
 | second hardening pass | sign-in, hashing, sessions, headers, passwords | **tested** | `s4-hardening.test.js` (11 tests): folded failure rows with exact counts and no email text, summaries on window end and on shutdown; hashing does not block the event loop at the production cost; old hash upgraded after a correct sign-in only; hostile stored hashes refused; flood answered 503; idle timeout and 12 hour limit; cleanup removes only dead sessions; plain 404; Permissions-Policy; common passwords at change, invite and reset. Eight sabotage checks, all failed the suite as they should |
+| runbook matches code | docs | **tested** | `runbook.test.js`: pinned Node version is exact, satisfies the engine minimum and appears in the runbook; every setting the runbook explains is read by the code; every command it shows exists in package.json; sabotage-checked by renaming a script and by changing the pinned version |
 | audit content | audit rows | **tested** | `audit-redaction.test.js`: every kind of write (projects, sections, tasks, comments, dependencies, forms and public submissions, people, invites, project members, service accounts and tokens, workspace, failed sign-ins, ingest, job import) made with marker text everywhere, every audit row scanned; a careless writer is still reduced to field names; sabotage-checked |
 | F11 audit export | audit screen and CSV | **tested** (CSV for people only) | API: owners and admins only, tokens and other roles refused, filters, paging, other workspace, strict input, CSV quoting and formula neutralising, no before or after values, token and hash shaped text scrubbed (sabotage-checked), export audited; browser: filters, load more, download, at 390px and 1440px, axe clean. The JSON or NDJSON feed for systems is not built |
 | F12 bundle share | workflow bundles | not built | later list |

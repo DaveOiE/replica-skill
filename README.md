@@ -45,6 +45,8 @@ this build does not create. There is no automatic scheduling or clean-up of old 
 
 Sessions end after 12 hours, or after 2 hours unused (`SESSION_IDLE_MINUTES`). Passwords must be 12 characters and not a common one.
 
+The step-by-step for running it on a server (not yet done by anyone) is `replica/runbook.md`; the Node version used for testing is pinned in `.nvmrc`.
+
 Needs Node 22.13 or newer (Python 3.8 or newer for the pack's tools). No account, key or paid service.
 Seed passwords are random each time and live only in the gitignored file. Tests:
 `npm test`, `python3 -m unittest discover -s tests`, `npx playwright test`. No email is sent by the app: invite

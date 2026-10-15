@@ -35,7 +35,7 @@ test('backup, then restore to a new file: same row counts in every table and the
     for (let i = 0; i < 4; i++) await app.inject({ method: 'POST', url: `/api/v1/projects/${creds.projects.pub}/tasks`, headers: { cookie }, payload: { title: `Real activity ${i}` } });
     const dest = new LocalDirDestination(join(dir, 'dest'));
     const r = await runBackup(db, { key: KEY, destination: dest, kind: 'daily' });
-    assert.match(r.name, /^backup-\d{8}T\d{6}Z-daily\.db\.gz\.enc$/);
+    assert.match(r.name, /^backup-daily-\d{8}T\d{6}Z\.db\.gz\.enc$/);
     assert.deepEqual(await dest.list('backup-'), [r.name]);
     const out = join(dir, 'restored', 'app.db');
     const x = await runRestore({ key: KEY, destination: dest, from: r.name, to: out });
@@ -171,7 +171,7 @@ test('the commands: backup, list and restore through the command line; the key i
     const run = (...a) => spawnSync(process.execPath, ['--no-warnings', 'app/cli/backup.js', ...a], { env, encoding: 'utf8' });
     const b = run('backup', '--kind', 'hourly');
     assert.equal(b.status, 0, b.stderr);
-    assert.match(b.stdout, /Backup written: backup-.*-hourly\.db\.gz\.enc/);
+    assert.match(b.stdout, /Backup written: backup-hourly-\d{8}T\d{6}Z\.db\.gz\.enc/);
     assert.match(b.stdout, /passed its integrity and audit-chain check/);
     const name = /Backup written: (\S+)/.exec(b.stdout)[1];
     assert.equal(run('list').stdout.trim(), name);
