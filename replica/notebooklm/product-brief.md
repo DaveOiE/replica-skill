@@ -32,6 +32,8 @@ Honest summary: this is a pilot-ready small work manager, not an enterprise plat
 - **Extra project fields: job number, client, status, owner name, start, due and closed dates, tags, latest note** (an extra, not on the original list): PILOT item 2: migration 0003; job number kept as raw text
 - **Ingest endpoint for Zen: POST /api/v1/ingest/tasks (write token only)** (an extra, not on the original list): ZEN phase 2: strict validation; routes by ADL-066 (prospect to the one Sales project; client job to that client's project, created on first use by client_slug; internal job to Internal, or Sales when the subtype is business development); rejects unroutable input with a clear 422 and files nothing; idempotent on idempotency_key (a retry, even a simultaneous one, returns the original); assignee matched by email, full name, or a first name only one person has, else unassigned and the reason recorded; one audit entry per created task; returns a stable id and a canonical URL
 - **Task fields for Zen: source_call_id, client_slug, job_number (raw text), promised_date, inferred, lane (free text), idempotency_key, source** (an extra, not on the original list): ZEN phase 2: migration 0005; lanes are free text, never an enum; job number is stored exactly as sent and never minted here; tasks made by hand are source manual and by a form are source form
+- **Read API for Zen: GET /api/v1/read/tasks and /read/projects (read token only)** (an extra, not on the original list): ZEN phase 3: filters job_number, client_slug (all tasks in the client project, hand-made included), ids and updated_since; keyset paging (limit up to 500, cursor) with stable order; returns the agreed fields plus source, context and project kind, never the description; a read token sees only ingested projects (Sales, Internal, client), never imported or staff projects or the people directory; reads audited by route pattern only; no outgoing webhooks
+- **Staff can set job number, promised date and lane on a task by hand (API only, no screen yet)** (an extra, not on the original list): ZEN phase 3: checked, audited with before and after; client slug is inherited from a client project, not editable; migration 0006 stores the routing context and backfills slugs
 
 ### Partly built
 
@@ -128,6 +130,7 @@ Workspace roles: owner, admin, member, view-only (a read-only seat), and guest (
 | members:update_role | yes | yes | yes | - | - | - |
 | project:create | yes | yes | yes | yes | - | - |
 | project:list | no | yes | yes | yes | yes | yes |
+| projects:read_api | no | - | - | - | - | - |
 | report:read | no | yes | yes | yes | yes | yes |
 | service:whoami | no | - | - | - | - | - |
 | service_accounts:manage | yes | yes | yes | - | - | - |
@@ -136,6 +139,7 @@ Workspace roles: owner, admin, member, view-only (a read-only seat), and guest (
 | session:read | no | yes | yes | yes | yes | yes |
 | session:signout | no | yes | yes | yes | yes | yes |
 | tasks:ingest | yes | - | - | - | - | - |
+| tasks:read_api | no | - | - | - | - | - |
 | workspace:read | no | yes | yes | yes | yes | yes |
 | workspace:update | yes | yes | yes | - | - | - |
 
@@ -318,6 +322,7 @@ Projects (which also hold the Job Register fields), sections, tasks and what han
 - lane: free text, not a fixed list
 - idempotency_key: lets Zen retry safely
 - source: ingestion, manual or form
+- context: prospect, client_job or internal_job for tasks made by ingestion; empty otherwise
 
 **task_dependencies** (used today)
 
@@ -706,7 +711,7 @@ Every change to data writes an audit entry in the same database transaction as t
 
 ## 6. The API (how another system could talk to this)
 
-The web app is a thin page over a JSON API at /api/v1 (56 routes). **Today the API accepts browser session cookies from a person who signed in, and bearer tokens from service accounts. A token carries a scope (tasks:write or tasks:read) and may call only routes that name its scope. The write token can create tasks through POST /api/v1/ingest/tasks (idempotent, routed by the Zen rules) and both tokens can call /api/v1/service/whoami to check they work. The read routes for Zen are not built yet. There are no outgoing webhooks and no MCP-style endpoint.** Public routes (no sign-in) exist only for invite links, reset links and the public request form, and they are rate limited.
+The web app is a thin page over a JSON API at /api/v1 (58 routes). **Today the API accepts browser session cookies from a person who signed in, and bearer tokens from service accounts. A token carries a scope (tasks:write or tasks:read) and may call only routes that name its scope. The write token can create tasks through POST /api/v1/ingest/tasks (idempotent, routed by the Zen rules) and both tokens can call /api/v1/service/whoami to check they work. The read token can read tasks and projects through GET /api/v1/read/tasks and /read/projects, but only those made by ingestion (Sales, Internal and client projects), never imported or staff projects and never the people directory. There are no outgoing webhooks and no MCP-style endpoint.** Public routes (no sign-in) exist only for invite links, reset links and the public request form, and they are rate limited.
 
 | Method | Path | Who may call it | Changes data |
 | --- | --- | --- | --- |
@@ -747,6 +752,8 @@ The web app is a thin page over a JSON API at /api/v1 (56 routes). **Today the A
 | POST | /api/v1/projects/:id/tasks | project editor or higher | yes |
 | GET | /api/v1/public/forms/:slug | anyone (rate limited) | no |
 | POST | /api/v1/public/forms/:slug/submit | anyone (rate limited) | yes |
+| GET | /api/v1/read/projects |  | no |
+| GET | /api/v1/read/tasks |  | no |
 | GET | /api/v1/reports/summary | owner, admin, member, view_only, guest | no |
 | GET | /api/v1/resets/:token | anyone (rate limited) | no |
 | POST | /api/v1/resets/:token/complete | anyone (rate limited) | yes |
@@ -769,7 +776,7 @@ The web app is a thin page over a JSON API at /api/v1 (56 routes). **Today the A
 
 ### What connecting an AI would need first (recommendation)
 
-1. **Service accounts with scoped tokens** (built): an AI or another system gets its own identity, shown a token once, with every call audited under that identity. The ingest route is built; the read routes for Zen are the next phase.
+1. **Service accounts with scoped tokens** (built): an AI or another system gets its own identity, shown a token once, with every call audited under that identity. The ingest and read routes are built.
 2. A short **allow-list of fields** an AI may read. Treat these as sensitive and exclude them by default: client names and notes from the Job Register, comments, task descriptions (which can contain visitor email addresses), form submissions, and people's email addresses.
 3. **Decide read-only versus write**: creating tasks is safe to start with; changing status or assignment should be a later, separate decision.
 4. NotebookLM is a Google service. Upload only this brief and the other documents in the replica folder, never exports of real client data such as the Job Register.

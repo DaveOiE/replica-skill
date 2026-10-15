@@ -61,5 +61,4 @@ test against a mock first). After those: calendar and timeline views, SAML and S
 
 Deskrail's role is now fixed by the owner's architecture: the task-and-action system of record behind Zen, with Zen as its only
 connection. The rules are kept in `zen-integration.md`. Phase 1 (machine access) is built: service accounts and scoped tokens,
-every token call audited, a token able to call only routes that name its scope. Phase 2 (ingest endpoint and task fields) is built too. Next: the read
-API for Zen (phase 3). The Job Register importer and Jobs view are untouched and transitional.
+every token call audited, a token able to call only routes that name its scope. Phase 2 (ingest endpoint and task fields) and phase 3 (the read API for Zen) are built too. Next: phase 4 (UI polish), after the owner's approval, and the hosting decision. The Job Register importer and Jobs view are untouched and transitional.

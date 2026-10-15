@@ -14,6 +14,8 @@ export const ACTIONS = {
   // Machine access. `service` lists the token scopes that may call an action; an action with no `service` list is closed to every token.
   'service:whoami': { roles: [], service: ['tasks:read', 'tasks:write'], write: false },
   'tasks:ingest': { roles: [], service: ['tasks:write'], write: true },   // Zen's write: create tasks, nothing else
+  'tasks:read_api': { roles: [], service: ['tasks:read'], write: false },       // Zen's read
+  'projects:read_api': { roles: [], service: ['tasks:read'], write: false },
   'service_accounts:read': { roles: MANAGERS, write: false },
   'service_accounts:manage': { roles: MANAGERS, write: true },
   'session:read': { roles: ALL, write: false },

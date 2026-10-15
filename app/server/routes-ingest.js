@@ -64,7 +64,7 @@ export function ingestRoutes(define, db, config) {
             let assigneeId = null;
             if (body.assignee) { const a = findAssignee(ws, body.assignee, project); if (a.id) assigneeId = a.id; else warnings.push({ field: 'assignee', problem: a.problem }); }
             const id = insertIngestedTask(db, ws, project, actor.userId, { title: body.title, description: body.description, assigneeId, dueDate: body.due_date, estimateMinutes: body.estimate_minutes, sourceCallId: body.source_call_id,
-              clientSlug: body.client_slug, jobNumber: body.job_number, promisedDate: body.promised_date, inferred: body.inferred, lane: body.lane, idempotencyKey: body.idempotency_key });
+              clientSlug: body.client_slug, jobNumber: body.job_number, promisedDate: body.promised_date, inferred: body.inferred, lane: body.lane, idempotencyKey: body.idempotency_key, context: body.context });
             return { id, project, assigneeId, warnings };
           });
           const t = findTaskByKey(db, ws, body.idempotency_key);

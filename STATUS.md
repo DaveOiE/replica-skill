@@ -8,13 +8,13 @@ Updated: 2026-10-15
 
 | state | features |
 | --- | --- |
-| done | 24 |
+| done | 26 |
 | partly done | 3 |
 | later (deferred) | 45 |
 | skipped | 2 |
-| **total** | **74** |
+| **total** | **76** |
 
-Demo scope: **79 of 89 points built (89%)**. Later pool: 121 points, not scheduled. One point is a small tested feature (a few routes, one screen state, its tests).
+Demo scope: **89 of 99 points built (90%)**. Later pool: 121 points, not scheduled. One point is a small tested feature (a few routes, one screen state, its tests).
 
 ## Budget
 
@@ -39,6 +39,7 @@ Used so far (proxy): **56.0%**. Rate: **0.31% of session per point** (measured o
 | P3 | Pilot 3: public request form and one rule | demo | 8 | 0 | 0 | done, 1 partial | 0.0% | - |
 | Z1 | Zen phase 1: machine access (service accounts and tokens) | demo | 3 | 0 | 0 | done | 0.0% | - |
 | Z2 | Zen phase 2: ingest endpoint and task fields | demo | 10 | 0 | 0 | done | 0.0% | - |
+| Z3 | Zen phase 3: read API for Zen | demo | 10 | 0 | 0 | done | 0.0% | - |
 
 Fits inside the 60% stop line at this rate: nothing.
 (Gauge and Evolve are extra: see replica/run-plan.md.)
@@ -81,6 +82,8 @@ Fits inside the 60% stop line at this rate: nothing.
 | M3 | Board view | C | must | 3 | demo | done | Built: one column per section; drag a card or use its Move to menu (keyboard); read-only for view-only seats; opens the same task drawer |
 | M3 | Calendar view | C | must | 3 | later | later (deferred) |  |
 | M3 | Timeline view (Gantt-style) | C | should | 5 | later | later (deferred) |  |
+| Z3 | Read API for Zen: GET /api/v1/read/tasks and /read/projects (read token only) | E | must | 8 | demo | done | ZEN phase 3: filters job_number, client_slug (all tasks in the client project, hand-made included), ids and updated_since; keyset paging (limit up to 500, cursor) with stable order; returns the agreed fields plus source, context and project kind, never the description; a read token sees only ingested projects (Sales, Internal, client), never imported or staff projects or the people directory; reads audited by route pattern only; no outgoing webhooks |
+| Z3 | Staff can set job number, promised date and lane on a task by hand (API only, no screen yet) | E | must | 2 | demo | done | ZEN phase 3: checked, audited with before and after; client slug is inherited from a client project, not editable; migration 0006 stores the routing context and backfills slugs |
 | M4 | Project status updates | C | should | 2 | later | later (deferred) |  |
 | M4 | Time tracking: estimated vs actual | C | should | 3 | later | later (deferred) |  |
 | M5 | Approvals | C | should | 3 | later | later (deferred) |  |

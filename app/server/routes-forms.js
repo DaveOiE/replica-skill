@@ -113,8 +113,8 @@ export function formRoutes(define, db, limiters) {
       const log = (action, targetId, summary, after) => appendAudit(db, { workspaceId: f.workspace_id, actorKind: 'system', action, targetType: 'task', targetId, summary, after, ip: ctx.ip, requestId: ctx.requestId });
       mutate({ ...ctx, actor: null }, { workspaceId: f.workspace_id, action: 'form.submit', targetType: 'form', targetId: f.id, summary: 'Request submitted through a public form (task created)', after: { task: taskId, answered: answers.length, email: !!email } }, () => {
         const pos = db.prepare('select coalesce(max(position), 0) + 1 as n from tasks where project_id = ?').get(f.project_id).n;
-        db.prepare(`insert into tasks(id,workspace_id,project_id,section_id,title,description,owner_id,status,position,created_at,updated_at,source) values (?,?,?,?,?,?,?,?,?,?,?,'form')`)
-          .run(taskId, f.workspace_id, f.project_id, f.target_section_id, title, description, f.created_by, 'todo', pos, now, now);
+        db.prepare(`insert into tasks(id,workspace_id,project_id,section_id,title,description,owner_id,status,position,created_at,updated_at,source,client_slug) values (?,?,?,?,?,?,?,?,?,?,?,'form',(select client_slug from projects where id = ? and kind = 'client'))`)
+          .run(taskId, f.workspace_id, f.project_id, f.target_section_id, title, description, f.created_by, 'todo', pos, now, now, f.project_id);
         db.prepare('insert into form_submissions(id,form_id,task_id,answers_json,submitter_email,created_at) values (?,?,?,?,?,?)').run(newId(), f.id, taskId, JSON.stringify(Object.fromEntries(answers.map((a) => [a.q.id, a.v]))), email || null, now);
         for (const r of db.prepare("select * from rules where enabled = 1 and json_extract(trigger_json, '$.formId') = ?").all(f.id)) {
           for (const a of JSON.parse(r.actions_json)) {

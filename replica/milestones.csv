@@ -14,3 +14,4 @@ P2,Pilot 2: Job Register importer and Jobs view,L,3,demo
 P3,Pilot 3: public request form and one rule,M,3,demo
 Z1,Zen phase 1: machine access (service accounts and tokens),M,3,demo
 Z2,Zen phase 2: ingest endpoint and task fields,M,3,demo
+Z3,Zen phase 3: read API for Zen,M,3,demo

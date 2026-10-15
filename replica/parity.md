@@ -1,4 +1,4 @@
-# Parity report (Gauge, after Zen phase 2)
+# Parity report (Gauge, after Zen phase 3)
 
 Two honest numbers, because the build was cut to a demo and then a pilot on purpose.
 
@@ -15,7 +15,7 @@ Register importer and Jobs view, the request form) are extras the original list 
 
 ## Built, partial, stubbed, missing
 
-- **Built and tested:** the Zen ingest endpoint and task fields (phase 2; extras, so not scored); service accounts with scoped tokens (Zen phase 1); workspaces, roles and password sign-in; task fields, comments, subtasks, milestones, dependencies; projects and sections; list and board views; unlimited guests; per-project admin controls; view-only seats; **forms that create tasks** (no branching, no customisation). Extras: add a person, change own password, admin password reset and unlock, invites by link, Job Register import, Jobs view, public request form.
+- **Built and tested:** the Zen ingest endpoint, task fields and read API (phases 2 and 3; extras, so not scored); service accounts with scoped tokens (Zen phase 1); workspaces, roles and password sign-in; task fields, comments, subtasks, milestones, dependencies; projects and sections; list and board views; unlimited guests; per-project admin controls; view-only seats; **forms that create tasks** (no branching, no customisation). Extras: add a person, change own password, admin password reset and unlock, invites by link, Job Register import, Jobs view, public request form.
 - **Partly built:** dashboards (fixed widgets only); rules automation (one rule type: assign new form requests to a chosen person); mobile-friendly web app (every screen built is checked at 390px and 1440px).
 - **Stubs and mocks: none.** Nothing is faked. SAML, SCIM, connectors, hooks and AI features are **not built**.
 - **Not built, later list (124 points):** the audit log screen and JSON and NDJSON export (moved here from the pilot because the budget gate failed); calendar and timeline views; custom fields; form branching and customisation; time tracking; status updates; portfolios; goals; workload and capacity; approvals and proofing; universal reporting; SAML and SCIM; the admin console and security settings; bundles; branding and onboarding; backup; integrations; DLP and archiving hooks; support page; compliance documents (all would be labelled not certified); AI features; attachments; project templates; the Toggl connector and time tracking (skipped by default).

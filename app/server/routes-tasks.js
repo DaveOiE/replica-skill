@@ -3,16 +3,19 @@ import { mutate } from './audit.js';
 import { newId, nowIso } from './db.js';
 import { projectAccess } from './access.js';
 
-const date = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Use a date like 2026-10-31.').refine((d) => !Number.isNaN(Date.parse(d)), 'That is not a real date.');
+const date = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Use a date like 2026-10-31.').refine((d) => !Number.isNaN(Date.parse(d)) && new Date(d).toISOString().slice(0, 10) === d, 'That is not a real date.');   // 2026-02-31 must not roll over into March
 const STATUS = z.enum(['todo', 'in_progress', 'blocked', 'done']);
 const fields = {
   title: z.string().trim().min(1).max(300), description: z.string().max(20000),
   sectionId: z.string().nullable(), assigneeId: z.string().nullable(), status: STATUS,
   startDate: date.nullable(), dueDate: date.nullable(), isMilestone: z.boolean(),
   estimateMinutes: z.number().int().min(0).max(100000).nullable(), position: z.number(),
+  // links to Zen: staff can set these on a task made by hand. The client slug is not editable here: it comes from the project.
+  jobNumber: z.string().min(1).max(60).refine((s) => !/[\u0000-\u001f\u007f]/.test(s) && s === s.trim(), 'No control characters or leading and trailing spaces: it is stored exactly as typed.').nullable(),
+  promisedDate: date.nullable(), lane: z.string().trim().min(1).max(80).nullable(),
 };
 const pick = (o, keys) => Object.fromEntries(keys.filter((k) => o[k] !== undefined).map((k) => [k, o[k]]));
-const COL = { title: 'title', description: 'description', sectionId: 'section_id', assigneeId: 'assignee_id', status: 'status', startDate: 'start_date', dueDate: 'due_date', isMilestone: 'is_milestone', estimateMinutes: 'estimate_minutes', position: 'position' };
+const COL = { title: 'title', description: 'description', sectionId: 'section_id', assigneeId: 'assignee_id', status: 'status', startDate: 'start_date', dueDate: 'due_date', isMilestone: 'is_milestone', estimateMinutes: 'estimate_minutes', position: 'position', jobNumber: 'job_number', promisedDate: 'promised_date', lane: 'lane' };
 
 export function taskRoutes(define, db) {
   const byProject = (req) => req.params.id;
@@ -21,6 +24,7 @@ export function taskRoutes(define, db) {
   const view = (t) => ({ id: t.id, projectId: t.project_id, parentId: t.parent_id, sectionId: t.section_id, title: t.title, description: t.description,
     status: t.status, assigneeId: t.assignee_id, assigneeName: t.assignee_name ?? null, startDate: t.start_date, dueDate: t.due_date,
     isMilestone: !!t.is_milestone, estimateMinutes: t.estimate_minutes, position: t.position, completedAt: t.completed_at,
+    jobNumber: t.job_number, promisedDate: t.promised_date, lane: t.lane, clientSlug: t.client_slug, inferred: !!t.inferred, source: t.source, sourceCallId: t.source_call_id,
     ...(t.open_blockers !== undefined ? { openBlockers: t.open_blockers } : {}) });
   const SELECT = `select t.*, u.name as assignee_name,
     (select count(*) from task_dependencies d join tasks b on b.id = d.depends_on_id where d.task_id = t.id and b.status != 'done') as open_blockers
@@ -68,9 +72,9 @@ export function taskRoutes(define, db) {
       const id = newId(), now = nowIso();
       const pos = db.prepare('select coalesce(max(position), 0) + 1 as n from tasks where project_id = ?').get(p.id).n;
       mutate(ctx, { action: 'task.create', targetType: 'task', targetId: id, summary: `Task created: ${body.title}`, after: { ...body, project: p.id } }, () =>
-        db.prepare(`insert into tasks(id,workspace_id,project_id,section_id,parent_id,title,description,assignee_id,owner_id,status,start_date,due_date,is_milestone,estimate_minutes,position,completed_at,created_at,updated_at)
-          values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`).run(id, actor.workspaceId, p.id, body.sectionId ?? null, body.parentId ?? null, body.title, body.description ?? '', body.assigneeId ?? null,
-          actor.userId, body.status ?? 'todo', body.startDate ?? null, body.dueDate ?? null, body.isMilestone ? 1 : 0, body.estimateMinutes ?? null, pos, body.status === 'done' ? now : null, now, now));
+        db.prepare(`insert into tasks(id,workspace_id,project_id,section_id,parent_id,title,description,assignee_id,owner_id,status,start_date,due_date,is_milestone,estimate_minutes,position,completed_at,created_at,updated_at,client_slug)
+          values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`).run(id, actor.workspaceId, p.id, body.sectionId ?? null, body.parentId ?? null, body.title, body.description ?? '', body.assigneeId ?? null,
+          actor.userId, body.status ?? 'todo', body.startDate ?? null, body.dueDate ?? null, body.isMilestone ? 1 : 0, body.estimateMinutes ?? null, pos, body.status === 'done' ? now : null, now, now, p.kind === 'client' ? p.client_slug : null)); // a task made in a client's project carries that client's slug
       return reply.code(201).send({ id });
     } });
 

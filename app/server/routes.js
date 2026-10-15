@@ -3,6 +3,7 @@ import { can, canAssignRole, ACTIONS } from './authz.js';
 import { resolveBearer } from './store.js';
 import { serviceRoutes } from './routes-service.js';
 import { ingestRoutes } from './routes-ingest.js';
+import { readRoutes } from './routes-read.js';
 import { mutate } from './audit.js';
 import { signIn, signOut, actorFromToken } from './auth.js';
 import { projectAccess } from './access.js';
@@ -94,6 +95,7 @@ export function registerRoutes(app, { db, config, limiters }) {
 
   serviceRoutes(define, db);
   ingestRoutes(define, db, config);
+  readRoutes(define, db, config);
   projectRoutes(define, db);
   taskRoutes(define, db);
   peopleRoutes(define, db);

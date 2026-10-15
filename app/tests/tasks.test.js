@@ -36,6 +36,8 @@ test('tasks: bad input is refused with plain messages', async () => {
   assert.equal((await call('member', 'POST', url, { title: 'x'.repeat(301) })).statusCode, 400);
   assert.equal((await call('member', 'POST', url, { title: 'x', dueDate: '31/10/2026' })).statusCode, 400);
   assert.equal((await call('member', 'POST', url, { title: 'x', dueDate: '2026-02-31x' })).statusCode, 400);
+  assert.equal((await call('member', 'POST', url, { title: 'x', dueDate: '2026-02-31' })).statusCode, 400, 'an impossible date must not roll over into March');
+  assert.equal((await call('member', 'PATCH', `/api/v1/tasks/${creds.tasks.a}`, { startDate: '2026-04-31' })).statusCode, 400);
   const dates = await call('member', 'POST', url, { title: 'x', startDate: '2030-05-02', dueDate: '2030-05-01' });
   assert.equal(dates.statusCode, 400);
   assert.match(dates.json().error, /start date/);

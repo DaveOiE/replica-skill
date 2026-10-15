@@ -24,8 +24,8 @@ export function insertIngestedTask(db, ws, project, ownerId, f) {
   const section = db.prepare('select id from sections where project_id = ? order by position limit 1').get(project.id)?.id ?? null;
   const pos = db.prepare('select coalesce(max(position), 0) + 1 as n from tasks where project_id = ?').get(project.id).n;
   db.prepare(`insert into tasks(id,workspace_id,project_id,section_id,title,description,assignee_id,owner_id,status,due_date,estimate_minutes,position,created_at,updated_at,
-      source_call_id,client_slug,job_number,promised_date,inferred,lane,idempotency_key,source) values (?,?,?,?,?,?,?,?,'todo',?,?,?,?,?,?,?,?,?,?,?,?,'ingestion')`)
+      source_call_id,client_slug,job_number,promised_date,inferred,lane,idempotency_key,context,source) values (?,?,?,?,?,?,?,?,'todo',?,?,?,?,?,?,?,?,?,?,?,?,?,'ingestion')`)
     .run(id, ws, project.id, section, f.title, f.description ?? '', f.assigneeId ?? null, ownerId, f.dueDate ?? null, f.estimateMinutes ?? null, pos, now, now,
-      f.sourceCallId ?? null, f.clientSlug ?? null, f.jobNumber ?? null, f.promisedDate ?? null, f.inferred ? 1 : 0, f.lane ?? null, f.idempotencyKey);
+      f.sourceCallId ?? null, f.clientSlug ?? null, f.jobNumber ?? null, f.promisedDate ?? null, f.inferred ? 1 : 0, f.lane ?? null, f.idempotencyKey, f.context);
   return id;
 }
