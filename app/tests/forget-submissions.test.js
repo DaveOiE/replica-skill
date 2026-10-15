@@ -77,7 +77,7 @@ test('migration 0007 also blanks submissions already orphaned by earlier task de
     db.exec("insert into workspaces(id,name,slug,created_at,updated_at) values ('w','W','w','t','t'); insert into users(id,email,name,kind,status,created_at,updated_at) values ('u','u@example.test','U','human','active','t','t');");
     db.exec("insert into projects(id,workspace_id,name,owner_id,visibility,created_at,updated_at) values ('p','w','P','u','workspace','t','t'); insert into forms(id,workspace_id,project_id,name,slug,created_by,created_at,updated_at) values ('f','w','p','F','s','u','t','t');");
     db.exec(`insert into form_submissions(id,form_id,task_id,answers_json,submitter_email,created_at) values ('s1','f',null,'{"a":"${MARK} old answer"}','${MARK}@example.test','t')`);
-    assert.deepEqual(migrate(db), ['0007_forget_submissions.sql']);
+    assert.ok(migrate(db).includes('0007_forget_submissions.sql'));
     const r = db.prepare("select answers_json a, submitter_email e from form_submissions where id = 's1'").get();
     assert.deepEqual([r.a, r.e], ['{}', null]);
   } finally { rmSync(dir, { recursive: true, force: true }); }

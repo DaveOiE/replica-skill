@@ -41,6 +41,7 @@ Honest summary: this is a pilot-ready small work manager, not an enterprise plat
 - **Deleting a task blanks its form submission** (an extra, not on the original list): Pre-data hardening group B: answers and submitter email cleared by a database trigger (covers subtasks and cascades); migration 0007 also clears older orphaned rows; project delete and delete-by-client wait for the forget-me ruling
 - **First-owner command (empty database only)** (an extra, not on the original list): Pre-hosting: npm run first-owner creates the workspace and first owner with a generated one-time password shown once in a terminal, stored only as a hash, never logged or audited; refuses if any owner exists or if the output is not a terminal
 - **Encrypted online backup and checked restore (folder destination)** (an extra, not on the original list): Pre-hosting: npm run backup takes a no-downtime copy (VACUUM INTO), checks integrity and the audit chain, encrypts with AES-256-GCM using a key from the environment, and hands it to a destination interface (folder driver built, cloud driver not); restore decrypts, checks, then replaces, keeping the old file aside
+- **Sign-in hardening: folded failure audit, async stronger hashing with upgrade, idle timeout and session clean-up, common-password rule** (an extra, not on the original list): Pre-hosting second pass: one audit row per account and address per window with a count; scrypt N=65536 off the main thread, capped, upgraded on sign-in; idle timeout 120 minutes; old sessions deleted; plain 404; Permissions-Policy; common-password check. Lockout redesign and __Host- cookie prefix deliberately skipped
 
 ### Partly built
 
@@ -204,6 +205,7 @@ Who exists, how they sign in, what they may do.
 - created_at
 - expires_at
 - revoked_at
+- last_seen_at
 
 **invites** (used today)
 

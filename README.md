@@ -43,6 +43,8 @@ checks it, and stores it; `npm run restore -- --from <name> --to <path>` checks 
 keeps any existing file aside. Only a folder destination is built; a cloud store would need a small driver and an account, which
 this build does not create. There is no automatic scheduling or clean-up of old backups in the app.
 
+Sessions end after 12 hours, or after 2 hours unused (`SESSION_IDLE_MINUTES`). Passwords must be 12 characters and not a common one.
+
 Needs Node 22.13 or newer (Python 3.8 or newer for the pack's tools). No account, key or paid service.
 Seed passwords are random each time and live only in the gitignored file. Tests:
 `npm test`, `python3 -m unittest discover -s tests`, `npx playwright test`. No email is sent by the app: invite

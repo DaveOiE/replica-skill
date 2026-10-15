@@ -18,7 +18,7 @@ export function redact(value) {
  * and a short list of fixed-vocabulary keys keep their value; every other field keeps its name and the value becomes NOT_RECORDED.
  */
 export const NOT_RECORDED = '[not recorded]';
-const ENUM_KEYS = new Set(['status', 'role', 'visibility', 'kind', 'source']);
+const ENUM_KEYS = new Set(['status', 'role', 'visibility', 'kind', 'source', 'attempted']);
 const ID_KEY = /(^id$|Id$|_id$)|^(project|task|comment|dependsOn|section|user|form)$/;
 const DATE_KEY = /(Date|At|_at)$/;
 const isoDate = /^\d{4}-\d{2}-\d{2}(T[\d:.]+Z)?$/;

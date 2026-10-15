@@ -8,13 +8,13 @@ Updated: 2026-10-15
 
 | state | features |
 | --- | --- |
-| done | 33 |
+| done | 34 |
 | partly done | 3 |
 | later (deferred) | 44 |
 | skipped | 2 |
-| **total** | **82** |
+| **total** | **83** |
 
-Demo scope: **103 of 113 points built (91%)**. Later pool: 116 points, not scheduled. One point is a small tested feature (a few routes, one screen state, its tests).
+Demo scope: **106 of 116 points built (91%)**. Later pool: 116 points, not scheduled. One point is a small tested feature (a few routes, one screen state, its tests).
 
 ## Budget
 
@@ -40,7 +40,7 @@ Used so far (proxy): **56.0%**. Rate: **0.31% of session per point** (measured o
 | Z1 | Zen phase 1: machine access (service accounts and tokens) | demo | 3 | 0 | 0 | done | 0.0% | - |
 | Z2 | Zen phase 2: ingest endpoint and task fields | demo | 10 | 0 | 0 | done | 0.0% | - |
 | Z3 | Zen phase 3: read API for Zen | demo | 10 | 0 | 0 | done | 0.0% | - |
-| Z4 | Zen phase 4a: badge, lane and promised date in the drawer, audit log screen with CSV export | demo | 14 | 0 | 0 | done | 0.0% | - |
+| Z4 | Zen phase 4a: badge, lane and promised date in the drawer, audit log screen with CSV export | demo | 17 | 0 | 0 | done | 0.0% | - |
 
 Fits inside the 60% stop line at this rate: nothing.
 (Gauge and Evolve are extra: see replica/run-plan.md.)
@@ -91,6 +91,7 @@ Fits inside the 60% stop line at this rate: nothing.
 | M4 | Project status updates | C | should | 2 | later | later (deferred) |  |
 | Z4 | Audit trail holds ids and field names only | E | must | 2 | demo | done | Pre-data hardening group A: no titles, descriptions, comment text, form answers, emails, names or project names in any audit write; deny-by-default in the single write path; scan test over every kind of change |
 | Z4 | Deleting a task blanks its form submission | E | must | 1 | demo | done | Pre-data hardening group B: answers and submitter email cleared by a database trigger (covers subtasks and cascades); migration 0007 also clears older orphaned rows; project delete and delete-by-client wait for the forget-me ruling |
+| Z4 | Sign-in hardening: folded failure audit, async stronger hashing with upgrade, idle timeout and session clean-up, common-password rule | E | must | 3 | demo | done | Pre-hosting second pass: one audit row per account and address per window with a count; scrypt N=65536 off the main thread, capped, upgraded on sign-in; idle timeout 120 minutes; old sessions deleted; plain 404; Permissions-Policy; common-password check. Lockout redesign and __Host- cookie prefix deliberately skipped |
 | Z4 | "AI/service-created" badge on tasks | C | should | 1 | demo | done | ZEN phase 4a: tasks whose source is ingestion show a badge and their source call in the list, the board and the task drawer, plus an Inferred marker when the sending system guessed. Shown to anyone who can see the task |
 | Z4 | Lane and promised date in the task drawer | C | should | 1 | demo | done | ZEN phase 4a: two fields in the drawer, editable by editors and admins through the existing task update route (the server enforces it). Lane is free text, never a fixed list |
 | M4 | Time tracking: estimated vs actual | C | should | 3 | later | later (deferred) |  |

@@ -3,7 +3,7 @@ import { createHash, randomBytes } from 'node:crypto';
 import { mutate } from './audit.js';
 import { newId, nowIso } from './db.js';
 import { canAssignRole } from './authz.js';
-import { hashPassword, checkPasswordRules } from './password.js';
+import { hashPasswordAsync, checkPasswordRules } from './password.js';
 
 const sha256 = (s) => createHash('sha256').update(s).digest('hex');
 const newToken = () => randomBytes(32).toString('base64url');
@@ -66,8 +66,10 @@ export function accessRoutes(define, db, limiters) {
       if (!r) return reply.code(404).send({ error: NOT_VALID });
       const problems = checkPasswordRules(body.password);
       if (problems.length) return reply.code(400).send({ error: problems.join(' '), details: [{ field: 'password', message: problems.join(' ') }] });
+      const hash = await hashPasswordAsync(body.password);
+      if (!validReset(req.params.token)) return reply.code(404).send({ error: NOT_VALID });   // checked again right before use: hashing took time, and a link works once
       mutate({ ...ctx, actor: null }, { workspaceId: r.workspace_id, action: 'auth.password_reset', targetType: 'user', targetId: r.user_id, summary: 'Password set from a reset link; all sessions ended; lock cleared' }, () => {
-        db.prepare('update users set password_hash = ?, failed_logins = 0, locked_until = null, updated_at = ? where id = ?').run(hashPassword(body.password), nowIso(), r.user_id);
+        db.prepare('update users set password_hash = ?, failed_logins = 0, locked_until = null, updated_at = ? where id = ?').run(hash, nowIso(), r.user_id);
         db.prepare('update sessions set revoked_at = ? where user_id = ? and revoked_at is null').run(nowIso(), r.user_id);
         db.prepare('update password_resets set used_at = ? where id = ?').run(nowIso(), r.id);
       });
@@ -121,10 +123,12 @@ export function accessRoutes(define, db, limiters) {
       if (!i) return reply.code(404).send({ error: NOT_VALID });
       const problems = checkPasswordRules(body.password);
       if (problems.length) return reply.code(400).send({ error: problems.join(' '), details: [{ field: 'password', message: problems.join(' ') }] });
+      const hash = await hashPasswordAsync(body.password);
+      if (!validInvite(req.params.token)) return reply.code(404).send({ error: NOT_VALID });   // checked again right before use: hashing took time, and a link works once
       if (db.prepare('select 1 from users where email = ?').get(i.email)) return reply.code(409).send({ error: 'That email already has an account. Sign in instead.' });
       const uid = newId(), now = nowIso();
       mutate({ ...ctx, actor: null }, { workspaceId: i.workspace_id, action: 'invite.accept', targetType: 'user', targetId: uid, summary: `Invite accepted as ${i.role}`, after: { role: i.role } }, () => {
-        db.prepare('insert into users(id,email,name,password_hash,created_at,updated_at) values (?,?,?,?,?,?)').run(uid, i.email, body.name, hashPassword(body.password), now, now);
+        db.prepare('insert into users(id,email,name,password_hash,created_at,updated_at) values (?,?,?,?,?,?)').run(uid, i.email, body.name, hash, now, now);
         db.prepare('insert into memberships(id,workspace_id,user_id,role,created_at,updated_at) values (?,?,?,?,?,?)').run(newId(), i.workspace_id, uid, i.role, now, now);
         db.prepare('update invites set accepted_at = ? where id = ?').run(now, i.id);
       });

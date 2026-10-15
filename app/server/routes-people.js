@@ -3,7 +3,7 @@ import { createHash } from 'node:crypto';
 import { mutate } from './audit.js';
 import { newId, nowIso } from './db.js';
 import { canAssignRole } from './authz.js';
-import { hashPassword, verifyPassword, checkPasswordRules, randomPassword } from './password.js';
+import { hashPasswordAsync, verifyPasswordAsync, checkPasswordRules, randomPassword } from './password.js';
 
 const sha256 = (s) => createHash('sha256').update(s).digest('hex');
 
@@ -17,8 +17,9 @@ export function peopleRoutes(define, db) {
       if (!canAssignRole(actor, null, body.role)) return reply.code(403).send({ error: 'You do not have permission to give that role.' });
       if (db.prepare('select 1 from users where email = ?').get(body.email)) return reply.code(409).send({ error: 'That email already has an account.' });
       const id = newId(), now = nowIso(), temp = randomPassword();
+      const tempHash = await hashPasswordAsync(temp);
       mutate(ctx, { action: 'member.create', targetType: 'user', targetId: id, summary: `Added ${body.role === 'guest' ? 'guest' : 'person'}`, after: { role: body.role } }, () => {
-        db.prepare('insert into users(id,email,name,password_hash,created_at,updated_at) values (?,?,?,?,?,?)').run(id, body.email, body.name, hashPassword(temp), now, now);
+        db.prepare('insert into users(id,email,name,password_hash,created_at,updated_at) values (?,?,?,?,?,?)').run(id, body.email, body.name, tempHash, now, now);
         db.prepare('insert into memberships(id,workspace_id,user_id,role,created_at,updated_at) values (?,?,?,?,?,?)').run(newId(), actor.workspaceId, id, body.role, now, now);
       });
       // Shown once, here only. It is never stored in plain text and never written to the audit trail.
@@ -30,11 +31,12 @@ export function peopleRoutes(define, db) {
     sample: (fx) => ({ url: '/api/v1/auth/password', payload: { current: fx.who.password, next: 'a-new-long-password-1' } }),
     handler: async ({ ctx, req, actor, body, reply }) => {
       const u = db.prepare('select password_hash from users where id = ?').get(actor.userId);
-      if (!u?.password_hash || !verifyPassword(body.current, u.password_hash)) return reply.code(403).send({ error: 'Your current password is not right.' });
+      if (!u?.password_hash || !(await verifyPasswordAsync(body.current, u.password_hash))) return reply.code(403).send({ error: 'Your current password is not right.' });
       const problems = checkPasswordRules(body.next);
       if (problems.length) return reply.code(400).send({ error: problems.join(' '), details: [{ field: 'next', message: problems.join(' ') }] });
+      const nextHash = await hashPasswordAsync(body.next);
       mutate(ctx, { action: 'auth.password_change', targetType: 'user', targetId: actor.userId, summary: 'Password changed; other sessions ended' }, () => {
-        db.prepare('update users set password_hash = ?, updated_at = ? where id = ?').run(hashPassword(body.next), nowIso(), actor.userId);
+        db.prepare('update users set password_hash = ?, updated_at = ? where id = ?').run(nextHash, nowIso(), actor.userId);
         db.prepare('update sessions set revoked_at = ? where user_id = ? and revoked_at is null and id != ?').run(nowIso(), actor.userId, sha256(req.cookies.session));
       });
       return { ok: true };

@@ -9,6 +9,8 @@ import { PRODUCT_NAME } from '../shared/brand.js';
 import { registerRoutes } from './routes.js';
 import { makeLimiter } from './rateLimit.js';
 import { appendAudit } from './audit.js';
+import { BusyError } from './password.js';
+import { cleanupSessions, flushSignInFailures } from './auth.js';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const webDir = join(here, '..', 'web');
@@ -25,10 +27,11 @@ export function loadConfig(env = process.env) {
     sessionHours: Number(env.SESSION_HOURS || 12), publicUrl, cookieSecure: env.COOKIE_SECURE === undefined ? https : env.COOKIE_SECURE === 'true',
     // true only when a reverse proxy on this machine sits in front: then the caller's address comes from the proxy's forwarded header.
     trustProxy: env.TRUST_PROXY === 'true',
+    idleMinutes: Number(env.SESSION_IDLE_MINUTES || 120),   // a session unused for this long ends, even before its 12 hours are up
   };
 }
 
-export async function buildApp({ db, config = loadConfig(), logger = false, signinPerMinute = 30, tokenPerMinute = 30, formPerMinute = 10, formPerHour = 60, tokenCallsPerMinute = 600 }) {
+export async function buildApp({ db, config = loadConfig(), logger = false, signinPerMinute = 30, tokenPerMinute = 30, formPerMinute = 10, formPerHour = 60, tokenCallsPerMinute = 600, housekeeping = true }) {
   const app = Fastify({ logger: logger ? { redact: ['req.headers.cookie', 'req.headers.authorization'],
     // Query strings can hold typed client names (job search), so only the path is logged.
     serializers: { req: (req) => ({ method: req.method, url: String(req.url).split('?')[0], host: req.headers?.host, remoteAddress: req.ip }) },
@@ -53,6 +56,7 @@ export async function buildApp({ db, config = loadConfig(), logger = false, sign
   app.addHook('onSend', async (req, reply) => {
     reply.header('X-Content-Type-Options', 'nosniff').header('X-Frame-Options', 'DENY').header('Referrer-Policy', 'no-referrer')
       .header('Content-Security-Policy', "default-src 'self'; img-src 'self' data:; frame-ancestors 'none'; base-uri 'none'; form-action 'self'");
+    reply.header('Permissions-Policy', 'camera=(), microphone=(), geolocation=(), payment=(), usb=(), interest-cohort=()');
     if (req.url.startsWith('/api/')) reply.header('Cache-Control', 'no-store');
     if (config.cookieSecure) reply.header('Strict-Transport-Security', 'max-age=31536000'); // only sent when the site is https
   });
@@ -67,6 +71,7 @@ export async function buildApp({ db, config = loadConfig(), logger = false, sign
     } catch (e) { req.log.error({ err: { message: e.message } }, 'audit write failed'); }
   });
   app.setErrorHandler((err, req, reply) => {
+    if (err instanceof BusyError) return reply.code(503).header('Retry-After', '5').send({ error: 'The server is busy. Try again in a few seconds.' });
     if (err.statusCode && err.statusCode < 500) return reply.code(err.statusCode).send({ error: 'That request could not be read.' });
     req.log.error({ err: { message: err.message } }, 'request failed');
     return reply.code(500).send({ error: 'Something went wrong on our side. Nothing was changed.' });
@@ -74,6 +79,17 @@ export async function buildApp({ db, config = loadConfig(), logger = false, sign
 
   registerRoutes(app, { db, config, limiters: { signin: makeLimiter({ max: signinPerMinute, windowMs: 60000 }), token: makeLimiter({ max: tokenPerMinute, windowMs: 60000 }),
       formSubmit: makeLimiter({ max: formPerMinute, windowMs: 60000 }), formHour: makeLimiter({ max: formPerHour, windowMs: 3600000 }), tokenCalls: makeLimiter({ max: tokenCallsPerMinute, windowMs: 60000 }) } });
+
+  // The framework's own 404 echoes the requested path back; ours says the same thing for every unknown address.
+  app.setNotFoundHandler((req, reply) => reply.code(404).send({ error: 'We could not find that.' }));
+
+  // Housekeeping: old sessions are cleared at start and every six hours; failed-sign-in summaries are written when their window ends and on shutdown.
+  const tick = () => { try { cleanupSessions(db); flushSignInFailures(db); } catch (e) { app.log.error({ err: { message: e.message } }, 'housekeeping failed'); } };
+  if (housekeeping) {
+    tick();
+    const sessions = setInterval(tick, 6 * 3600000).unref(), flush = setInterval(() => { try { flushSignInFailures(db); } catch { /* next time */ } }, 60000).unref();
+    app.addHook('onClose', async () => { clearInterval(sessions); clearInterval(flush); try { flushSignInFailures(db, { all: true }); } catch { /* database already closed */ } });
+  }
 
   const indexHtml = readFileSync(join(webDir, 'index.html'), 'utf8').replaceAll('{{PRODUCT_NAME}}', escapeHtml(PRODUCT_NAME));
   app.get('/', async (req, reply) => reply.type('text/html; charset=utf-8').send(indexHtml));

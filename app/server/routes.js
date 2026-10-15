@@ -40,7 +40,7 @@ export function registerRoutes(app, { db, config, limiters }) {
           if (!actor) { if (!limiters.token.hit(req.ip)) return reply.code(429).send({ error: 'Too many tries. Wait a minute and try again.' }); return reply.code(401).send({ error: 'That token is not valid.' }); }
           if (!limiters.tokenCalls.hit(actor.tokenId)) return reply.code(429).header('Retry-After', '60').send({ error: 'Too many calls for this token. Slow down and retry in a minute.' });
           svc = req.svc = { actor, spec };
-        } else actor = actorFromToken(db, req.cookies?.[SESSION_COOKIE]);
+        } else actor = actorFromToken(db, req.cookies?.[SESSION_COOKIE], undefined, config.idleMinutes);
         let access = null;
         if (spec.action) {
           if (!actor) return reply.code(401).send({ error: 'Sign in to continue.' });
@@ -80,7 +80,7 @@ export function registerRoutes(app, { db, config, limiters }) {
     sample: (fx) => ({ url: '/api/v1/auth/signin', payload: { email: fx.creds.member.email, password: fx.creds.member.password } }),
     handler: async ({ req, reply, ctx, body }) => {
       if (!limiters.signin.hit(req.ip)) return reply.code(429).send({ error: 'Too many tries. Wait a minute and try again.' });
-      const r = signIn(ctx, { email: body.email, password: body.password, workspaceSlug: body.workspace, hours: config.sessionHours });
+      const r = await signIn(ctx, { email: body.email, password: body.password, workspaceSlug: body.workspace, hours: config.sessionHours });
       if (!r.ok) return reply.code(r.status).send({ error: r.error, ...(r.workspaces ? { workspaces: r.workspaces } : {}) });
       setSessionCookie(reply, r.token);
       return { user: { id: r.actor.userId, name: r.actor.name, email: r.actor.email }, role: r.actor.role };

@@ -1,5 +1,9 @@
 import { openDb, migrate } from '../server/db.js';
 import { seedDemo } from '../seed/seed.js';
+import { setPasswordCost } from '../server/password.js';
+
+// A cheap hashing cost keeps the suite fast. The production cost has its own tests.
+setPasswordCost({ N: 1024, r: 8, p: 1 });
 
 /** Fresh in-memory database with the schema and the fake demo workspace. */
 export function freshDb() {
