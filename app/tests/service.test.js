@@ -43,7 +43,7 @@ test('a token can never manage tokens, accounts or anything else', async () => {
   }
 });
 
-test('scope isolation: against every route, a token may call only what names its scope; today that is whoami and nothing else', async () => {
+test('scope isolation: against every route, a token may call only what names its scope: whoami for both, ingest for the write token only', async () => {
   const { app, db, creds } = await freshApp();
   const before = db.prepare("select (select count(*) from tasks) t, (select count(*) from projects) p, (select count(*) from users) u, (select count(*) from memberships) m").get();
   for (const [name, tok] of [['write', creds.svc.write.token], ['read', creds.svc.read.token]]) {
@@ -51,10 +51,12 @@ test('scope isolation: against every route, a token may call only what names its
       const s = r.sample({ creds, who: creds.owner });
       const res = await asToken(app, tok, r.method, s.url, s.payload);
       if (r.action === 'service:whoami') assert.equal(res.statusCode, 200, `${name} ${r.method} ${r.url}`);
+      else if (r.action === 'tasks:ingest') assert.equal(res.statusCode, name === 'write' ? 201 : 403, `${name} token on ingest`);
       else assert.equal(res.statusCode, 403, `${name} token on ${r.method} ${r.url} got ${res.statusCode}`);
     }
   }
-  assert.deepEqual(db.prepare("select (select count(*) from tasks) t, (select count(*) from projects) p, (select count(*) from users) u, (select count(*) from memberships) m").get(), before, 'no refused call changed anything');
+  const after = db.prepare("select (select count(*) from tasks) t, (select count(*) from projects) p, (select count(*) from users) u, (select count(*) from memberships) m").get();
+  assert.deepEqual({ ...after }, { ...before, t: before.t + 1, p: before.p + 1 }, 'the only changes are the one task and its Internal project from the write token\'s allowed ingest call; every refused call changed nothing');
 });
 
 test('a token cannot reach the people directory, and service accounts are not people', async () => {

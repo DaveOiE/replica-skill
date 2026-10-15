@@ -8,13 +8,13 @@ Updated: 2026-10-15
 
 | state | features |
 | --- | --- |
-| done | 22 |
+| done | 24 |
 | partly done | 3 |
 | later (deferred) | 45 |
 | skipped | 2 |
-| **total** | **72** |
+| **total** | **74** |
 
-Demo scope: **69 of 79 points built (87%)**. Later pool: 121 points, not scheduled. One point is a small tested feature (a few routes, one screen state, its tests).
+Demo scope: **79 of 89 points built (89%)**. Later pool: 121 points, not scheduled. One point is a small tested feature (a few routes, one screen state, its tests).
 
 ## Budget
 
@@ -38,6 +38,7 @@ Used so far (proxy): **56.0%**. Rate: **0.31% of session per point** (measured o
 | P2 | Pilot 2: Job Register importer and Jobs view | demo | 15 | 0 | 0 | done | 0.0% | - |
 | P3 | Pilot 3: public request form and one rule | demo | 8 | 0 | 0 | done, 1 partial | 0.0% | - |
 | Z1 | Zen phase 1: machine access (service accounts and tokens) | demo | 3 | 0 | 0 | done | 0.0% | - |
+| Z2 | Zen phase 2: ingest endpoint and task fields | demo | 10 | 0 | 0 | done | 0.0% | - |
 
 Fits inside the 60% stop line at this rate: nothing.
 (Gauge and Evolve are extra: see replica/run-plan.md.)
@@ -70,6 +71,8 @@ Fits inside the 60% stop line at this rate: nothing.
 | M2 | Task dependencies | C | should | 3 | demo | done | M2: no loops; blocked tasks closable only by a project admin, and the audit says so |
 | M2 | Milestones | C | should | 1 | demo | done | M2: a flag on a task, shown as a badge |
 | M2 | List view | C | must | 3 | demo | done | M2: grouped by section with inline status, assignee and due date; read-only for view-only seats |
+| Z2 | Ingest endpoint for Zen: POST /api/v1/ingest/tasks (write token only) | E | must | 8 | demo | done | ZEN phase 2: strict validation; routes by ADL-066 (prospect to the one Sales project; client job to that client's project, created on first use by client_slug; internal job to Internal, or Sales when the subtype is business development); rejects unroutable input with a clear 422 and files nothing; idempotent on idempotency_key (a retry, even a simultaneous one, returns the original); assignee matched by email, full name, or a first name only one person has, else unassigned and the reason recorded; one audit entry per created task; returns a stable id and a canonical URL |
+| Z2 | Task fields for Zen: source_call_id, client_slug, job_number (raw text), promised_date, inferred, lane (free text), idempotency_key, source | E | must | 2 | demo | done | ZEN phase 2: migration 0005; lanes are free text, never an enum; job number is stored exactly as sent and never minted here; tasks made by hand are source manual and by a form are source form |
 | P3 | Rules automation: trigger, condition, action | C | must | 3 | demo | partly done | PILOT item 3: ONE rule type only, "assign new requests from a form to a chosen person"; every run is recorded; if the person loses access the task is still created, unassigned, and the problem is shown to admins. No conditions, no other triggers or actions |
 | M3 | Custom fields: text, number, date, single and multi select | C | must | 5 | later | later (deferred) | A2 |
 | P3 | Forms that create tasks | C | must | 5 | demo | done | PILOT item 3: project admins build a request form (short text, long text, pick one; one question becomes the task title); a public link anyone can fill in; rate limited per address and per form, honeypot, strict validation, audited; the public page and its answers reveal nothing internal; unknown, closed and archived forms give the identical 404. Branching and customisation are NOT built |

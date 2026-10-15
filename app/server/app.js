@@ -18,7 +18,7 @@ const escapeHtml = (s) => s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&l
 export function loadConfig(env = process.env) {
   return {
     port: Number(env.PORT || 3000), dbPath: env.DB_PATH || join(here, '..', '..', 'data', 'app.db'),
-    sessionHours: Number(env.SESSION_HOURS || 12), cookieSecure: env.COOKIE_SECURE === 'true',
+    sessionHours: Number(env.SESSION_HOURS || 12), publicUrl: (env.PUBLIC_URL || `http://127.0.0.1:${Number(env.PORT || 3000)}`).replace(/\/+$/, ''), cookieSecure: env.COOKIE_SECURE === 'true',
   };
 }
 
@@ -51,7 +51,7 @@ export async function buildApp({ db, config = loadConfig(), logger = false, sign
   // reads, refusals and failed writes get an api.call or api.denied entry. The route pattern is logged, never the real URL or any value.
   app.addHook('onResponse', async (req, reply) => {
     const s = req.svc;
-    if (!s || (s.spec.write && reply.statusCode < 400)) return;
+    if (!s || (s.spec.write && reply.statusCode < 400 && !s.audit)) return;   // s.audit is set for idempotent replays, which change nothing but are still recorded
     try {
       appendAudit(db, { workspaceId: s.actor.workspaceId, actorId: s.actor.userId, actorKind: 'service', action: reply.statusCode >= 400 ? 'api.denied' : 'api.call', targetType: 'api', targetId: s.spec.url,
         summary: `${s.spec.method} ${s.spec.url} answered ${reply.statusCode}`, after: { status: reply.statusCode, token: s.actor.tokenId }, ip: req.ip, requestId: req.id });

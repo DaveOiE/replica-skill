@@ -16,6 +16,21 @@ Other systems line up through two identifiers on every task: `job_number` and `c
 - Job number is a tag on the task, never a project, stored as raw text, never minted here.
 - Unidentifiable job or client: REJECT with a clear error; never an "unsorted" project (ADL-024).
 
+## What phase 2 added (decisions to confirm)
+- **`context` is the one field added to the ingest body** (`prospect`, `client_job` or `internal_job`). The routing rules cannot be applied without it, and guessing it from other fields would break ADL-024. Confirm the name and values with Zen.
+- Required identification: prospect needs `client_slug`; client_job needs `client_slug` and `job_number`; internal_job needs `job_number`. Otherwise 422 `unroutable` with a code and a message, and nothing is filed. Zen retries.
+- Field names on the Zen-facing API are snake_case as specified (`promised_date`, `source_call_id`, `idempotency_key`), unlike the older people-facing API.
+- A client project is named after its `client_slug` because Zen owns client names. Deskrail never copies them.
+- A replay returns the first task unchanged and does not compare payloads. Warnings (such as an unmatched assignee) are returned on creation only and recorded in the audit trail.
+- The canonical task URL is built from the `PUBLIC_URL` setting (default http://127.0.0.1:3000). Set it when hosting is decided.
+
+## Where the project models collide (open question 2, flagged)
+1. The Jobs screen lists only projects that have a `job_number`. Ingested tasks carry the job number on the task, in the client's project, so they never appear there, and an imported per-job project (for example J9075P) will not contain the tasks Zen files under that same job number.
+2. A client can therefore have two homes: its ingestion project (by `client_slug`) and any imported per-job projects (by `job_number`). Nothing links them. They share only the text of the identifiers.
+3. The dashboard, My tasks and the project list show both models together.
+4. Projects made by ingestion are visible to the whole workspace and owned by the service account. Imported projects are private to owners and admins by default.
+5. The importer and Jobs view are untouched, as instructed. When they retire (ADL-071) the per-job projects can be archived and nothing else changes.
+
 ## Phases
 1. Machine access: service accounts and scoped tokens (**built**, see security.md).
 2. Ingest endpoint and task fields (migration; idempotent on idempotency_key; routing above; strict validation).

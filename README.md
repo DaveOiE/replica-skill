@@ -48,7 +48,7 @@ and reset links are shown once to the admin, who passes them on.
 | Job Register | admins import a CSV from a spreadsheet (preview, then confirm; safe to repeat); everyone with access searches and filters the Jobs screen |
 | Request forms | project admins build a form; anyone with the public link sends a request that becomes a task, optionally assigned to a chosen person |
 | Dashboard | task counts, tasks by status, open tasks by person, progress by project (fixed widgets) |
-| Machine access | admins create service accounts and scoped tokens (shown once, revocable) for other systems such as Zen; a token can do only what its scope allows. The ingest and read routes for Zen are the next phases, so a token can only call a connection check today |
+| Machine access | admins create service accounts and scoped tokens (shown once, revocable) for other systems such as Zen; a token can do only what its scope allows. A write token can create tasks through the ingest endpoint (idempotent, routed to the Sales, Internal or client project by fixed rules, and rejected if the job or client cannot be identified). The read routes for Zen are the next phase |
 | Accountability | every change is recorded in a tamper-evident audit trail; permissions and the trail are tested on every route |
 
 ### Partly built
