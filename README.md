@@ -37,6 +37,12 @@ For a real instance (not the demo), use a new database file and create the first
 `npm run first-owner -- --workspace "Your Company" --name "Your Name" --email you@your-company.example`. It shows a one-time password
 once in the terminal, stores only a hash, writes nothing secret to any log, and refuses to run if an owner already exists.
 
+Backups: `npm run backup:keygen` once (keep a copy of the key somewhere other than the server), then with `BACKUP_KEY` and
+`BACKUP_DEST=file:/path/to/another/disk` set, `npm run backup` takes an online encrypted copy while the app keeps running,
+checks it, and stores it; `npm run restore -- --from <name> --to <path>` checks the backup before it puts anything in place and
+keeps any existing file aside. Only a folder destination is built; a cloud store would need a small driver and an account, which
+this build does not create. There is no automatic scheduling or clean-up of old backups in the app.
+
 Needs Node 22.13 or newer (Python 3.8 or newer for the pack's tools). No account, key or paid service.
 Seed passwords are random each time and live only in the gitignored file. Tests:
 `npm test`, `python3 -m unittest discover -s tests`, `npx playwright test`. No email is sent by the app: invite

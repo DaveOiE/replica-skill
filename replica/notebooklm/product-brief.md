@@ -40,6 +40,7 @@ Honest summary: this is a pilot-ready small work manager, not an enterprise plat
 - **Audit trail holds ids and field names only** (an extra, not on the original list): Pre-data hardening group A: no titles, descriptions, comment text, form answers, emails, names or project names in any audit write; deny-by-default in the single write path; scan test over every kind of change
 - **Deleting a task blanks its form submission** (an extra, not on the original list): Pre-data hardening group B: answers and submitter email cleared by a database trigger (covers subtasks and cascades); migration 0007 also clears older orphaned rows; project delete and delete-by-client wait for the forget-me ruling
 - **First-owner command (empty database only)** (an extra, not on the original list): Pre-hosting: npm run first-owner creates the workspace and first owner with a generated one-time password shown once in a terminal, stored only as a hash, never logged or audited; refuses if any owner exists or if the output is not a terminal
+- **Encrypted online backup and checked restore (folder destination)** (an extra, not on the original list): Pre-hosting: npm run backup takes a no-downtime copy (VACUUM INTO), checks integrity and the audit chain, encrypts with AES-256-GCM using a key from the environment, and hands it to a destination interface (folder driver built, cloud driver not); restore decrypts, checks, then replaces, keeping the old file aside
 
 ### Partly built
 

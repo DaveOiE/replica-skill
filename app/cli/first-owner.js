@@ -1,5 +1,5 @@
 // Creates the first owner of an empty database, with a generated one-time password shown once on the terminal.
-// Usage: npm run first-owner -- --workspace "Acme Support" --name "Pat Lee" --email pat@your-company.example [--slug acme]
+// Usage: npm run first-owner -- --workspace "Acme Support" --name "Pat Lee" --email pat@example.test [--slug acme]
 // The password is never written to a file, a log or the audit trail. Run it on the machine that holds the database, in a terminal you control.
 import { pathToFileURL } from 'node:url';
 import { newId, nowIso, openDbOrExplain, migrate, transaction } from '../server/db.js';

@@ -1,8 +1,8 @@
 # Test plan and results (Gauge, after Zen phase 4a)
 
-Suites, all passing at the time of writing: **152 JavaScript** (API, permissions, data, importer, forms, web hygiene),
+Suites, all passing at the time of writing: **159 JavaScript** (API, permissions, data, importer, forms, web hygiene),
 **69 Python** (the pack's tools and the brand sweep gate), **52 browser** (real Chromium at 390px and 1440px, including an
-accessibility scan of the earlier screens plus the audit log screen and the badge views). Total 273. Run them: `npm test`, `python3 -m unittest discover -s tests`,
+accessibility scan of the earlier screens plus the audit log screen and the badge views). Total 280. Run them: `npm test`, `python3 -m unittest discover -s tests`,
 `npx playwright test`.
 
 ## Flows from the recon map
@@ -24,6 +24,7 @@ accessibility scan of the earlier screens plus the audit log screen and the badg
 | form answers after task delete | form submissions | **tested** | `forget-submissions.test.js`: task delete blanks answers and email, other submissions untouched, subtasks, plain SQL delete and project cascade, migration backfill; sabotage-checked |
 | hardening review | proxy address, cookie and HSTS, table growth, read dates, file modes | **tested** | `security-hardening.test.js` (5 tests); sabotage-checked by switching off the proxy setting and the sweep |
 | first owner command | CLI | **tested** | `first-owner.test.js` (5 tests): creates the owner, password works and is stored only as a hash, never in the audit trail or on disk, shown once, refuses when an owner exists (including demo data) and a pipe; sabotage-checked by removing the owner check and by putting the password in the audit summary |
+| backup and restore | CLI and library | **tested** | `backup.test.js` (7 tests): backup then restore to a new file with the same row counts in every table and a verified audit chain; app keeps writing during backups; encrypted file shows no plaintext; wrong key, changed byte, short or foreign file fail without touching the target; a copy with a broken chain is never uploaded; no silent overwrite and the old file kept aside; any destination object works; the CLI never prints the key. Sabotage-checked three ways. Not tested against a cloud store (none built) or at production size |
 | audit content | audit rows | **tested** | `audit-redaction.test.js`: every kind of write (projects, sections, tasks, comments, dependencies, forms and public submissions, people, invites, project members, service accounts and tokens, workspace, failed sign-ins, ingest, job import) made with marker text everywhere, every audit row scanned; a careless writer is still reduced to field names; sabotage-checked |
 | F11 audit export | audit screen and CSV | **tested** (CSV for people only) | API: owners and admins only, tokens and other roles refused, filters, paging, other workspace, strict input, CSV quoting and formula neutralising, no before or after values, token and hash shaped text scrubbed (sabotage-checked), export audited; browser: filters, load more, download, at 390px and 1440px, axe clean. The JSON or NDJSON feed for systems is not built |
 | F12 bundle share | workflow bundles | not built | later list |

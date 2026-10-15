@@ -53,9 +53,10 @@ These were found while writing the plan. Each is small and each needs its own te
 2. **A first owner without the fake seed. DONE:** `npm run first-owner` (see the runbook). Before it, the only way to get an owner was `npm run seed`. Today the only way to get an owner is `npm run seed`, which makes the fake demo workspace. A
    real instance needs a one-off command that creates the workspace and the first owner, reading the password from a prompt (never from
    a file or the command line) and recording the event in the audit trail. Until then, do not host.
-3. **A backup command.** There is no backup feature (the README says so). Add `npm run backup -- <target>` using SQLite's online backup
-   (`VACUUM INTO` or the backup API), then an integrity check of the copy. Copying the three database files with `cp` while the app runs is
-   not safe and must not be the method.
+3. **A backup command. DONE:** `npm run backup`, `npm run backup:list` and `npm run restore` (see the runbook). The destination is an interface with a
+   folder driver only; a cloud driver is not built and needs your account decision. Scheduling (hourly, daily and monthly promotion) and the clean-up of
+   old copies stay outside the app: a systemd timer, and the storage's own lifecycle rule. The encryption key is symmetric and is held on the VM, so a
+   break-in could read new backups it can reach; the plan's append-only upload identity and an off-machine copy of the key remain the controls.
 
 ## HTTPS and PUBLIC_URL
 
