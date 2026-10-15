@@ -57,7 +57,7 @@ and reset links are shown once to the admin, who passes them on.
 - **Automation:** one rule only, "assign new form requests to a chosen person". No other triggers, conditions or actions.
 - **Forms:** short text, long text and pick-one questions. No branching or styling options.
 - **Mobile-friendly web app:** every screen built is checked at phone and desktop width.
-- The audit trail is recorded and verifiable, but **there is no screen or export for it yet**.
+- The audit trail has a screen (owners and admins only) with filters and a CSV export. The CSV holds field names, never values or secrets. There is **no JSON feed for other systems and no verify-chain button yet**.
 
 ### Job Register import
 

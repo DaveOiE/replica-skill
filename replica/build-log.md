@@ -32,3 +32,14 @@ stayed green. Fixed, and a test now syntax-checks every web module.
 
 Goals (S16) and the audit log screen (S28) were deferred to the later list to hold the 45% line with the
 Gauge and Evolve reserve. The audit trail itself is recorded and verifiable; only its screen is later.
+
+## Zen phase 4a (2026-10-15)
+
+| item | state | notes |
+| --- | --- | --- |
+| Badge and source call (list, board, drawer) | done | based on source = ingestion; an Inferred marker when the sender guessed |
+| Lane and promised date in the drawer | done | free text lane; the server decides who may edit through the existing PATCH |
+| Audit log screen and CSV export | done | owners and admins only; SQL in `store-audit.js`; field names only; scrubbed again on the way out; export audited |
+| Link-outs | skipped | as requested |
+
+Harder than expected: an invalid date in the export body crashed the date check (500) instead of giving a 400; fixed and tested.

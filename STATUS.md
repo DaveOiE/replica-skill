@@ -8,13 +8,13 @@ Updated: 2026-10-15
 
 | state | features |
 | --- | --- |
-| done | 26 |
+| done | 29 |
 | partly done | 3 |
-| later (deferred) | 45 |
+| later (deferred) | 44 |
 | skipped | 2 |
-| **total** | **76** |
+| **total** | **78** |
 
-Demo scope: **89 of 99 points built (90%)**. Later pool: 121 points, not scheduled. One point is a small tested feature (a few routes, one screen state, its tests).
+Demo scope: **96 of 106 points built (91%)**. Later pool: 116 points, not scheduled. One point is a small tested feature (a few routes, one screen state, its tests).
 
 ## Budget
 
@@ -29,7 +29,7 @@ Used so far (proxy): **56.0%**. Rate: **0.31% of session per point** (measured o
 | M3 | Board view (rest of views and forms later) | demo | 3 | 0 | 18 | done | 0.0% | - |
 | M4 | Automation | later | 0 | 0 | 5 | later | 0.0% | - |
 | M5 | Simple dashboard (goals portfolios and approvals later) | demo | 4 | 0 | 22 | done, 1 partial | 0.0% | - |
-| M6 | Audit log screen and SIEM API and service accounts | later | 0 | 0 | 8 | later | 0.0% | - |
+| M6 | Audit log screen and SIEM API and service accounts | later | 0 | 0 | 3 | later | 0.0% | - |
 | M7 | Admin console SSO and provisioning | later | 0 | 0 | 32 | later | 0.0% | - |
 | M8 | Bundles branding and backup | later | 0 | 0 | 9 | later | 0.0% | - |
 | M9 | Integrations stubs and compliance docs | later | 0 | 0 | 13 | later | 0.0% | - |
@@ -40,6 +40,7 @@ Used so far (proxy): **56.0%**. Rate: **0.31% of session per point** (measured o
 | Z1 | Zen phase 1: machine access (service accounts and tokens) | demo | 3 | 0 | 0 | done | 0.0% | - |
 | Z2 | Zen phase 2: ingest endpoint and task fields | demo | 10 | 0 | 0 | done | 0.0% | - |
 | Z3 | Zen phase 3: read API for Zen | demo | 10 | 0 | 0 | done | 0.0% | - |
+| Z4 | Zen phase 4a: badge, lane and promised date in the drawer, audit log screen with CSV export | demo | 7 | 0 | 0 | done | 0.0% | - |
 
 Fits inside the 60% stop line at this rate: nothing.
 (Gauge and Evolve are extra: see replica/run-plan.md.)
@@ -84,7 +85,10 @@ Fits inside the 60% stop line at this rate: nothing.
 | M3 | Timeline view (Gantt-style) | C | should | 5 | later | later (deferred) |  |
 | Z3 | Read API for Zen: GET /api/v1/read/tasks and /read/projects (read token only) | E | must | 8 | demo | done | ZEN phase 3: filters job_number, client_slug (all tasks in the client project, hand-made included), ids and updated_since; keyset paging (limit up to 500, cursor) with stable order; returns the agreed fields plus source, context and project kind, never the description; a read token sees only ingested projects (Sales, Internal, client), never imported or staff projects or the people directory; reads audited by route pattern only; no outgoing webhooks |
 | Z3 | Staff can set job number, promised date and lane on a task by hand (API only, no screen yet) | E | must | 2 | demo | done | ZEN phase 3: checked, audited with before and after; client slug is inherited from a client project, not editable; migration 0006 stores the routing context and backfills slugs |
+| Z4 | Audit log of admin and user actions | E | must | 5 | demo | done | ZEN phase 4a: owners and admins only. Screen with filters (who, action, from and to date), newest first, load-more paging; CSV export (fields only: seq, time, who, action, target, summary, names of changed fields, ip, request id; never before or after values, never secrets; formula-looking cells neutralised; capped at 50,000 rows). Each export is itself audited. SQL lives in store-audit.js. Verify-chain button, search box and a JSON or NDJSON feed for other systems are NOT built |
 | M4 | Project status updates | C | should | 2 | later | later (deferred) |  |
+| Z4 | "AI/service-created" badge on tasks | C | should | 1 | demo | done | ZEN phase 4a: tasks whose source is ingestion show a badge and their source call in the list, the board and the task drawer, plus an Inferred marker when the sending system guessed. Shown to anyone who can see the task |
+| Z4 | Lane and promised date in the task drawer | C | should | 1 | demo | done | ZEN phase 4a: two fields in the drawer, editable by editors and admins through the existing task update route (the server enforces it). Lane is free text, never a fixed list |
 | M4 | Time tracking: estimated vs actual | C | should | 3 | later | later (deferred) |  |
 | M5 | Approvals | C | should | 3 | later | later (deferred) |  |
 | M5 | Proofing: review and sign-off on a piece of work | C | could | 2 | later | later (deferred) | comment and decision on an attachment |
@@ -94,8 +98,7 @@ Fits inside the 60% stop line at this rate: nothing.
 | M5 | Workload and resource management in a portfolio | C | should | 3 | later | later (deferred) |  |
 | M5 | Reporting dashboards with custom charts | C | must | 4 | demo | partly done | Demo slice built: four number tiles, tasks by status, open tasks by person, progress by project, each chart with a numbers table, counting only projects the viewer can see. NOT built: choosing or building your own charts (custom chart builder is later) |
 | M5 | Universal reporting across projects and teams | C | should | 3 | later | later (deferred) | kept simple |
-| M6 | Audit log of admin and user actions | E | must | 5 | later | later (deferred) | demo slice: admin screen with filters, before/after, verify chain; SIEM export API and service accounts are later (deferred 2026-10-12 to hold the 45% line with the Gauge and Evolve reserve; the audit trail itself is recorded and verifiable today, only the screen is later) |
-| M6 | Audit API suited to SIEM export | E | must | 3 | later | later (deferred) | JSON and NDJSON, cursor paging |
+| M6 | Audit API suited to SIEM export | E | must | 3 | later | later (deferred) | NOT built. Phase 4a made a CSV for people only. A cursor-paged JSON or NDJSON feed that a service token could read is later; today a token can never read the audit log |
 | M7 | Control who can invite guests | E | should | 1 | later | later (deferred) |  |
 | M7 | Trusted guest domains | E | should | 2 | later | later (deferred) |  |
 | M7 | Admin console: teams | E | must | 3 | later | later (deferred) |  |

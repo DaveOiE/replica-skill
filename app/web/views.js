@@ -10,6 +10,9 @@ const STATUS_OPTIONS = Object.entries(S.status);
 const fail = (res) => toast(res.data?.error || S.networkError, true);
 const notFound = () => h('div', { class: 'empty' }, h('p', {}, S.notFound));
 const link = (href, text, cls) => h('a', { href, class: cls }, text);
+// Tasks written by another system (source "ingestion") carry a badge and the call they came from; the inferred marker says the system guessed.
+const sourceBits = (t) => t.source === 'ingestion' ? [h('span', { class: 'badge badge-service' }, S.serviceCreated),
+  t.sourceCallId && h('span', { class: 'muted source-call' }, `${S.sourceCall} ${t.sourceCallId}`), t.inferred && h('span', { class: 'badge' }, S.inferred)] : [];
 
 export async function myTasksView(ctx) {
   document.title = pageTitle('S03');
@@ -50,7 +53,7 @@ export async function projectView(ctx, id, taskId, view = 'list') {
   const subsOf = (t) => td.tasks.filter((x) => x.parentId === t.id);
 
   const taskRow = (t, sub) => h('li', { class: `row${sub ? ' sub' : ''}` },
-    h('div', { class: 'row-main' }, link(`#/p/${id}/t/${t.id}`, t.title, 'task-link'), t.isMilestone && h('span', { class: 'badge' }, S.milestone),
+    h('div', { class: 'row-main' }, link(`#/p/${id}/t/${t.id}`, t.title, 'task-link'), t.isMilestone && h('span', { class: 'badge' }, S.milestone), sourceBits(t),
       !sub && subsOf(t).length > 0 && h('span', { class: 'muted' }, ` ${subsOf(t).filter((x) => x.status === 'done').length}/${subsOf(t).length}`)),
     select(`st-${t.id}`, `${S.statusLabel}: ${t.title}`, STATUS_OPTIONS, t.status, (v) => patch(t.id, { status: v }), !canEdit),
     select(`as-${t.id}`, `${S.assignee}: ${t.title}`, people, t.assigneeId, (v) => patch(t.id, { assigneeId: v || null }), !canEdit),
@@ -78,7 +81,7 @@ export async function projectView(ctx, id, taskId, view = 'list') {
     link(`#/p/${id}/board/t/${t.id}`, t.title, 'task-link'),
     h('div', { class: 'row-main' }, h('span', { class: `chip chip-${t.status}` }, S.status[t.status]), t.assigneeName && h('span', { class: 'muted' }, t.assigneeName),
       t.dueDate && h('span', { class: t.dueDate < today() && t.status !== 'done' ? 'overdue' : 'muted' }, t.dueDate < today() && t.status !== 'done' ? `${S.overdue}: ${t.dueDate}` : t.dueDate),
-      t.isMilestone && h('span', { class: 'badge' }, S.milestone), subsOf(t).length > 0 && h('span', { class: 'muted' }, `${subsOf(t).filter((x) => x.status === 'done').length}/${subsOf(t).length}`)),
+      t.isMilestone && h('span', { class: 'badge' }, S.milestone), sourceBits(t), subsOf(t).length > 0 && h('span', { class: 'muted' }, `${subsOf(t).filter((x) => x.status === 'done').length}/${subsOf(t).length}`)),
     canEdit && select(`mv-${t.id}`, `${S.moveTo}: ${t.title}`, sectionChoices, secId || '', (v) => move(t.id, v || null, endOf(v || null))));
   const column = (sec) => {
     const mine = colTasks(sec.id);
@@ -120,6 +123,8 @@ async function drawer(ctx, projectId, taskId, k) {
     select('d-assignee', S.assignee, k.people, t.assigneeId, (v) => patch(t.id, { assigneeId: v || null }), !canEdit),
     text('d-start', S.start, t.startDate, 'startDate', { type: 'date' }), text('d-due', S.due, t.dueDate, 'dueDate', { type: 'date' }),
     text('d-est', S.estimate, t.estimateMinutes, 'estimateMinutes', { type: 'number', min: '0' }),
+    text('d-lane', S.lane, t.lane, 'lane', { maxlength: '80' }), text('d-promised', S.promised, t.promisedDate, 'promisedDate', { type: 'date' }),
+    t.source === 'ingestion' && h('div', { class: 'row-main source-line' }, sourceBits(t)),
     h('div', { class: 'field check' }, h('input', { id: 'd-ms', type: 'checkbox', checked: t.isMilestone, disabled: !canEdit, onchange: (e) => patch(t.id, { isMilestone: e.target.checked }) }), h('label', { for: 'd-ms' }, S.milestone)),
     h('h3', {}, S.waitingOn), h('ul', { class: 'list' }, d.blockedBy.map((b) => h('li', { class: 'row' }, h('span', { class: 'row-main' }, `${b.title} (${S.status[b.status]})`),
       canEdit && h('button', { class: 'btn btn-secondary', type: 'button', 'aria-label': `${S.remove}: ${b.title}`, onclick: async () => { const x = await api('DELETE', `/api/v1/tasks/${t.id}/dependencies/${b.id}`); x.status === 200 ? reload() : fail(x); } }, S.remove)))),

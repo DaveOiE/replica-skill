@@ -15,3 +15,4 @@ P3,Pilot 3: public request form and one rule,M,3,demo
 Z1,Zen phase 1: machine access (service accounts and tokens),M,3,demo
 Z2,Zen phase 2: ingest endpoint and task fields,M,3,demo
 Z3,Zen phase 3: read API for Zen,M,3,demo
+Z4,"Zen phase 4a: badge, lane and promised date in the drawer, audit log screen with CSV export",M,3,demo

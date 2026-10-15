@@ -47,7 +47,7 @@
 1. **Edit jobs in the app.** Let people change a job's status, next action, due date and note on the Jobs screen, so the
    register can be kept in the app and the spreadsheet can retire. This is what makes the import a one-off instead of
    a weekly chore. About 5 points, roughly 1.6% of a session at the current rate.
-2. **Audit log screen with filters and verify-chain, then JSON and NDJSON export and service accounts.** The trail is
+2. **Verify-chain button and a JSON or NDJSON audit feed for systems.** The screen, filters and CSV export are built (Zen phase 4a), as are service accounts. The trail is
    already recorded and tamper-evident. About 11 points, roughly 3.5%.
 3. **Attachments on tasks and project templates** (so a repeatable job, like onboarding a client, starts from a
    template with its files). About 6 points, roughly 2%.
@@ -61,4 +61,4 @@ test against a mock first). After those: calendar and timeline views, SAML and S
 
 Deskrail's role is now fixed by the owner's architecture: the task-and-action system of record behind Zen, with Zen as its only
 connection. The rules are kept in `zen-integration.md`. Phase 1 (machine access) is built: service accounts and scoped tokens,
-every token call audited, a token able to call only routes that name its scope. Phase 2 (ingest endpoint and task fields) and phase 3 (the read API for Zen) are built too. Next: phase 4 (UI polish), after the owner's approval, and the hosting decision. The Job Register importer and Jobs view are untouched and transitional.
+every token call audited, a token able to call only routes that name its scope. Phase 2 (ingest endpoint and task fields) and phase 3 (the read API for Zen) are built too. Phase 4a is built: the AI/service-created badge in list, board and drawer, lane and promised date in the drawer, and an owners-and-admins audit log screen with filters and CSV export (the audit screen is no longer on the later list; the JSON feed for other systems still is). Next: the hosting decision (see `hosting-plan.md`, a plan only). The Job Register importer and Jobs view are untouched and transitional.

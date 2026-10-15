@@ -4,6 +4,7 @@ import { S } from './strings.js';
 import { pageTitle } from '/shared/titles.js';
 import { inviteView, resetView } from './views-public.js';
 import { jobsView, importView } from './views-jobs.js';
+import { auditView } from './views-audit.js';
 import { formsAdminView, publicFormView } from './views-forms.js';
 import { myTasksView, projectsView, reportsView, projectView, settingsView, peopleView, accountView } from './views.js';
 
@@ -51,7 +52,7 @@ function shell(content) {
     h('header', { class: 'topbar' }, h('strong', { class: 'workspace-name' }, session.workspace.name), h('span', { class: 'badge' }, roleLabel), h('span', { class: 'who' }, session.user.name), signOut),
     h('nav', { class: 'side', 'aria-label': S.navLabel },
       item('#/', S.nav.myTasks, here === '#/'), item('#/projects', S.nav.projects, here.startsWith('#/projects') || here.startsWith('#/p/')), item('#/jobs', S.nav2.jobs, here === '#/jobs' || here === '#/import'), item('#/reports', S.nav.dashboard, here === '#/reports'),
-      admin && item('#/people', S.nav.people, here === '#/people'), item('#/account', S.nav.account, here === '#/account')),
+      admin && item('#/people', S.nav.people, here === '#/people'), admin && item('#/audit', S.nav.audit, here === '#/audit'), item('#/account', S.nav.account, here === '#/account')),
     h('main', { id: 'main', class: 'content', tabindex: '-1' },
       /\(demo\)$/.test(session.workspace.name) && banner(S.demoBanner), session.role === 'view_only' && banner(S.viewOnlyBanner, 'banner-info'), content),
     h('div', { id: 'toasts', class: 'toasts', role: 'status', 'aria-live': 'polite' }));
@@ -67,6 +68,7 @@ async function route() {
   else if (hash === '#/import') parts = await importView(ctx);
   else if (hash === '#/reports') parts = await reportsView(ctx);
   else if (hash === '#/people') parts = await peopleView(ctx);
+  else if (hash === '#/audit') parts = await auditView(ctx);
   else if (hash === '#/account') parts = await accountView(ctx);
   else if ((parts = hash.match(/^#\/p\/([\w-]+)\/forms$/))) parts = await formsAdminView(ctx, parts[1]);
   else if ((parts = hash.match(/^#\/p\/([\w-]+)\/settings$/))) parts = await settingsView(ctx, parts[1]);

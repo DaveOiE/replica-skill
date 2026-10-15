@@ -16,6 +16,8 @@ export const ACTIONS = {
   'tasks:ingest': { roles: [], service: ['tasks:write'], write: true },   // Zen's write: create tasks, nothing else
   'tasks:read_api': { roles: [], service: ['tasks:read'], write: false },       // Zen's read
   'projects:read_api': { roles: [], service: ['tasks:read'], write: false },
+  'audit:read': { roles: MANAGERS, write: false },
+  'audit:export': { roles: MANAGERS, write: true },   // a token never reads the audit log
   'service_accounts:read': { roles: MANAGERS, write: false },
   'service_accounts:manage': { roles: MANAGERS, write: true },
   'session:read': { roles: ALL, write: false },

@@ -68,7 +68,7 @@ Honest summary: this is a pilot-ready small work manager, not an enterprise plat
   o.push(`### Partly built\n\n${by((f) => f.clone === 'partial').map(line).join('\n')}\n`);
   o.push(`### Not built (the "later list", about ${pts(later)} effort points, nothing faked)\n\n${later.map((f) => `- ${f.feature}`).join('\n')}\n`);
   o.push(`### Left out on purpose\n\n${by((f) => f.clone === 'skip').map((f) => `- ${f.feature}: ${f.notes}`).join('\n')}\n`);
-  o.push(`There are **no stubs and no mocks**: anything not built is simply absent. AI features, single sign-on (SAML), user provisioning (SCIM), connectors and an audit-log screen are all **not built**.\n`);
+  o.push(`There are **no stubs and no mocks**: anything not built is simply absent. AI features, single sign-on (SAML), user provisioning (SCIM), and connectors are all **not built**.\n`);
 
   o.push('## 2. Screens a person can reach\n');
   o.push(table(['Screen', 'Who', 'What it is for'], [
@@ -116,7 +116,7 @@ The importer reads a 13-column CSV exported from a Google Sheet: Job No, Job Tit
 `);
 
   o.push('## 5. The audit trail\n');
-  o.push('Every change to data writes an audit entry in the same database transaction as the change: who (a person, the system, or an anonymous visitor), what happened, which record, and which fields changed. Entries are chained by hashes, so tampering is detectable, and the database refuses edits and deletes. Failed sign-ins are recorded. Reads are not recorded. Refused requests are not recorded because they change nothing. There is **no screen and no export for the audit trail yet** (it is on the later list).\n');
+  o.push('Every change to data writes an audit entry in the same database transaction as the change: who (a person, the system, or an anonymous visitor), what happened, which record, and which fields changed. Entries are chained by hashes, so tampering is detectable, and the database refuses edits and deletes. Failed sign-ins are recorded. Reads are not recorded. Refused requests are not recorded because they change nothing. Owners and admins have an **Audit log screen** with filters (who, action, date range), newest first, and a **CSV export**. The screen and the CSV show field names only, never the values before or after a change, and anything shaped like a token or password hash is removed again on the way out. Each export is itself recorded. A service token can never read the audit log. There is **no JSON feed for other systems and no verify-chain button yet**.\n');
 
   o.push('## 6. The API (how another system could talk to this)\n');
   o.push(`The web app is a thin page over a JSON API at /api/v1 (${app.routeTable.length} routes). **Today the API accepts browser session cookies from a person who signed in, and bearer tokens from service accounts. A token carries a scope (tasks:write or tasks:read) and may call only routes that name its scope. The write token can create tasks through POST /api/v1/ingest/tasks (idempotent, routed by the Zen rules) and both tokens can call /api/v1/service/whoami to check they work. The read token can read tasks and projects through GET /api/v1/read/tasks and /read/projects, but only those made by ingestion (Sales, Internal and client projects), never imported or staff projects and never the people directory. There are no outgoing webhooks and no MCP-style endpoint.** Public routes (no sign-in) exist only for invite links, reset links and the public request form, and they are rate limited.\n`);
@@ -141,7 +141,7 @@ Not covered: no penetration test, no manual screen-reader pass (an automated acc
 
 Built by the Replica skills in stages (frame, organize, run, gauge, evolve). The test suites cover the API, permissions, the importer, forms, the browser screens at phone and desktop width, and accessibility. Parity is measured with the pack's own tool against the public feature list the owner supplied: roughly 31 out of 100 against the full list and about 90 out of 100 against the demo and pilot scope. No S1, S2 or S3 bug is open.
 
-Decisions still needing the owner: whether to send email (needs an email service account), whether to add time tracking with a push-only Toggl connector (needs a Toggl account and token), and the due-date assumption for the Job Register. Next improvements by value: edit jobs in the app, the audit log screen with export and service accounts, attachments and project templates.
+Decisions still needing the owner: whether to send email (needs an email service account), whether to add time tracking with a push-only Toggl connector (needs a Toggl account and token), and the due-date assumption for the Job Register. Next improvements by value: edit jobs in the app, a JSON audit feed, attachments and project templates.
 
 The accompanying documents in the repository's replica folder (parity.md, security.md, bugs.md, test-plan.md, summary.md, brand.md) give the detail behind these statements.
 `);

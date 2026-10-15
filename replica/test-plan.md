@@ -1,8 +1,8 @@
-# Test plan and results (Gauge, pilot version)
+# Test plan and results (Gauge, after Zen phase 4a)
 
-Suites, all passing at the time of writing: **131 JavaScript** (API, permissions, data, importer, forms, web hygiene),
-**69 Python** (the pack's tools and the brand sweep gate), **48 browser** (real Chromium at 390px and 1440px, including an
-accessibility scan of 19 screens and pages). Total 248. Run them: `npm test`, `python3 -m unittest discover -s tests`,
+Suites, all passing at the time of writing: **135 JavaScript** (API, permissions, data, importer, forms, web hygiene),
+**69 Python** (the pack's tools and the brand sweep gate), **52 browser** (real Chromium at 390px and 1440px, including an
+accessibility scan of the earlier screens plus the audit log screen and the badge views). Total 256. Run them: `npm test`, `python3 -m unittest discover -s tests`,
 `npx playwright test`.
 
 ## Flows from the recon map
@@ -21,7 +21,7 @@ accessibility scan of 19 screens and pages). Total 248. Run them: `npm test`, `p
 | F10 guest and view-only | restricted roles | **tested** | route walk across five roles, guest added to one project, view-only read-only in the browser; invites by link, admin reset and unlock tested end to end |
 | F15 job register | import and Jobs view | **tested** | invented sample with #REF! cells, J1234P, duplicates and a combined client: counts, cleaning, idempotency, audit, privacy of responses, audit and logs; browser at 390px and 1440px |
 | F16 public request form | form builder, public link, assignment rule | **tested** | public page reveals nothing internal, identical 404s, validation, rate limits, honeypot, audit, rule failing safely; browser from builder to the assigned person's task |
-| F11 SIEM export | audit export | not built | the trail is recorded and its chain verified by tests; no export screen or API |
+| F11 audit export | audit screen and CSV | **tested** (CSV for people only) | API: owners and admins only, tokens and other roles refused, filters, paging, other workspace, strict input, CSV quoting and formula neutralising, no before or after values, token and hash shaped text scrubbed (sabotage-checked), export audited; browser: filters, load more, download, at 390px and 1440px, axe clean. The JSON or NDJSON feed for systems is not built |
 | F12 bundle share | workflow bundles | not built | later list |
 | F13 backup | backup | not built | later list |
 | F14 AI stub | AI features | not built | later list |

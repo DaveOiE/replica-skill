@@ -14,6 +14,8 @@ test('authz matrix: every role against every action', () => {
     'workspace:update': { owner: 1, admin: 1, member: 0, view_only: 0, guest: 0 },
     'members:read': { owner: 1, admin: 1, member: 0, view_only: 0, guest: 0 },
     'members:update_role': { owner: 1, admin: 1, member: 0, view_only: 0, guest: 0 },
+    'audit:read': { owner: 1, admin: 1, member: 0, view_only: 0, guest: 0 },
+    'audit:export': { owner: 1, admin: 1, member: 0, view_only: 0, guest: 0 },
     'tasks:read_api': { owner: 0, admin: 0, member: 0, view_only: 0, guest: 0 },
     'projects:read_api': { owner: 0, admin: 0, member: 0, view_only: 0, guest: 0 },
     'tasks:ingest': { owner: 0, admin: 0, member: 0, view_only: 0, guest: 0 },

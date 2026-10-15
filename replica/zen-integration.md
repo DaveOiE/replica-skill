@@ -86,7 +86,8 @@ No outgoing webhooks exist or will be built: Zen reads live.
 1. Machine access: service accounts and scoped tokens (**built**, see security.md).
 2. Ingest endpoint and task fields (**built**, see the contract above).
 3. Read API for Zen (**built**, see the contract above).
-4. Only after approval: UI polish (AI-created badge, lane field, audit log screen with export, optional read-only link-outs built only from job_number and client_slug).
+4a. **Built:** the AI/service-created badge (source ingestion) with the source call and an Inferred marker, in the list, board and drawer; lane and promised date in the drawer through the existing PATCH; the audit log screen (owners and admins) with filters and CSV export, field names only, never values or secrets. The audit log cannot be read by any token.
+4b. Not built, on request only: read-only link-outs built from job_number and client_slug.
 
 ## Do not build
 Time tracking or Toggl, any connector to QuickBooks, Drive, Gmail, Calendar, Reseller or TPP, attachments, job-number minting, approvals and proofing, SAML, SCIM, data residency, key management, a client portal, lane permissions, outgoing webhooks, an Asana importer. The Job Register importer and Jobs view stay untouched and are transitional (ADL-071).

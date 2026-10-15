@@ -22,6 +22,7 @@ Honest summary: this is a pilot-ready small work manager, not an enterprise plat
 - **Per-project admin controls**: M2: project admins rename, archive, manage sections and who is on the project, nothing wider
 - **Service accounts**: ZEN phase 1: service accounts (users of kind service, no password, no membership, never listed as people) with scoped tokens tasks:write and tasks:read; shown once, only a hash stored, revocable, optional expiry, last-used time; admin-only management in the browser, a token can never manage tokens; every token call audited under the account (actor_kind service); per-token rate limit; a token may call only routes that name its scope (today only /service/whoami)
 - **View-only seats**: M1: view-only and guest can never write; proven by route walk on every route. No billing or licence counting (A4)
+- **Audit log of admin and user actions**: ZEN phase 4a: owners and admins only. Screen with filters (who, action, from and to date), newest first, load-more paging; CSV export (fields only: seq, time, who, action, target, summary, names of changed fields, ip, request id; never before or after values, never secrets; formula-looking cells neutralised; capped at 50,000 rows). Each export is itself audited. SQL lives in store-audit.js. Verify-chain button, search box and a JSON or NDJSON feed for other systems are NOT built
 - **Add a person (admin creates a teammate or guest; temporary password shown once)** (an extra, not on the original list): Built: the password hash is stored and the password is never written to the audit trail; no email is sent (the admin hands the temporary password over)
 - **Change own password (needed because new people get a temporary one)** (an extra, not on the original list): ADDED in M2: needs the current password, enforces the 12-character rule, ends other sessions
 - **Admin password reset by one-time link (24 hours, single use)** (an extra, not on the original list): PILOT item 1: reset links never stored in the clear; ends all of the person's sessions and clears any lock; refused for yourself, for owners (unless you are one) and for anyone in more than one workspace
@@ -34,6 +35,8 @@ Honest summary: this is a pilot-ready small work manager, not an enterprise plat
 - **Task fields for Zen: source_call_id, client_slug, job_number (raw text), promised_date, inferred, lane (free text), idempotency_key, source** (an extra, not on the original list): ZEN phase 2: migration 0005; lanes are free text, never an enum; job number is stored exactly as sent and never minted here; tasks made by hand are source manual and by a form are source form
 - **Read API for Zen: GET /api/v1/read/tasks and /read/projects (read token only)** (an extra, not on the original list): ZEN phase 3: filters job_number, client_slug (all tasks in the client project, hand-made included), ids and updated_since; keyset paging (limit up to 500, cursor) with stable order; returns the agreed fields plus source, context and project kind, never the description; a read token sees only ingested projects (Sales, Internal, client), never imported or staff projects or the people directory; reads audited by route pattern only; no outgoing webhooks
 - **Staff can set job number, promised date and lane on a task by hand (API only, no screen yet)** (an extra, not on the original list): ZEN phase 3: checked, audited with before and after; client slug is inherited from a client project, not editable; migration 0006 stores the routing context and backfills slugs
+- **"AI/service-created" badge on tasks** (an extra, not on the original list): ZEN phase 4a: tasks whose source is ingestion show a badge and their source call in the list, the board and the task drawer, plus an Inferred marker when the sending system guessed. Shown to anyone who can see the task
+- **Lane and promised date in the task drawer** (an extra, not on the original list): ZEN phase 4a: two fields in the drawer, editable by editors and admins through the existing task update route (the server enforces it). Lane is free text, never a fixed list
 
 ### Partly built
 
@@ -41,7 +44,7 @@ Honest summary: this is a pilot-ready small work manager, not an enterprise plat
 - **Mobile-friendly web app**: M1 and M2: shell, sign-in, projects, list view and task drawer checked at 390px and 1440px in Chromium; later screens are checked as built
 - **Reporting dashboards with custom charts**: Demo slice built: four number tiles, tasks by status, open tasks by person, progress by project, each chart with a numbers table, counting only projects the viewer can see. NOT built: choosing or building your own charts (custom chart builder is later)
 
-### Not built (the "later list", about 121 effort points, nothing faked)
+### Not built (the "later list", about 116 effort points, nothing faked)
 
 - Attachments on tasks
 - Project templates (custom)
@@ -75,7 +78,6 @@ Honest summary: this is a pilot-ready small work manager, not an enterprise plat
 - Custom branding
 - Workflow bundles
 - Cross-region backup
-- Audit log of admin and user actions
 - Audit API suited to SIEM export
 - Data residency selection
 - Enterprise key management
@@ -94,7 +96,7 @@ Honest summary: this is a pilot-ready small work manager, not an enterprise plat
 - Catalogue of 100+ connectors: the owner's catalogue is not part of the product to rebuild
 - Native mobile apps: out of scope per the list
 
-There are **no stubs and no mocks**: anything not built is simply absent. AI features, single sign-on (SAML), user provisioning (SCIM), connectors and an audit-log screen are all **not built**.
+There are **no stubs and no mocks**: anything not built is simply absent. AI features, single sign-on (SAML), user provisioning (SCIM), and connectors are all **not built**.
 
 ## 2. Screens a person can reach
 
@@ -117,6 +119,8 @@ Workspace roles: owner, admin, member, view-only (a read-only seat), and guest (
 
 | Action (workspace level) | Changes data? | owner | admin | member | view_only | guest |
 | --- | --- | --- | --- | --- | --- | --- |
+| audit:export | yes | yes | yes | - | - | - |
+| audit:read | no | yes | yes | - | - | - |
 | invites:manage | yes | yes | yes | - | - | - |
 | invites:read | no | yes | yes | - | - | - |
 | jobs:import | yes | yes | yes | - | - | - |
@@ -707,14 +711,16 @@ The importer reads a 13-column CSV exported from a Google Sheet: Job No, Job Tit
 
 ## 5. The audit trail
 
-Every change to data writes an audit entry in the same database transaction as the change: who (a person, the system, or an anonymous visitor), what happened, which record, and which fields changed. Entries are chained by hashes, so tampering is detectable, and the database refuses edits and deletes. Failed sign-ins are recorded. Reads are not recorded. Refused requests are not recorded because they change nothing. There is **no screen and no export for the audit trail yet** (it is on the later list).
+Every change to data writes an audit entry in the same database transaction as the change: who (a person, the system, or an anonymous visitor), what happened, which record, and which fields changed. Entries are chained by hashes, so tampering is detectable, and the database refuses edits and deletes. Failed sign-ins are recorded. Reads are not recorded. Refused requests are not recorded because they change nothing. Owners and admins have an **Audit log screen** with filters (who, action, date range), newest first, and a **CSV export**. The screen and the CSV show field names only, never the values before or after a change, and anything shaped like a token or password hash is removed again on the way out. Each export is itself recorded. A service token can never read the audit log. There is **no JSON feed for other systems and no verify-chain button yet**.
 
 ## 6. The API (how another system could talk to this)
 
-The web app is a thin page over a JSON API at /api/v1 (58 routes). **Today the API accepts browser session cookies from a person who signed in, and bearer tokens from service accounts. A token carries a scope (tasks:write or tasks:read) and may call only routes that name its scope. The write token can create tasks through POST /api/v1/ingest/tasks (idempotent, routed by the Zen rules) and both tokens can call /api/v1/service/whoami to check they work. The read token can read tasks and projects through GET /api/v1/read/tasks and /read/projects, but only those made by ingestion (Sales, Internal and client projects), never imported or staff projects and never the people directory. There are no outgoing webhooks and no MCP-style endpoint.** Public routes (no sign-in) exist only for invite links, reset links and the public request form, and they are rate limited.
+The web app is a thin page over a JSON API at /api/v1 (60 routes). **Today the API accepts browser session cookies from a person who signed in, and bearer tokens from service accounts. A token carries a scope (tasks:write or tasks:read) and may call only routes that name its scope. The write token can create tasks through POST /api/v1/ingest/tasks (idempotent, routed by the Zen rules) and both tokens can call /api/v1/service/whoami to check they work. The read token can read tasks and projects through GET /api/v1/read/tasks and /read/projects, but only those made by ingestion (Sales, Internal and client projects), never imported or staff projects and never the people directory. There are no outgoing webhooks and no MCP-style endpoint.** Public routes (no sign-in) exist only for invite links, reset links and the public request form, and they are rate limited.
 
 | Method | Path | Who may call it | Changes data |
 | --- | --- | --- | --- |
+| GET | /api/v1/audit | owner, admin | no |
+| POST | /api/v1/audit/export | owner, admin | yes |
 | POST | /api/v1/auth/password | owner, admin, member, view_only, guest | yes |
 | GET | /api/v1/auth/session | owner, admin, member, view_only, guest | no |
 | POST | /api/v1/auth/signin | anyone (rate limited) | yes |
@@ -791,6 +797,6 @@ Not covered: no penetration test, no manual screen-reader pass (an automated acc
 
 Built by the Replica skills in stages (frame, organize, run, gauge, evolve). The test suites cover the API, permissions, the importer, forms, the browser screens at phone and desktop width, and accessibility. Parity is measured with the pack's own tool against the public feature list the owner supplied: roughly 31 out of 100 against the full list and about 90 out of 100 against the demo and pilot scope. No S1, S2 or S3 bug is open.
 
-Decisions still needing the owner: whether to send email (needs an email service account), whether to add time tracking with a push-only Toggl connector (needs a Toggl account and token), and the due-date assumption for the Job Register. Next improvements by value: edit jobs in the app, the audit log screen with export and service accounts, attachments and project templates.
+Decisions still needing the owner: whether to send email (needs an email service account), whether to add time tracking with a push-only Toggl connector (needs a Toggl account and token), and the due-date assumption for the Job Register. Next improvements by value: edit jobs in the app, a JSON audit feed, attachments and project templates.
 
 The accompanying documents in the repository's replica folder (parity.md, security.md, bugs.md, test-plan.md, summary.md, brand.md) give the detail behind these statements.

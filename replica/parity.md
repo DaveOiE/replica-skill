@@ -1,11 +1,11 @@
-# Parity report (Gauge, after Zen phase 3)
+# Parity report (Gauge, after Zen phase 4a)
 
 Two honest numbers, because the build was cut to a demo and then a pilot on purpose.
 
 | scored against | feature score | must-haves done | what it means |
 | --- | --- | --- | --- |
-| **the full public feature list** (62 counted rows) | **32.7 / 100** | 10 of 22 | A small part of the list. Not shippable as an enterprise product. |
-| **the demo and pilot scope** (17 counted rows) | **90.4 / 100** | 10 of 13 | Pilot-ready for a small team. The three partial must-haves are: dashboards (fixed widgets, no chart builder), automation (one rule type only) and the mobile checks on later screens. |
+| **the full public feature list** (62 counted rows) | **35.0 / 100** | 11 of 22 | A small part of the list. Not shippable as an enterprise product. |
+| **the demo and pilot scope** (18 counted rows) | **91.0 / 100** | 11 of 14 | Pilot-ready for a small team. The three partial must-haves are: dashboards (fixed widgets, no chart builder), automation (one rule type only) and the mobile checks on later screens. |
 
 The layout score is **not measured**: this was a clean-room build and no reference screenshots of the original were captured.
 
@@ -18,7 +18,7 @@ Register importer and Jobs view, the request form) are extras the original list 
 - **Built and tested:** the Zen ingest endpoint, task fields and read API (phases 2 and 3; extras, so not scored); service accounts with scoped tokens (Zen phase 1); workspaces, roles and password sign-in; task fields, comments, subtasks, milestones, dependencies; projects and sections; list and board views; unlimited guests; per-project admin controls; view-only seats; **forms that create tasks** (no branching, no customisation). Extras: add a person, change own password, admin password reset and unlock, invites by link, Job Register import, Jobs view, public request form.
 - **Partly built:** dashboards (fixed widgets only); rules automation (one rule type: assign new form requests to a chosen person); mobile-friendly web app (every screen built is checked at 390px and 1440px).
 - **Stubs and mocks: none.** Nothing is faked. SAML, SCIM, connectors, hooks and AI features are **not built**.
-- **Not built, later list (124 points):** the audit log screen and JSON and NDJSON export (moved here from the pilot because the budget gate failed); calendar and timeline views; custom fields; form branching and customisation; time tracking; status updates; portfolios; goals; workload and capacity; approvals and proofing; universal reporting; SAML and SCIM; the admin console and security settings; bundles; branding and onboarding; backup; integrations; DLP and archiving hooks; support page; compliance documents (all would be labelled not certified); AI features; attachments; project templates; the Toggl connector and time tracking (skipped by default).
+- **Not built, later list (124 points):** the JSON and NDJSON audit feed for other systems (the audit log screen and its CSV export were built in Zen phase 4a); calendar and timeline views; custom fields; form branching and customisation; time tracking; status updates; portfolios; goals; workload and capacity; approvals and proofing; universal reporting; SAML and SCIM; the admin console and security settings; bundles; branding and onboarding; backup; integrations; DLP and archiving hooks; support page; compliance documents (all would be labelled not certified); AI features; attachments; project templates; the Toggl connector and time tracking (skipped by default).
 - **Left out on purpose (not scored):** a catalogue of 100+ connectors; native mobile apps.
 
 ## The tool's own output, full list
@@ -39,7 +39,7 @@ Not shippable yet: 12 must-have features are not done.
 - provisioning                   0.0  (2 features)
 - security                       0.0  (1 features)
 - backup                         0.0  (1 features)
-- audit                          0.0  (2 features)
+- audit                          see the recount below (1 of 2 built: the screen and CSV export; the JSON feed is later)
 - compliance                     0.0  (5 features)
 - support                        0.0  (1 features)
 - ai                             0.0  (5 features)
@@ -57,8 +57,7 @@ Not shippable yet: 12 must-have features are not done.
 ## Missing, in build order
 - [must] admin: Admin console: settings and access, no
 - [must] admin: Admin console: teams, no
-- [must] audit: Audit API suited to SIEM export, no  (JSON and NDJSON, cursor paging)
-- [must] audit: Audit log of admin and user actions, no  (demo slice: admin screen with filters, before/after, verify chain; SIEM export API and service accounts are later (deferred 2026-10-12 to hold the 45% line with the Gauge and Evolve reserve; the audit trail itself is recorded and verifiable today, only the screen is later))
+- [must] audit: Audit API suited to SIEM export, no  (CSV for people is built; the JSON or NDJSON feed for systems is later)
 - [must] custom fields: Custom fields: text, number, date, single and multi select, no  (A2)
 - [must] provisioning: SCIM deprovisioning, no  (deactivation ends sessions)
 - [must] provisioning: SCIM provisioning, no  (SCIM 2.0 against a local test client)
