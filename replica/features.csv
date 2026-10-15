@@ -4,7 +4,7 @@ feature,area,priority,original,clone,notes,tag,ceiling,milestone,effort,scope
 Comments on tasks,tasks,must,yes,yes,M2: commenters and up; author and time set by the server,C,done,M2,2,demo
 Attachments on tasks,tasks,should,yes,no,"local disk, size and type limits",C,done,M2,3,later
 Subtasks,tasks,must,yes,yes,M2: one level; listed with the parent in the list view and drawer,C,done,M2,2,demo
-Projects with sections,projects,must,yes,yes,"M2: create (default sections), rename, archive (read-only), visibility private or workspace; sections add and delete. Team-visible projects work in the API but there is no team UI until M7",C,done,M2,3,demo
+Projects with sections,projects,must,yes,yes,"M2: create (default sections), rename, archive (read-only), visibility private or workspace; sections add and delete. Team-visible projects work in the API but there is no screen to create teams yet",C,done,M2,3,demo
 Project templates (custom),projects,should,yes,no,,C,done,M2,3,later
 List view,views,must,yes,yes,"M2: grouped by section with inline status, assignee and due date; read-only for view-only seats",C,done,M2,3,demo
 Board view,views,must,yes,yes,Built: one column per section; drag a card or use its Move to menu (keyboard); read-only for view-only seats; opens the same task drawer,C,done,M3,3,demo
@@ -63,7 +63,7 @@ No-code AI builder for automations,ai,could,yes,no,"keyword and template matchin
 AI planning assistant,ai,could,yes,no,"feature flag, rule-based",S,stub,M10,1,later
 MCP-style endpoint for outside AI apps,ai,could,yes,no,"A6; service account token, local only",S,stub,M10,2,later
 "Smart fields, summaries, status drafts, editing help",ai,could,yes,no,A7; rule-based text,?,stub,M10,1,later
-Add a person (admin creates a teammate or guest; temporary password shown once),access,must,no,yes,"M2: built; hash stored, password never in the audit trail; no email is sent (invites are later)",E,done,M2,2,demo
+Add a person (admin creates a teammate or guest; temporary password shown once),access,must,no,yes,Built: the password hash is stored and the password is never written to the audit trail; no email is sent (the admin hands the temporary password over),E,done,M2,2,demo
 Change own password (needed because new people get a temporary one),security,must,no,yes,"ADDED in M2: needs the current password, enforces the 12-character rule, ends other sessions",E,done,M2,1,demo
 "Admin password reset by one-time link (24 hours, single use)",security,must,no,yes,"PILOT item 1: reset links never stored in the clear; ends all of the person's sessions and clears any lock; refused for yourself, for owners (unless you are one) and for anyone in more than one workspace",E,done,P1,3,demo
 Unlock a locked account (admin),security,should,no,yes,PILOT item 1: clears the five-failure lock; audited,E,done,P1,1,demo

@@ -12,7 +12,7 @@ Honest summary: this is a pilot-ready small work manager, not an enterprise plat
 - **Task fields: owner, assignee, due date, start date, status, description**: M2: create, edit, delete; assignee must be able to see the project; dates validated; every change audited with before and after
 - **Comments on tasks**: M2: commenters and up; author and time set by the server
 - **Subtasks**: M2: one level; listed with the parent in the list view and drawer
-- **Projects with sections**: M2: create (default sections), rename, archive (read-only), visibility private or workspace; sections add and delete. Team-visible projects work in the API but there is no team UI until M7
+- **Projects with sections**: M2: create (default sections), rename, archive (read-only), visibility private or workspace; sections add and delete. Team-visible projects work in the API but there is no screen to create teams yet
 - **List view**: M2: grouped by section with inline status, assignee and due date; read-only for view-only seats
 - **Board view**: Built: one column per section; drag a card or use its Move to menu (keyboard); read-only for view-only seats; opens the same task drawer
 - **Task dependencies**: M2: no loops; blocked tasks closable only by a project admin, and the audit says so
@@ -21,7 +21,7 @@ Honest summary: this is a pilot-ready small work manager, not an enterprise plat
 - **Unlimited free guests**: M2: guests see only projects they are added to; never project admin; no seat limit
 - **Per-project admin controls**: M2: project admins rename, archive, manage sections and who is on the project, nothing wider
 - **View-only seats**: M1: view-only and guest can never write; proven by route walk on every route. No billing or licence counting (A4)
-- **Add a person (admin creates a teammate or guest; temporary password shown once)** (an extra, not on the original list): M2: built; hash stored, password never in the audit trail; no email is sent (invites are later)
+- **Add a person (admin creates a teammate or guest; temporary password shown once)** (an extra, not on the original list): Built: the password hash is stored and the password is never written to the audit trail; no email is sent (the admin hands the temporary password over)
 - **Change own password (needed because new people get a temporary one)** (an extra, not on the original list): ADDED in M2: needs the current password, enforces the 12-character rule, ends other sessions
 - **Admin password reset by one-time link (24 hours, single use)** (an extra, not on the original list): PILOT item 1: reset links never stored in the clear; ends all of the person's sessions and clears any lock; refused for yourself, for owners (unless you are one) and for anyone in more than one workspace
 - **Unlock a locked account (admin)** (an extra, not on the original list): PILOT item 1: clears the five-failure lock; audited
