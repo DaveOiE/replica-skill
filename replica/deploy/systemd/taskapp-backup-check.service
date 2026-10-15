@@ -1,15 +1,20 @@
-# Alerts if the newest backup is older than 3 hours (or if there is none).
+# Alerts if the newest backup of any kind is too old (hourly 3 hours, daily 26 hours, monthly 32 days), if a kind is missing, if a backup claims to be from the future,
+# or if finished copies are stuck waiting to upload. Reads the destination's file names with the LIST-ONLY credential: it cannot read or change a backup.
 [Unit]
-Description=Check the newest backup is recent
+Description=Check the newest backups are recent
 OnFailure=taskapp-alert@%n.service
 
 [Service]
 Type=oneshot
-User=taskapp
-Group=taskapp
-EnvironmentFile=/etc/taskapp/backup-upload.env
+User=taskapp-backup
+Group=taskapp-backup
+EnvironmentFile=/etc/taskapp/backup.env
+LoadCredential=gcs-key:/etc/taskapp/credentials/checker-key.json
+LoadCredential=alert-webhook:/etc/taskapp/credentials/alert-webhook
 Environment=PATH=/usr/local/bin:/usr/bin:/bin
-Environment=STATE_DIR=/var/lib/taskapp-backup
+Environment=HOME=/var/lib/taskapp-backup
+Environment=CLOUDSDK_CONFIG=/var/lib/taskapp-backup/gcloud-checker
+Environment=CHECK_REMOTE=1
 ExecStart=/opt/taskapp/current/replica/deploy/bin/backup-check.sh
 StateDirectory=taskapp-backup
 StateDirectoryMode=0700
@@ -17,6 +22,22 @@ UMask=0077
 ProtectSystem=strict
 ProtectHome=true
 PrivateTmp=true
+PrivateDevices=true
+PrivateUsers=true
+InaccessiblePaths=/var/lib/taskapp /etc/taskapp
 NoNewPrivileges=true
 CapabilityBoundingSet=
+AmbientCapabilities=
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectKernelLogs=true
+ProtectControlGroups=true
+RestrictNamespaces=true
+RestrictRealtime=true
+RestrictSUIDSGID=true
+LockPersonality=true
 RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+SystemCallArchitectures=native
+SystemCallFilter=@system-service
+SystemCallFilter=~@privileged @resources
+LimitCORE=0

@@ -118,7 +118,7 @@ test('A3: restore --replace keeps the crashed database whole: its write-ahead lo
     const good = openDb(join(dir, 'src', 'app.db')); migrate(good);
     const key = randomBytes(32), dest = new LocalDirDestination(join(dir, 'dest'));
     const { name } = await runBackup(good, { key, destination: dest });
-    const r = await runRestore({ key, destination: dest, from: name, to: live, replace: true, now: () => 'T1' });
+    const r = await runRestore({ key, destination: dest, from: name, confirm: name, to: live, replace: true, now: () => 'T1' });
     assert.ok(existsSync(`${r.kept}-wal`), 'the log was kept with its file');
     assert.ok(!existsSync(`${live}-wal`) && !existsSync(`${live}-shm`), 'the restored file does not inherit it');
     const kept = new DatabaseSync(r.kept, { readOnly: false });

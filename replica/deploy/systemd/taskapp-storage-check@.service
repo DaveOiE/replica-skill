@@ -1,0 +1,41 @@
+# Proves what a storage credential can and cannot do. %i is uploader, checker or drill. Run once per identity when you set up the storage, and after any change:
+#   systemctl start --wait taskapp-storage-check@uploader.service   (and @checker, @drill; then journalctl -u 'taskapp-storage-check@*' -n 40)
+# Each line says PASS or FAIL; the unit fails if any FAIL. The uploader must be able to add a file and must NOT be able to list, read, delete or overwrite.
+[Unit]
+Description=Storage credential check (%i)
+
+[Service]
+Type=oneshot
+User=taskapp-backup
+Group=taskapp-backup
+EnvironmentFile=/etc/taskapp/backup.env
+LoadCredential=gcs-key:/etc/taskapp/credentials/%i-key.json
+Environment=PATH=/usr/local/bin:/usr/bin:/bin
+Environment=HOME=/var/lib/taskapp-backup
+Environment=CLOUDSDK_CONFIG=/var/lib/taskapp-backup/gcloud-verify-%i
+ExecStart=/opt/taskapp/current/replica/deploy/bin/verify-storage.sh %i
+StateDirectory=taskapp-backup
+StateDirectoryMode=0700
+UMask=0077
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+PrivateDevices=true
+PrivateUsers=true
+InaccessiblePaths=/var/lib/taskapp /etc/taskapp
+NoNewPrivileges=true
+CapabilityBoundingSet=
+AmbientCapabilities=
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectKernelLogs=true
+ProtectControlGroups=true
+RestrictNamespaces=true
+RestrictRealtime=true
+RestrictSUIDSGID=true
+LockPersonality=true
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+SystemCallArchitectures=native
+SystemCallFilter=@system-service
+SystemCallFilter=~@privileged @resources
+LimitCORE=0

@@ -21,7 +21,7 @@ table inet taskapp {
 		# The web: Caddy listens here. The app's own port (3000) is not listed, so it is never reachable from outside.
 		tcp dport { 80, 443 } accept
 
-		# SSH, from the stated range only, and slowed down if someone hammers it.
+		# SSH, from the stated range only, and slowed down per source address if someone hammers it (a single shared limit would let one source lock everyone else out).
 		# @SSH_RULE@
 
 		# Everything else is dropped by the policy above.

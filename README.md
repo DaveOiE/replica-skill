@@ -38,9 +38,9 @@ For a real instance (not the demo), use a new database file and create the first
 `npm run first-owner -- --workspace "Your Company" --name "Your Name" --email you@your-company.example`. It shows a one-time password
 once in the terminal, stores only a hash, writes nothing secret to any log, and refuses to run if an owner already exists.
 
-Backups: `npm run backup:keygen` once (keep a copy of the key somewhere other than the server), then with `BACKUP_KEY` and
+Backups: `npm run backup:keygen` once (keep a copy of the key somewhere other than the server), then with `BACKUP_KEY_FILE` (or `BACKUP_KEY`) and
 `BACKUP_DEST=file:/path/to/another/disk` set, `npm run backup` takes an online encrypted copy while the app keeps running,
-checks it, and stores it; `npm run restore -- --from <name> --to <path>` checks the backup before it puts anything in place and
+checks it, and stores it; `npm run restore -- --from <name> --to <path>` shows what the backup is, asks you to type its name, checks it (including the kind and time sealed inside it) before it puts anything in place and
 keeps any existing file aside. Only a folder destination is built; a cloud store would need a small driver and an account, which
 this build does not create. There is no automatic scheduling or clean-up of old backups in the app.
 

@@ -6,8 +6,8 @@
 
 {
 	email {$TASKAPP_ACME_EMAIL}
-	# Do not announce the Caddy version or the admin API to anyone but this machine.
-	admin localhost:2019
+	# No admin API at all. It would be reachable by every program on this machine, and a change made through it is saved and survives a restart.
+	admin off
 }
 
 {$TASKAPP_DOMAIN} {

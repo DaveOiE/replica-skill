@@ -1,0 +1,14 @@
+# One timer for every backup: every hour at 07 minutes past. The script decides what is due: always an hourly copy, plus the daily copy at the first run
+# at or after DAILY_HOUR (UTC) each day, plus the monthly copy at the first such run each month (day 1, or the next run if that one was missed).
+# Persistent=true: if the machine was off at the time, it runs once when it comes back, and the script catches up whatever daily or monthly copy is due.
+[Unit]
+Description=Backup timer
+
+[Timer]
+OnCalendar=*-*-* *:07:00
+Persistent=true
+RandomizedDelaySec=60
+Unit=taskapp-backup@scheduled.service
+
+[Install]
+WantedBy=timers.target

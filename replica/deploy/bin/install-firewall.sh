@@ -14,14 +14,22 @@ case "$mode" in check|--apply|--persist) ;; *) die "usage: SSH_RANGE=<cidr> inst
 range=${SSH_RANGE:-}
 [ -n "$range" ] || die "Set SSH_RANGE to the address range that may use SSH, for example SSH_RANGE=198.51.100.0/24"
 case "$range" in *__REPLACE*) die "SSH_RANGE still holds a placeholder" ;; esac
-case "$range" in 0.0.0.0/0|::/0|0.0.0.0/*|::/0*) die "SSH_RANGE must not be the whole internet" ;; esac
-if [[ "$range" =~ ^([0-9]{1,3}\.){3}[0-9]{1,3}(/([0-9]|[12][0-9]|3[0-2]))?$ ]]; then fam="ip"
-elif [[ "$range" =~ ^[0-9a-fA-F:]+(/([0-9]|[1-9][0-9]|1[01][0-9]|12[0-8]))?$ ]] && [[ "$range" == *:* ]]; then fam="ip6"
+addr=${range%%/*}; prefix=""; [[ "$range" == */* ]] && prefix=${range#*/}
+if [[ "$addr" =~ ^([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})$ ]]; then
+  fam="ip"; max=32; min=16
+  for o in "${BASH_REMATCH[@]:1}"; do [ "$o" -le 255 ] || die "SSH_RANGE is not an address or range: $range"; done
+  case "${BASH_REMATCH[1]}" in 0|127|22[4-9]|2[3-5][0-9]) die "SSH_RANGE must be an ordinary address range, not $range" ;; esac
+elif [[ "$addr" == *:* && "$addr" =~ ^[0-9a-fA-F:]+$ ]]; then
+  fam="ip6"; max=128; min=48
+  [[ "$addr" =~ ^(0*:)+0*$ ]] && die "SSH_RANGE must not be the unspecified address: $range"
 else die "SSH_RANGE is not an address or range: $range"; fi
-# A range wider than /8 (or /16 for IPv6) is almost certainly a mistake.
-if [ "$fam" = ip ] && [[ "$range" == */* ]] && [ "${range#*/}" -lt 8 ]; then die "SSH_RANGE is too wide: $range"; fi
+[ -z "$prefix" ] && prefix=$max
+[[ "$prefix" =~ ^[0-9]{1,3}$ ]] && [ "$prefix" -le "$max" ] || die "SSH_RANGE has a bad prefix length: $range"
+# Not the whole internet, and not close to it: an SSH range is a few networks you control. IPv4 no wider than /16 (65,536 addresses), IPv6 no wider than /48.
+[ "$prefix" -ge "$min" ] || die "SSH_RANGE $range is too wide: the prefix must be /$min or longer. List the actual networks that need SSH."
 
-rule="$fam saddr $range tcp dport 22 ct state new limit rate 10/minute accept"
+# SSH is slowed per source address: one noisy source cannot use up the allowance and lock the owner out.
+rule="$fam saddr $range tcp dport 22 ct state new meter ssh_$fam { $fam saddr timeout 5m limit rate 10/minute } accept"
 out=$(mktemp); trap 'rm -f "$out"' EXIT
 awk -v rule="$rule" '/@SSH_RULE@/ { sub(/# @SSH_RULE@/, rule) } { print }' "$template" > "$out"
 grep -q '@SSH_RULE@' "$out" && die "the template marker was not replaced"

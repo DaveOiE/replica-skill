@@ -1,0 +1,48 @@
+# Step 1 of a backup, run by the APP user because only it may open the live database: take a consistent, checked, plain copy into a folder the
+# backup user can read. No key, no credential and no network here. %i is "scheduled" or "premigration". Started by taskapp-backup@%i.service; by hand only for testing.
+[Unit]
+Description=Database snapshot for backup (%i)
+OnFailure=taskapp-alert@%n.service
+
+[Service]
+Type=oneshot
+User=taskapp
+Group=taskapp-backup
+WorkingDirectory=/opt/taskapp/current
+EnvironmentFile=/etc/taskapp/app.env
+Environment=NODE_ENV=production
+ExecStartPre=/opt/taskapp/current/replica/deploy/bin/check-node.sh
+ExecStart=/opt/taskapp/current/replica/deploy/bin/snapshot.sh %i
+TimeoutStartSec=10min
+
+# The snapshot folder belongs to the app user and the backup group (0770), so the backup user can read it and delete it afterwards, and nobody else can see it.
+StateDirectory=taskapp-snapshot
+StateDirectoryMode=0770
+UMask=0027
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+PrivateDevices=true
+PrivateUsers=true
+ReadWritePaths=/var/lib/taskapp /var/lib/taskapp-snapshot
+InaccessiblePaths=/etc/taskapp /var/lib/taskapp-backup
+IPAddressDeny=any
+NoNewPrivileges=true
+CapabilityBoundingSet=
+AmbientCapabilities=
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectKernelLogs=true
+ProtectControlGroups=true
+ProtectClock=true
+ProtectHostname=true
+RestrictNamespaces=true
+RestrictRealtime=true
+RestrictSUIDSGID=true
+LockPersonality=true
+RemoveIPC=true
+RestrictAddressFamilies=AF_UNIX
+SystemCallArchitectures=native
+SystemCallFilter=@system-service
+SystemCallFilter=~@privileged @resources
+LimitCORE=0

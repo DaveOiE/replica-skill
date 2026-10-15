@@ -10,7 +10,7 @@ import { openDb, migrate } from '../server/db.js';
 import { seedDemo } from '../seed/seed.js';
 import { buildApp } from '../server/app.js';
 import { verifyChain } from '../server/audit.js';
-import { keyFrom, destinationFrom, LocalDirDestination, runBackup, runRestore, checkDatabase, tableCounts, encryptFile, decryptFile, BackupError } from '../server/backup.js';
+import { keyFrom, keyFromEnv, destinationFrom, LocalDirDestination, runBackup, runRestore, checkDatabase, tableCounts, encryptFile, decryptFile, sealSnapshot, snapshot, BackupError } from '../server/backup.js';
 
 const MARK = 'zqxbackupmark';
 const KEY = randomBytes(32);
@@ -38,7 +38,7 @@ test('backup, then restore to a new file: same row counts in every table and the
     assert.match(r.name, /^backup-daily-\d{8}T\d{6}Z\.db\.gz\.enc$/);
     assert.deepEqual(await dest.list('backup-'), [r.name]);
     const out = join(dir, 'restored', 'app.db');
-    const x = await runRestore({ key: KEY, destination: dest, from: r.name, to: out });
+    const x = await runRestore({ key: KEY, destination: dest, confirm: r.name, from: r.name, to: out });
     const restored = new DatabaseSync(out, { readOnly: true });
     assert.deepEqual(tableCounts(restored), tableCounts(db), 'every table has the same number of rows');
     assert.deepEqual(x.counts, r.counts);
@@ -61,7 +61,7 @@ test('no downtime: the app keeps answering and writing while a backup runs, and 
     const backups = [];
     const writes = [];
     for (let i = 0; i < 6; i++) {
-      backups.push(runBackup(db, { key: KEY, destination: dest, kind: 'manual', now: () => `20300101T00000${i}Z` }));
+      backups.push(runBackup(db, { key: KEY, destination: dest, kind: 'manual', created: `2020-01-01T00:00:0${i}.000Z` }));
       for (let j = 0; j < 5; j++) writes.push(app.inject({ method: 'POST', url: `/api/v1/projects/${creds.projects.pub}/tasks`, headers: { cookie }, payload: { title: `during backup ${i}-${j}` } }));
       await new Promise((r) => setImmediate(r));
     }
@@ -71,7 +71,7 @@ test('no downtime: the app keeps answering and writing while a backup runs, and 
     assert.equal(results.length, 6);
     for (const r of results) {
       const out = join(dir, `r-${r.name}.db`);
-      await runRestore({ key: KEY, destination: dest, from: r.name, to: out });
+      await runRestore({ key: KEY, destination: dest, confirm: r.name, from: r.name, to: out });
       const c = checkDatabase(out);
       assert.equal(c.ok, true, c.problems.join('; '));
     }
@@ -90,15 +90,15 @@ test('the encrypted file reveals nothing, and a wrong key, a changed byte or a s
     const target = join(dir, 'target.db');
     writeFileSync(target, 'existing database stand-in');
     const untouched = () => assert.equal(readFileSync(target, 'utf8'), 'existing database stand-in');
-    await assert.rejects(runRestore({ key: randomBytes(32), destination: dest, from: name, to: target, replace: true }), /key is wrong or the file was changed/);
+    await assert.rejects(runRestore({ key: randomBytes(32), destination: dest, confirm: name, from: name, to: target, replace: true }), /key is wrong or the file was changed/);
     untouched();
     const flipped = Buffer.from(bytes); flipped[Math.floor(flipped.length / 2)] ^= 1;
     writeFileSync(join(dir, 'flipped.enc'), flipped);
-    await assert.rejects(runRestore({ key: KEY, destination: dest, from: join(dir, 'flipped.enc'), to: target, replace: true }), /key is wrong or the file was changed/);
+    await assert.rejects(runRestore({ key: KEY, destination: dest, confirm: 'flipped.enc', from: join(dir, 'flipped.enc'), to: target, replace: true }), /key is wrong or the file was changed/);
     writeFileSync(join(dir, 'short.enc'), bytes.subarray(0, 10));
-    await assert.rejects(runRestore({ key: KEY, destination: dest, from: join(dir, 'short.enc'), to: target, replace: true }), /too short/);
+    await assert.rejects(runRestore({ key: KEY, destination: dest, confirm: 'short.enc', from: join(dir, 'short.enc'), to: target, replace: true }), /too short/);
     writeFileSync(join(dir, 'other.enc'), Buffer.from('not a backup at all, just some text that is long enough to pass the size test'));
-    await assert.rejects(runRestore({ key: KEY, destination: dest, from: join(dir, 'other.enc'), to: target, replace: true }), /not a backup made by this tool/);
+    await assert.rejects(runRestore({ key: KEY, destination: dest, confirm: 'other.enc', from: join(dir, 'other.enc'), to: target, replace: true }), /not a backup made by this tool/);
     untouched();
     assert.deepEqual(readdirSync(dir).filter((f) => f.includes('restoring') || f.includes('before-restore')), []);
   } finally { rmSync(dir, { recursive: true, force: true }); }
@@ -117,9 +117,9 @@ test('a copy that fails its check is never uploaded (broken audit chain), and a 
     // a well-formed encrypted file holding a broken database must not replace a good one
     const bad = join(dir, 'bad.db'); copyFileSync(join(dir, 'live', 'app.db'), bad);
     const raw = new DatabaseSync(bad); raw.exec('pragma wal_checkpoint(truncate)'); raw.close();
-    await encryptFile(bad, join(dir, 'bad.enc'), KEY);
+    await encryptFile(bad, join(dir, 'bad.enc'), KEY, { v: 2, kind: 'manual', created: new Date().toISOString(), fingerprint: {} });
     const good = join(dir, 'good.db'); writeFileSync(good, 'GOOD');
-    await assert.rejects(runRestore({ key: KEY, destination: dest, from: join(dir, 'bad.enc'), to: good, replace: true }), /failed its check, so nothing was replaced/);
+    await assert.rejects(runRestore({ key: KEY, destination: dest, confirm: 'bad.enc', from: join(dir, 'bad.enc'), to: good, replace: true }), /failed its check, so nothing was replaced/);
     assert.equal(readFileSync(good, 'utf8'), 'GOOD');
   } finally { rmSync(dir, { recursive: true, force: true }); }
 });
@@ -129,9 +129,9 @@ test('a backup name is never reused: the folder destination refuses to overwrite
   try {
     const { db } = liveDb(dir);
     const dest = new LocalDirDestination(join(dir, 'dest'));
-    const first = await runBackup(db, { key: KEY, destination: dest, now: () => '20300101T000000Z' });
+    const first = await runBackup(db, { key: KEY, destination: dest, created: '2020-01-01T00:00:00.000Z' });
     const before = readFileSync(join(dir, 'dest', first.name));
-    await assert.rejects(runBackup(db, { key: KEY, destination: dest, now: () => '20300101T000000Z' }), /Backups are never overwritten/);
+    await assert.rejects(runBackup(db, { key: KEY, destination: dest, created: '2020-01-01T00:00:00.000Z' }), /Backups are never overwritten/);
     assert.ok(readFileSync(join(dir, 'dest', first.name)).equals(before));
   } finally { rmSync(dir, { recursive: true, force: true }); }
 });
@@ -144,9 +144,9 @@ test('restore never overwrites silently: an existing target needs --replace and 
     const { name } = await runBackup(db, { key: KEY, destination: dest });
     const target = join(dir, 'app.db');
     writeFileSync(target, 'old'); writeFileSync(`${target}-wal`, 'stale wal'); writeFileSync(`${target}-shm`, 'stale shm');
-    await assert.rejects(runRestore({ key: KEY, destination: dest, from: name, to: target }), /already exists/);
+    await assert.rejects(runRestore({ key: KEY, destination: dest, confirm: name, from: name, to: target }), /already exists/);
     assert.equal(readFileSync(target, 'utf8'), 'old');
-    const r = await runRestore({ key: KEY, destination: dest, from: name, to: target, replace: true, now: () => 'T1' });
+    const r = await runRestore({ key: KEY, destination: dest, confirm: name, from: name, to: target, replace: true, now: () => 'T1' });
     assert.equal(r.kept, `${target}.before-restore-T1`);
     assert.equal(readFileSync(r.kept, 'utf8'), 'old');
     assert.ok(!existsSync(`${target}-wal`) && !existsSync(`${target}-shm`));
@@ -168,7 +168,7 @@ test('settings: key and destination are validated, and the destination is an int
     const memory = { put: async (n, p) => store.set(n, readFileSync(p)), get: async (n, p) => { if (!store.has(n)) throw new BackupError('missing'); writeFileSync(p, store.get(n)); }, list: async () => [...store.keys()] };
     const { name } = await runBackup(db, { key: KEY, destination: memory, kind: 'premigration' });
     assert.match(name, /premigration/);
-    await runRestore({ key: KEY, destination: memory, from: name, to: join(dir, 'm.db') });
+    await runRestore({ key: KEY, destination: memory, confirm: name, from: name, to: join(dir, 'm.db') });
     assert.equal(checkDatabase(join(dir, 'm.db')).ok, true);
     await assert.rejects(runBackup(db, { key: KEY, destination: memory, kind: 'weekly' }), /kind must be one of/);
   } finally { rmSync(dir, { recursive: true, force: true }); }
@@ -187,12 +187,16 @@ test('the commands: backup, list and restore through the command line; the key i
     assert.match(b.stdout, /passed its integrity and audit-chain check/);
     const name = /Backup written: (\S+)/.exec(b.stdout)[1];
     assert.equal(run('list').stdout.trim(), name);
-    const r = run('restore', '--from', name, '--to', join(dir, 'restored.db'));
+    assert.equal(run('restore', '--from', name, '--to', join(dir, 'unconfirmed.db')).status, 1, 'restore will not go ahead without the name being confirmed');
+    assert.match(run('restore', '--from', name, '--to', join(dir, 'unconfirmed.db')).stderr, /confirm the backup by name/);
+    assert.equal(run('restore', '--from', name, '--to', join(dir, 'unconfirmed.db'), '--confirm', 'backup-hourly-19990101T000000Z.db.gz.enc').status, 1, 'the wrong name is refused');
+    assert.ok(!existsSync(join(dir, 'unconfirmed.db')));
+    const r = run('restore', '--from', name, '--to', join(dir, 'restored.db'), '--confirm', name);
     assert.equal(r.status, 0, r.stderr);
-    assert.match(r.stdout, /passed its integrity and audit-chain check before it was put in place/);
+    assert.match(r.stdout, /passed its integrity and audit-chain check, and its data matched the fingerprint recorded when it was taken, before it was put in place/);
     assert.equal(checkDatabase(join(dir, 'restored.db')).ok, true);
     for (const out of [b.stdout, b.stderr, r.stdout, r.stderr]) assert.ok(!out.includes(key), 'the key was printed');
-    assert.equal(run('restore', '--from', name, '--to', join(dir, 'restored.db')).status, 1, 'no silent overwrite');
+    assert.equal(run('restore', '--from', name, '--to', join(dir, 'restored.db'), '--confirm', name).status, 1, 'no silent overwrite');
     const noKey = spawnSync(process.execPath, ['--no-warnings', 'app/cli/backup.js', 'backup'], { env: { ...env, BACKUP_KEY: '' }, encoding: 'utf8' });
     assert.equal(noKey.status, 1); assert.match(noKey.stderr, /BACKUP_KEY is not set/);
     const kg = run('keygen');

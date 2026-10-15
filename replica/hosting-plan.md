@@ -57,7 +57,7 @@ These were found while writing the plan. Each is small and each needs its own te
 2. **A first owner without the fake seed. DONE** (the owner must choose their own password at first sign-in; a shell-only `break-glass` command can unlock or reset them later): `npm run first-owner` (see the runbook). Before it, the only way to get an owner was `npm run seed`. Today the only way to get an owner is `npm run seed`, which makes the fake demo workspace. A
    real instance needs a one-off command that creates the workspace and the first owner, reading the password from a prompt (never from
    a file or the command line) and recording the event in the audit trail. Until then, do not host.
-3. **A backup command. DONE:** `npm run backup`, `npm run backup:list` and `npm run restore` (see the runbook). The app writes the encrypted copy to a local staging folder; uploading is done by the kit's `backup.sh` through rclone or gsutil with a create-only credential you make in your own account (the app has a folder driver only, and no cloud driver). The encryption key is symmetric and is held on the VM, so a
+3. **A backup command. DONE:** `npm run backup`, `npm run backup:list` and `npm run restore` (see the runbook). The app writes the encrypted copy to a local staging folder; uploading is done by the kit's `backup.sh` through `gcloud storage` with a create-only credential you make in your own account (the app has a folder driver only, and no cloud driver). The encryption key is symmetric and is held on the VM, so a
    break-in could read new backups still waiting there; the create-only upload identity and an off-machine copy of the key remain the controls.
 
 ## HTTPS and PUBLIC_URL
@@ -83,13 +83,13 @@ These were found while writing the plan. Each is small and each needs its own te
 
 | what | when | where | kept |
 | --- | --- | --- | --- |
-| **hourly** consistent copy of the database (backup command, below), encrypted | every hour, all day | storage bucket in the second project | **the last 48** (two days) |
-| **daily** copy | every night | same bucket, name prefix `backup-daily-` | **the last 30** |
-| **monthly** copy | the 1st of each month | same bucket, name prefix `backup-monthly-` | **the last 12** |
-| **pre-migration** backup, taken by the deploy step before any migration runs | before every deploy that adds a migration | same bucket, separate folder | **the last 5**, never deleted by the daily clean-up |
+| **hourly** consistent copy of the database (backup command, below), encrypted | every hour, all day | storage bucket in the second project | **2 days** (age rule) |
+| **daily** copy | every night | same bucket, name prefix `backup-daily-` | **31 days** |
+| **monthly** copy | the 1st of each month | same bucket, name prefix `backup-monthly-` | **400 days** |
+| **pre-migration** backup, taken by the deploy step before any migration runs | before every deploy that adds a migration | same bucket, separate folder | **90 days** (own name prefix, so the daily clean-up never touches it) |
 | disk snapshot (extra safety, not the main backup) | nightly | GCP snapshot schedule | 7 |
 
-So at any time there are up to 95 off-machine backups (48 + 30 + 12 + 5). Older ones are removed by a bucket lifecycle rule, not by the VM.
+Providers delete by **age and name prefix**, not by "keep the last N", so retention is written as ages (`deploy/gcs/lifecycle.json`), with object versioning keeping a replaced or deleted copy for 30 more days. At steady state that is about 48 hourly, 31 daily, 13 monthly and a few pre-migration copies. Older ones are removed by the bucket's rules, not by the VM.
 
 - The copy is encrypted before it leaves the VM (for example with `age`), to a key whose private half is held by the owner off the VM. The
   VM's backup identity can add objects but not read, overwrite or delete them (use bucket retention or object versioning), so a break-in
@@ -200,7 +200,7 @@ the runbook is about 60 to 90 thousand tokens, plus the owner's time to create t
 | Database for the task system | not set (ADL-062 is Zen's own database only) | SQLite chosen as a Deskrail decision, recorded here; revisit if the Playbook sets one |
 | Hosting location | **NOT STATED** | separate GCP project proposed; the choice of project and cloud is the owner's. The plan does not assume `oie-zen-core` |
 | Cloud provider itself | **NOT STATED** | GCP used for wording only, because the owner named it; nothing depends on it except bucket and identity wording |
-| Backup frequency and retention | **NOT STATED** | hourly (last 48), daily (last 30), monthly (last 12) and pre-migration (last 5) is **this plan's proposal**, not a rule |
+| Backup frequency and retention | **NOT STATED** | hourly (2 days), daily (31 days), monthly (400 days) and pre-migration (90 days) is **this plan's proposal**, not a rule |
 | Recovery point and time targets | **NOT STATED** | up to about an hour of possible loss is stated plainly, not hidden; the restore time goal is unproven until the restore test is run |
 | Whether Zen can replay a lost hour | **NOT STATED** | not assumed; idempotent ingest makes a replay safe but does not recover staff edits |
 | Forget-me scope, audit retention, backup expiry for deleted data | **NOT STATED** (Blockers #7) | described, not decided |

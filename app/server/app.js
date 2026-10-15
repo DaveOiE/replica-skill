@@ -20,6 +20,8 @@ const sharedDir = join(here, '..', 'shared');
 const escapeHtml = (s) => s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
 export function loadConfig(env = process.env) {
+  // A setting still holding a placeholder from an example file means the file was never filled in. Stop, and say which one.
+  for (const [k, v] of Object.entries(env)) if (typeof v === 'string' && v.includes('__REPLACE')) throw new Error(`${k} still holds a placeholder (__REPLACE...). Fill in the settings file before starting.`);
   const publicUrl = (env.PUBLIC_URL || `http://127.0.0.1:${Number(env.PORT || 3000)}`).replace(/\/+$/, '');
   const https = publicUrl.startsWith('https://');
   // The session cookie is Secure whenever the public address is https, unless someone says otherwise on purpose.

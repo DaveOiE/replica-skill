@@ -1,0 +1,10 @@
+{
+  "rule": [
+    { "action": { "type": "Delete" }, "condition": { "age": 2,   "matchesPrefix": ["backups/backup-hourly-"] } },
+    { "action": { "type": "Delete" }, "condition": { "age": 31,  "matchesPrefix": ["backups/backup-daily-"] } },
+    { "action": { "type": "Delete" }, "condition": { "age": 400, "matchesPrefix": ["backups/backup-monthly-"] } },
+    { "action": { "type": "Delete" }, "condition": { "age": 90,  "matchesPrefix": ["backups/backup-premigration-"] } },
+    { "action": { "type": "Delete" }, "condition": { "age": 1,   "matchesPrefix": ["backups/verify-"] } },
+    { "action": { "type": "Delete" }, "condition": { "isLive": false, "daysSinceNoncurrentTime": 30 } }
+  ]
+}

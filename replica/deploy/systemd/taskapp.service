@@ -1,6 +1,7 @@
-# The app. Runs as its own unprivileged user, sees almost none of the machine, and restarts if it stops.
-# Install as /etc/systemd/system/taskapp.service. Code lives read-only under /opt/taskapp/current (owned by root);
-# the only writable place is /var/lib/taskapp (the database), which systemd creates for the service user.
+# The app, and only the app. Runs as its own unprivileged user, sees almost none of the machine, has no network except this machine, and restarts if it stops.
+# Install as /etc/systemd/system/taskapp.service. Code lives read-only under /opt/taskapp/current (owned by root); the only writable place is
+# /var/lib/taskapp (the database), which systemd creates for the service user. The backup key, the storage credentials and the alert address are NOT here:
+# they belong to a different user (taskapp-backup) and reach only that user's units.
 [Unit]
 Description=Task and action system of record (Node, SQLite)
 Documentation=file:///opt/taskapp/current/replica/runbook.md
@@ -15,8 +16,9 @@ Type=simple
 User=taskapp
 Group=taskapp
 WorkingDirectory=/opt/taskapp/current
-# Holds PUBLIC_URL, TRUST_PROXY, SESSION_IDLE_MINUTES, BACKUP_KEY, NODE_VERSION_PIN. Root-owned, mode 0600; systemd reads it before dropping privileges.
-EnvironmentFile=/etc/taskapp/taskapp.env
+# PUBLIC_URL, TRUST_PROXY, SESSION_*, NODE_VERSION_PIN. Root-owned, mode 0600; systemd reads it before dropping privileges, so the app user cannot read the file itself.
+EnvironmentFile=/etc/taskapp/app.env
+# production: the app then refuses to start unless PUBLIC_URL is an https address, and refuses any setting still holding a placeholder.
 Environment=NODE_ENV=production
 # Refuses to start on any Node other than the pinned version.
 ExecStartPre=/opt/taskapp/current/replica/deploy/bin/check-node.sh
@@ -33,9 +35,14 @@ ProtectSystem=strict
 ProtectHome=true
 PrivateTmp=true
 PrivateDevices=true
+PrivateUsers=true
 ReadWritePaths=/var/lib/taskapp
+# Not even visible: the settings folder (and with it every credential) and the backup user's folders.
+InaccessiblePaths=/etc/taskapp /var/lib/taskapp-backup /var/lib/taskapp-snapshot
 
-# What it may do.
+# What it may do. The app only ever talks to Caddy on this machine, so it gets no other network at all.
+IPAddressDeny=any
+IPAddressAllow=localhost
 NoNewPrivileges=true
 CapabilityBoundingSet=
 AmbientCapabilities=
@@ -58,10 +65,11 @@ SystemCallFilter=@system-service
 SystemCallFilter=~@privileged @resources
 # MemoryDenyWriteExecute is deliberately NOT set: Node's JIT needs writable and executable memory.
 
-# Limits: a runaway process cannot take the whole machine.
+# Limits: a runaway process cannot take the whole machine, and a crash leaves no core file (which would hold the memory).
 MemoryMax=1G
 TasksMax=256
 LimitNOFILE=4096
+LimitCORE=0
 
 [Install]
 WantedBy=multi-user.target

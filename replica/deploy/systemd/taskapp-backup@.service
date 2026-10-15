@@ -1,23 +1,28 @@
-# One backup run. %i is the kind: hourly, daily, monthly or premigration. Started by the timers, or by hand:
-#   systemctl start taskapp-backup@premigration.service
+# Step 2 of a backup, run by the BACKUP user: check the snapshot, encrypt it (the kind and time go inside the authenticated header), upload it with the
+# create-only credential, record the time. %i is "scheduled" (hourly, plus the daily and monthly copies when due) or "premigration". Started by the timer, or by hand before a deploy:
+#   systemctl start --wait taskapp-backup@premigration.service
+# The first command below runs as root ("+") only to ask systemd to run step 1 as the app user and wait for it. Nothing else here runs as root.
 [Unit]
-Description=Encrypted backup (%i): take, check, upload
-After=network-online.target taskapp.service
+Description=Encrypted backup (%i): seal and upload
+After=network-online.target
 Wants=network-online.target
 OnFailure=taskapp-alert@%n.service
 
 [Service]
 Type=oneshot
-User=taskapp
-Group=taskapp
+User=taskapp-backup
+Group=taskapp-backup
 WorkingDirectory=/opt/taskapp/current
-EnvironmentFile=/etc/taskapp/taskapp.env
-EnvironmentFile=/etc/taskapp/backup-upload.env
-# npm needs somewhere to write; keep it inside the one writable folder.
+EnvironmentFile=/etc/taskapp/backup.env
+# Secrets reach this unit, and only this unit, as files in $CREDENTIALS_DIRECTORY (a private, per-run folder). The files in /etc/taskapp/credentials stay root-only.
+LoadCredential=backup-key:/etc/taskapp/credentials/backup-key
+LoadCredential=gcs-key:/etc/taskapp/credentials/uploader-key.json
+LoadCredential=alert-webhook:/etc/taskapp/credentials/alert-webhook
+LoadCredential=healthcheck-ping:/etc/taskapp/credentials/healthcheck-ping
 Environment=PATH=/opt/node/bin:/usr/local/bin:/usr/bin:/bin
 Environment=HOME=/var/lib/taskapp-backup
-Environment=npm_config_cache=/var/lib/taskapp-backup/.npm
-Environment=npm_config_update_notifier=false
+Environment=CLOUDSDK_CONFIG=/var/lib/taskapp-backup/gcloud
+ExecStartPre=+/usr/bin/systemctl start --wait taskapp-snapshot@%i.service
 ExecStartPre=/opt/taskapp/current/replica/deploy/bin/check-node.sh
 ExecStart=/opt/taskapp/current/replica/deploy/bin/backup.sh %i
 TimeoutStartSec=30min
@@ -29,19 +34,26 @@ ProtectSystem=strict
 ProtectHome=true
 PrivateTmp=true
 PrivateDevices=true
-# The database folder is writable only because SQLite needs its shared-memory file to read a database in WAL mode.
-ReadWritePaths=/var/lib/taskapp /var/lib/taskapp-backup
+PrivateUsers=true
+# Its own folder and the snapshot folder, nothing else. The live database is not even visible to it.
+ReadWritePaths=/var/lib/taskapp-snapshot
+InaccessiblePaths=/var/lib/taskapp /etc/taskapp
 NoNewPrivileges=true
 CapabilityBoundingSet=
 AmbientCapabilities=
 ProtectKernelTunables=true
 ProtectKernelModules=true
+ProtectKernelLogs=true
 ProtectControlGroups=true
+ProtectClock=true
+ProtectHostname=true
 RestrictNamespaces=true
 RestrictRealtime=true
 RestrictSUIDSGID=true
 LockPersonality=true
+RemoveIPC=true
 RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
 SystemCallArchitectures=native
 SystemCallFilter=@system-service
 SystemCallFilter=~@privileged @resources
+LimitCORE=0

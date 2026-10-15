@@ -25,8 +25,8 @@ Kept in a root-owned file outside the repository (mode 600, the kit uses `/etc/t
 | `TRUST_PROXY` | `true` | only with a reverse proxy on the same machine. The app then trusts that local proxy and takes the caller's address from the forwarded header. Without it all callers look like one address and the rate limits break. The proxy should set `X-Forwarded-For` itself and pass `Host` through unchanged |
 | `SESSION_HOURS` | `12` | longest a session lives |
 | `SESSION_IDLE_MINUTES` | `120` | a session unused for this long ends |
-| `BACKUP_KEY` | 64 hex characters | see section 4. Also kept somewhere other than this machine |
-| `BACKUP_DEST` | `file:/var/lib/taskapp-backup/outbox` | a LOCAL staging folder. The app writes each finished, encrypted backup there; `backup.sh` (the deployment kit) uploads it with a create-only credential through rclone or gsutil and then removes it. Uploading is not done by the app, and no cloud driver is built into it |
+| `BACKUP_KEY_FILE` | a file holding the key | **not in the app's settings.** Only the backup service gets the key, as a systemd credential file. `BACKUP_KEY` (the key itself in the environment) still works for a hand-run tool but the kit never uses it, and the app does not need it. Keep a second copy off the machine |
+| `BACKUP_DEST` | `file:/var/lib/taskapp-backup/outbox` | a LOCAL staging folder used by the backup user. The app never uploads and holds no storage credential; `backup.sh` (the deployment kit) uploads with a create-only credential through `gcloud storage` |
 
 ## 3. First start
 
@@ -42,28 +42,28 @@ The exact order, with every command, file and unit, is in `deploy/README.md` (th
 
 ## 4. Backups
 
-Setup, once:
-1. `npm run backup:keygen` in a terminal. It prints `BACKUP_KEY=...` once and stores nothing. Put it in the settings file **and** in a second place off the machine (a password manager). Without the key no backup can be opened, and the key cannot be recovered.
-2. Set `BACKUP_DEST` (the staging folder) and the upload settings in `backup-upload.env` (`UPLOAD_TOOL`, `UPLOAD_TARGET`, the create-only credential file). A copy that never leaves the machine is not a backup: the freshness check alerts if uploads stop. Without the kit, `BACKUP_DEST` can instead point straight at a folder on a different disk or machine.
+Setup, once (the kit's README has the full steps in order):
+1. `npm run backup:keygen` in a terminal. It prints a key once and stores nothing. Install it with `bin/install-credential.sh backup-key` (it goes to a root-only folder and reaches only the backup service) **and** keep a second copy off the machine (a password manager). Without the key no backup can be opened, and the key cannot be recovered. Keys that are all zeros or obviously patterned are refused.
+2. Make the storage bucket in a **separate project** and the three identities (uploader: create only; checker: list only; drill: read only) as the kit README describes, install their key files, and run **step 11** (`verify-storage.sh uploader|checker|drill`). Step 11 proves upload works while list, read, delete and overwrite are refused with the uploader credential. Nobody should rely on the backups until it has passed on the real bucket. A copy that never leaves the machine is not a backup: the freshness check alerts if uploads stop.
 
-Scheduled runs are the kit's systemd timers (`replica/deploy/systemd/`), which start `backup.sh <kind>`; that script runs `npm run backup -- --kind <kind>`, uploads, records the time and alerts on failure. By hand (for example before a deploy): `systemctl start taskapp-backup@premigration.service`. Without the kit, any scheduler running `npm run backup -- --kind <kind>` does the same first half:
+Scheduled runs: **one** hourly systemd timer (`taskapp-backup.timer`) starts `backup.sh scheduled`, which decides what is due: an hourly copy every run, the daily copy at one fixed hour (03:00 UTC), the monthly copy on day 1. Two steps, two users: first `taskapp-snapshot@` (as the app user, no network, no credential) takes and checks an online copy; then the backup user checks it again, seals it (the kind and creation time are inside the authenticated header) and uploads it. If a run is missed the next hour does it; the daily and monthly decisions are recorded only after a successful upload. By hand (for example before a deploy): `systemctl start taskapp-backup@premigration.service`. Without the kit, any scheduler running `npm run backup -- --kind <kind>` does the same first half.
 
-| kind | when | keep (set in the destination, not by the app) |
+| kind | when | how long it is kept (an age rule on the bucket, by name prefix, plus object versioning; not "the last N") |
 | --- | --- | --- |
-| `hourly` | every hour | the last 48 |
-| `daily` | every night | the last 30 |
-| `monthly` | the 1st of each month | the last 12 |
-| `premigration` | by hand, before each deploy that adds a migration | the last 5 |
+| `hourly` | every hour | 2 days |
+| `daily` | once a day | 31 days |
+| `monthly` | the 1st of each month | 400 days |
+| `premigration` | by hand, before each deploy that adds a migration | 90 days |
 
-Names look like `backup-hourly-20301231T235959Z.db.gz.enc`, with the kind first so a storage lifecycle rule can match a prefix. The app never deletes old backups; the destination's own clean-up does (or you do). Each run takes an online copy (the app keeps running), checks it (SQLite integrity, foreign keys, the audit hash chain of every workspace), encrypts it, and only then stores it. If the check fails nothing is stored and the command exits non-zero: wire that exit code to an alert. Also alert when `npm run backup:list` shows no new file for 3 hours.
+Replaced or deleted versions are kept for 30 days more (versioning), so a mistake can be undone inside that window. Names look like `backup-hourly-20301231T235959Z.db.gz.enc`, with the kind first so a lifecycle rule can match a prefix. The app never deletes backups; the bucket's rules do. The freshness check (twice an hour, list-only identity) looks at each kind separately: hourly older than 3 hours, daily older than 26 hours, monthly older than 32 days, a kind that never appeared once the system is old enough to have one, any name claiming a time in the future, and finished copies stuck in the staging folder.
 
-**Restore drill** (before go-live, then monthly). The kit's `restore-drill.sh` does all of this for you, with a read-only credential: it fetches the newest backup, restores it into a scratch folder, starts a throw-away app on a spare port, checks it answers, deletes everything, and never touches the live database (`sudo -u taskapp /opt/taskapp/current/replica/deploy/bin/restore-drill.sh`; it must end with `DRILL PASSED`). By hand, on a scratch machine or folder, never over the live file:
+**Restore drill** (before go-live, then monthly). The kit's `restore-drill.sh` does all of this for you, with a read-only credential: it fetches the newest backup whose name is plausible, restores it into a scratch folder, starts a throw-away app on a spare port (it refuses if something already listens there), checks that the process it started is the one that answered, compares the data with the fingerprint recorded when the backup was taken, deletes the scratch folder it made, and never touches the live database (`systemctl start taskapp-restore-drill.service`; it must end with `DRILL PASSED`). A renamed or forged file makes it FAIL. By hand, on a scratch machine or folder, never over the live file:
 1. `npm run backup:list`, pick a name.
-2. `npm run restore -- --from <name> --to /tmp/drill/app.db`
+2. `npm run restore -- --from <name> --to /tmp/drill/app.db --confirm <name>` (without `--confirm` it shows what the backup is and asks you to type its name)
 3. It prints the row counts and says the copy passed its checks before it was put in place. Point a throwaway instance at it (`DB_PATH=/tmp/drill/app.db`, another `PORT`), sign in, read the audit log, then delete the scratch copy. Write the date and result in `replica/ops-log.md`.
 4. Try it with the wrong key once, to see it refuse.
 
-**Real restore** (after a failure): stop the app. `npm run restore -- --from <name> --to /var/lib/taskapp/app.db --replace`. The damaged file is kept beside it as `app.db.before-restore-<time>`. Start the app, check it, then decide what to delete. Changes made after that backup are lost (up to an hour with hourly copies), and any forget-me deletions made since must be repeated (see the plan).
+**Real restore** (after a failure): stop the app. `npm run restore -- --from <name> --to /var/lib/taskapp/app.db --replace` and type the backup's name when asked. The name and time are checked against the ones sealed inside the file, so a renamed or older file is refused (choosing a genuine older backup on purpose is still possible: read the date it shows). The damaged file is kept beside it as `app.db.before-restore-<time>`. Start the app, check it, then decide what to delete. Changes made after that backup are lost (up to an hour with hourly copies), and any forget-me deletions made since must be repeated (see the plan).
 
 ## 5. Updating
 
@@ -89,11 +89,11 @@ Names look like `backup-hourly-20301231T235959Z.db.gz.enc`, with the kind first 
 - **Someone leaves:** People, Deactivate. They are signed out at once and cannot sign in again; their tasks and history stay.
 - **The `npm run seed` command is for demos only.** It now refuses to touch an existing database without `--force`; never point it at a real one.
 - **A token leaked:** revoke it on People at once (effect is immediate), create a new one, and read the audit log for that service account's calls.
-- **The backup key is lost:** existing backups cannot be opened. Make a new key (`backup:keygen`), take a fresh backup straight away, and keep two copies this time.
+- **The backup key is lost:** existing backups cannot be opened. Make a new key (`backup:keygen`, then install it), take a fresh backup straight away, and keep two copies this time.
 - **A backup check failed:** do not ignore it. It means the live database failed an integrity or audit-chain check: stop writes if you can, restore the newest good backup to a scratch file, and compare.
 - **Disk nearly full:** the audit trail and backups grow; clear old backups at the destination first.
 
 ## 8. Not covered here
 
-The deployment kit (`deploy/`) is written and its scripts, units, firewall rules and settings are linted and run against fakes in the test suite, but **nothing has been run on a real machine**: systemd running the units, Caddy and certificates, real rclone or gsutil, the create-only credential, the firewall in force, the alert webhook and the VM itself are untested, and the cloud account is yours to make. Hosting
+The deployment kit (`deploy/`) is written and its scripts, units, firewall rules and settings are linted and run against fakes in the test suite, but **nothing has been run on a real machine**: systemd running the units, Caddy and certificates, real `gcloud` and Google Cloud permissions (until step 11 is run on the real bucket), the create-only credential, the firewall in force, the alert webhook and the VM itself are untested, and the cloud account is yours to make. Hosting
 location, region, domain, backup retention, recovery targets and the forget-me ruling are NOT STATED in the Playbook and are listed in `hosting-plan.md`.

@@ -1,7 +1,7 @@
 // Break-glass tool: unlock an account, or make a one-time password-reset link, from the server's command line. For when the only owner is locked out
 // or has lost their password. It needs shell access to the machine and the database, which is the point: no request over the network can do this.
-//   npm run break-glass -- unlock --email you@your-company.example
-//   npm run break-glass -- reset  --email you@your-company.example      (prints a link once; needs a terminal)
+//   npm run break-glass -- unlock --email you@example.test
+//   npm run break-glass -- reset  --email you@example.test      (prints a link once; needs a terminal)
 // Every use is recorded in the audit trail (ids only, no names or emails) as a system action "from the command line".
 import { pathToFileURL } from 'node:url';
 import { nowIso, openDbOrExplain, migrate, transaction } from '../server/db.js';

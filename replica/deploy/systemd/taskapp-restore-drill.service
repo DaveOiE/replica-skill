@@ -1,0 +1,48 @@
+# Restore drill, started by hand: systemctl start --wait taskapp-restore-drill.service     (then: journalctl -u taskapp-restore-drill -n 40)
+# Fetches the newest backup with the READ-ONLY credential, restores it into a scratch folder, starts a throw-away app on a spare port with a clean environment,
+# proves the process that answers is that app, and deletes everything. To drill a particular backup: systemctl edit taskapp-restore-drill.service and add
+# Environment=DRILL_NAME=<exact name>. It never touches the live database, which this unit cannot even see.
+[Unit]
+Description=Restore drill (throw-away copy, then delete)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=taskapp-backup
+Group=taskapp-backup
+WorkingDirectory=/opt/taskapp/current
+EnvironmentFile=/etc/taskapp/backup.env
+LoadCredential=backup-key:/etc/taskapp/credentials/backup-key
+LoadCredential=gcs-key:/etc/taskapp/credentials/drill-key.json
+Environment=PATH=/opt/node/bin:/usr/local/bin:/usr/bin:/bin
+Environment=HOME=/var/lib/taskapp-backup
+Environment=CLOUDSDK_CONFIG=/var/lib/taskapp-backup/gcloud-drill
+ExecStartPre=/opt/taskapp/current/replica/deploy/bin/check-node.sh
+ExecStart=/opt/taskapp/current/replica/deploy/bin/restore-drill.sh
+TimeoutStartSec=15min
+StateDirectory=taskapp-backup
+StateDirectoryMode=0700
+UMask=0077
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+PrivateDevices=true
+PrivateUsers=true
+InaccessiblePaths=/var/lib/taskapp /etc/taskapp
+NoNewPrivileges=true
+CapabilityBoundingSet=
+AmbientCapabilities=
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectKernelLogs=true
+ProtectControlGroups=true
+RestrictNamespaces=true
+RestrictRealtime=true
+RestrictSUIDSGID=true
+LockPersonality=true
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+SystemCallArchitectures=native
+SystemCallFilter=@system-service
+SystemCallFilter=~@privileged @resources
+LimitCORE=0
