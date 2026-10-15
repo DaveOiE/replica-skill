@@ -124,6 +124,18 @@ test('a copy that fails its check is never uploaded (broken audit chain), and a 
   } finally { rmSync(dir, { recursive: true, force: true }); }
 });
 
+test('a backup name is never reused: the folder destination refuses to overwrite', async () => {
+  const dir = tmp();
+  try {
+    const { db } = liveDb(dir);
+    const dest = new LocalDirDestination(join(dir, 'dest'));
+    const first = await runBackup(db, { key: KEY, destination: dest, now: () => '20300101T000000Z' });
+    const before = readFileSync(join(dir, 'dest', first.name));
+    await assert.rejects(runBackup(db, { key: KEY, destination: dest, now: () => '20300101T000000Z' }), /Backups are never overwritten/);
+    assert.ok(readFileSync(join(dir, 'dest', first.name)).equals(before));
+  } finally { rmSync(dir, { recursive: true, force: true }); }
+});
+
 test('restore never overwrites silently: an existing target needs --replace and is kept aside; stale log files are removed', async () => {
   const dir = tmp();
   try {

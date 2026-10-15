@@ -1,0 +1,22 @@
+# Alerts if the newest backup is older than 3 hours (or if there is none).
+[Unit]
+Description=Check the newest backup is recent
+OnFailure=taskapp-alert@%n.service
+
+[Service]
+Type=oneshot
+User=taskapp
+Group=taskapp
+EnvironmentFile=/etc/taskapp/backup-upload.env
+Environment=PATH=/usr/local/bin:/usr/bin:/bin
+Environment=STATE_DIR=/var/lib/taskapp-backup
+ExecStart=/opt/taskapp/current/replica/deploy/bin/backup-check.sh
+StateDirectory=taskapp-backup
+StateDirectoryMode=0700
+UMask=0077
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+NoNewPrivileges=true
+CapabilityBoundingSet=
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX

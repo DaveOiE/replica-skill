@@ -1,0 +1,16 @@
+# Started by OnFailure= in the other units. %i is the name of the unit that failed. Sends one alert; never touches data.
+[Unit]
+Description=Alert: %i failed
+
+[Service]
+Type=oneshot
+User=taskapp
+Group=taskapp
+EnvironmentFile=/etc/taskapp/backup-upload.env
+ExecStart=/opt/taskapp/current/replica/deploy/bin/alert.sh "unit %i failed on this machine. See: journalctl -u %i"
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+NoNewPrivileges=true
+CapabilityBoundingSet=
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX

@@ -29,6 +29,7 @@ export class LocalDirDestination {
   constructor(dir) { this.dir = resolve(dir); }
   async put(name, localPath) {
     mkdirSync(this.dir, { recursive: true, mode: 0o700 });
+    if (existsSync(join(this.dir, name))) throw new BackupError(`${name} already exists in ${this.dir}. Backups are never overwritten.`);
     const tmp = join(this.dir, `${name}.partial`);
     copyFileSync(localPath, tmp);
     renameSync(tmp, join(this.dir, name));

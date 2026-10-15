@@ -1,0 +1,59 @@
+# Caddy in front of the app. Install as /etc/caddy/Caddyfile.
+# Caddy gets and renews the HTTPS certificate by itself, answers on 80 only to redirect to 443, and forwards to the app,
+# which listens on 127.0.0.1 only (nothing else on this machine is reachable from outside).
+# The domain and a contact address come from the environment, so no real value lives in this file:
+#   see caddy.env.example (loaded by the caddy service through the drop-in in caddy-override.conf).
+
+{
+	email {$TASKAPP_ACME_EMAIL}
+	# Do not announce the Caddy version or the admin API to anyone but this machine.
+	admin localhost:2019
+}
+
+{$TASKAPP_DOMAIN} {
+	encode zstd gzip
+
+	# The largest thing the app accepts is the Job Register import (about 3.3 MB); stop anything bigger here.
+	request_body {
+		max_size 4MB
+	}
+
+	# The app sets its own security headers (CSP, nosniff, frame denial, referrer and permissions policy, and HSTS on https).
+	# They pass through untouched: nothing here adds, changes or duplicates them. Only the server banner is removed.
+	header {
+		-Server
+		defer
+	}
+
+	# Access log: who, when, status, size. No address path or query (typed search words travel there), no headers (cookies, tokens).
+	log {
+		output file /var/log/caddy/taskapp-access.log {
+			roll_size 20MiB
+			roll_keep 10
+			roll_keep_for 336h
+		}
+		format filter {
+			wrap json
+			fields {
+				request>uri delete
+				request>headers delete
+				resp_headers>Set-Cookie delete
+			}
+		}
+	}
+
+	reverse_proxy 127.0.0.1:3000 {
+		# The caller's address, set by Caddy itself: whatever the client sent in these headers is discarded, so it cannot pick the
+		# address the app's rate limits and audit rows will see. The app trusts only this local proxy (TRUST_PROXY=true).
+		header_up X-Forwarded-For {remote_host}
+		header_up -X-Real-IP
+		header_up -Forwarded
+		# Host reaches the app unchanged; its cross-site check compares Origin with it.
+		transport http {
+			dial_timeout 5s
+			response_header_timeout 30s
+		}
+		health_uri /api/v1/health
+		health_interval 30s
+	}
+}

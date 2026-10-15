@@ -1,0 +1,47 @@
+# One backup run. %i is the kind: hourly, daily, monthly or premigration. Started by the timers, or by hand:
+#   systemctl start taskapp-backup@premigration.service
+[Unit]
+Description=Encrypted backup (%i): take, check, upload
+After=network-online.target taskapp.service
+Wants=network-online.target
+OnFailure=taskapp-alert@%n.service
+
+[Service]
+Type=oneshot
+User=taskapp
+Group=taskapp
+WorkingDirectory=/opt/taskapp/current
+EnvironmentFile=/etc/taskapp/taskapp.env
+EnvironmentFile=/etc/taskapp/backup-upload.env
+# npm needs somewhere to write; keep it inside the one writable folder.
+Environment=PATH=/opt/node/bin:/usr/local/bin:/usr/bin:/bin
+Environment=HOME=/var/lib/taskapp-backup
+Environment=npm_config_cache=/var/lib/taskapp-backup/.npm
+Environment=npm_config_update_notifier=false
+ExecStartPre=/opt/taskapp/current/replica/deploy/bin/check-node.sh
+ExecStart=/opt/taskapp/current/replica/deploy/bin/backup.sh %i
+TimeoutStartSec=30min
+
+StateDirectory=taskapp-backup
+StateDirectoryMode=0700
+UMask=0077
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+PrivateDevices=true
+# The database folder is writable only because SQLite needs its shared-memory file to read a database in WAL mode.
+ReadWritePaths=/var/lib/taskapp /var/lib/taskapp-backup
+NoNewPrivileges=true
+CapabilityBoundingSet=
+AmbientCapabilities=
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictNamespaces=true
+RestrictRealtime=true
+RestrictSUIDSGID=true
+LockPersonality=true
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+SystemCallArchitectures=native
+SystemCallFilter=@system-service
+SystemCallFilter=~@privileged @resources

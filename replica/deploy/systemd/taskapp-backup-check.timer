@@ -1,0 +1,10 @@
+[Unit]
+Description=Backup freshness check
+
+[Timer]
+OnCalendar=*-*-* *:20,50:00
+Persistent=true
+Unit=taskapp-backup-check.service
+
+[Install]
+WantedBy=timers.target

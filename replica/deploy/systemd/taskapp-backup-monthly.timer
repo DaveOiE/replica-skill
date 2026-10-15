@@ -1,0 +1,13 @@
+# Runs the monthly backup. Persistent=true: if the machine was off at the time, it runs once when it comes back.
+# Odd minutes on purpose, so the three kinds never start together.
+[Unit]
+Description=Backup timer (monthly)
+
+[Timer]
+OnCalendar=*-*-01 00:27:00
+Persistent=true
+RandomizedDelaySec=60
+Unit=taskapp-backup@monthly.service
+
+[Install]
+WantedBy=timers.target

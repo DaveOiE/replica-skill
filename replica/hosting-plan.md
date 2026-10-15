@@ -1,5 +1,7 @@
 # Hosting plan: one small VM (plan only)
 
+The deployment kit is in `deploy/`: a systemd unit for the app, Caddy config, hourly/daily/monthly backup timers with upload and a 3-hour freshness alert, a restore drill script, firewall rules, journald log retention, and a README with the exact order of steps. Files only: nothing has been run on a real machine, no account exists.
+
 The step-by-step commands are in `runbook.md`. This file is the reasoning, the costs and the open decisions.
 
 Status: **a plan. Nothing here has been built, bought, signed up for or deployed.** No account, key or payment is needed to read it, and
@@ -26,7 +28,7 @@ with a token. Deskrail makes no outgoing calls.
 ```
 internet -> :443 reverse proxy (certificates renewed automatically)
               -> 127.0.0.1:3000 Deskrail (node, run by systemd, own unprivileged user)
-                    -> /var/lib/deskrail/app.db  (+ app.db-wal, app.db-shm), on the persistent disk
+                    -> /var/lib/taskapp/app.db  (+ app.db-wal, app.db-shm), on the persistent disk
 backup timers (hourly, daily and monthly runs, plus one before each migration) -> consistent copy -> encrypted -> storage bucket in a different project
 ```
 
@@ -55,10 +57,8 @@ These were found while writing the plan. Each is small and each needs its own te
 2. **A first owner without the fake seed. DONE:** `npm run first-owner` (see the runbook). Before it, the only way to get an owner was `npm run seed`. Today the only way to get an owner is `npm run seed`, which makes the fake demo workspace. A
    real instance needs a one-off command that creates the workspace and the first owner, reading the password from a prompt (never from
    a file or the command line) and recording the event in the audit trail. Until then, do not host.
-3. **A backup command. DONE:** `npm run backup`, `npm run backup:list` and `npm run restore` (see the runbook). The destination is an interface with a
-   folder driver only; a cloud driver is not built and needs your account decision. Scheduling (hourly, daily and monthly promotion) and the clean-up of
-   old copies stay outside the app: a systemd timer, and the storage's own lifecycle rule. The encryption key is symmetric and is held on the VM, so a
-   break-in could read new backups it can reach; the plan's append-only upload identity and an off-machine copy of the key remain the controls.
+3. **A backup command. DONE:** `npm run backup`, `npm run backup:list` and `npm run restore` (see the runbook). The app writes the encrypted copy to a local staging folder; uploading is done by the kit's `backup.sh` through rclone or gsutil with a create-only credential you make in your own account (the app has a folder driver only, and no cloud driver). The encryption key is symmetric and is held on the VM, so a
+   break-in could read new backups still waiting there; the create-only upload identity and an off-machine copy of the key remain the controls.
 
 ## HTTPS and PUBLIC_URL
 

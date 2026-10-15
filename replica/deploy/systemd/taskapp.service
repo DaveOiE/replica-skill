@@ -1,0 +1,67 @@
+# The app. Runs as its own unprivileged user, sees almost none of the machine, and restarts if it stops.
+# Install as /etc/systemd/system/taskapp.service. Code lives read-only under /opt/taskapp/current (owned by root);
+# the only writable place is /var/lib/taskapp (the database), which systemd creates for the service user.
+[Unit]
+Description=Task and action system of record (Node, SQLite)
+Documentation=file:///opt/taskapp/current/replica/runbook.md
+After=network.target
+# Alert if the service keeps failing and gives up.
+OnFailure=taskapp-alert@%n.service
+StartLimitIntervalSec=600
+StartLimitBurst=5
+
+[Service]
+Type=simple
+User=taskapp
+Group=taskapp
+WorkingDirectory=/opt/taskapp/current
+# Holds PUBLIC_URL, TRUST_PROXY, SESSION_IDLE_MINUTES, BACKUP_KEY, NODE_VERSION_PIN. Root-owned, mode 0600; systemd reads it before dropping privileges.
+EnvironmentFile=/etc/taskapp/taskapp.env
+Environment=NODE_ENV=production
+# Refuses to start on any Node other than the pinned version.
+ExecStartPre=/opt/taskapp/current/replica/deploy/bin/check-node.sh
+ExecStart=/opt/node/bin/node --no-warnings app/server/index.js
+Restart=on-failure
+RestartSec=3
+TimeoutStopSec=20
+
+# Where it may write, and nothing else.
+StateDirectory=taskapp
+StateDirectoryMode=0700
+UMask=0077
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+PrivateDevices=true
+ReadWritePaths=/var/lib/taskapp
+
+# What it may do.
+NoNewPrivileges=true
+CapabilityBoundingSet=
+AmbientCapabilities=
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectKernelLogs=true
+ProtectControlGroups=true
+ProtectClock=true
+ProtectHostname=true
+ProtectProc=invisible
+ProcSubset=pid
+RestrictNamespaces=true
+RestrictRealtime=true
+RestrictSUIDSGID=true
+LockPersonality=true
+RemoveIPC=true
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+SystemCallArchitectures=native
+SystemCallFilter=@system-service
+SystemCallFilter=~@privileged @resources
+# MemoryDenyWriteExecute is deliberately NOT set: Node's JIT needs writable and executable memory.
+
+# Limits: a runaway process cannot take the whole machine.
+MemoryMax=1G
+TasksMax=256
+LimitNOFILE=4096
+
+[Install]
+WantedBy=multi-user.target

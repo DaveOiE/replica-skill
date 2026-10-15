@@ -1,0 +1,37 @@
+#!/usr/sbin/nft -f
+# Host firewall: the only things reachable from outside are web traffic (80, 443) and SSH from one stated range.
+# Do not load this file as it is. Run install-firewall.sh, which puts your range on the marked line, checks the result, and
+# only then (with --apply) loads it.
+flush ruleset
+
+table inet taskapp {
+	chain input {
+		type filter hook input priority 0; policy drop;
+
+		iif "lo" accept
+		ct state invalid drop
+		ct state established,related accept
+
+		# IPv6 needs these to work at all; ping is allowed but limited.
+		ip6 nexthdr icmpv6 icmpv6 type { destination-unreachable, packet-too-big, time-exceeded, parameter-problem, nd-router-advert, nd-neighbor-solicit, nd-neighbor-advert } accept
+		ip protocol icmp icmp type { destination-unreachable, time-exceeded, parameter-problem } accept
+		icmp type echo-request limit rate 5/second accept
+		icmpv6 type echo-request limit rate 5/second accept
+
+		# The web: Caddy listens here. The app's own port (3000) is not listed, so it is never reachable from outside.
+		tcp dport { 80, 443 } accept
+
+		# SSH, from the stated range only, and slowed down if someone hammers it.
+		# @SSH_RULE@
+
+		# Everything else is dropped by the policy above.
+	}
+
+	chain forward {
+		type filter hook forward priority 0; policy drop;
+	}
+
+	chain output {
+		type filter hook output priority 0; policy accept;
+	}
+}
