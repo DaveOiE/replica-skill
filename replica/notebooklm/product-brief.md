@@ -20,6 +20,7 @@ Honest summary: this is a pilot-ready small work manager, not an enterprise plat
 - **Forms that create tasks**: PILOT item 3: project admins build a request form (short text, long text, pick one; one question becomes the task title); a public link anyone can fill in; rate limited per address and per form, honeypot, strict validation, audited; the public page and its answers reveal nothing internal; unknown, closed and archived forms give the identical 404. Branching and customisation are NOT built
 - **Unlimited free guests**: M2: guests see only projects they are added to; never project admin; no seat limit
 - **Per-project admin controls**: M2: project admins rename, archive, manage sections and who is on the project, nothing wider
+- **Service accounts**: ZEN phase 1: service accounts (users of kind service, no password, no membership, never listed as people) with scoped tokens tasks:write and tasks:read; shown once, only a hash stored, revocable, optional expiry, last-used time; admin-only management in the browser, a token can never manage tokens; every token call audited under the account (actor_kind service); per-token rate limit; a token may call only routes that name its scope (today only /service/whoami)
 - **View-only seats**: M1: view-only and guest can never write; proven by route walk on every route. No billing or licence counting (A4)
 - **Add a person (admin creates a teammate or guest; temporary password shown once)** (an extra, not on the original list): Built: the password hash is stored and the password is never written to the audit trail; no email is sent (the admin hands the temporary password over)
 - **Change own password (needed because new people get a temporary one)** (an extra, not on the original list): ADDED in M2: needs the current password, enforces the 12-character rule, ends other sessions
@@ -36,7 +37,7 @@ Honest summary: this is a pilot-ready small work manager, not an enterprise plat
 - **Mobile-friendly web app**: M1 and M2: shell, sign-in, projects, list view and task drawer checked at 390px and 1440px in Chromium; later screens are checked as built
 - **Reporting dashboards with custom charts**: Demo slice built: four number tiles, tasks by status, open tasks by person, progress by project, each chart with a numbers table, counting only projects the viewer can see. NOT built: choosing or building your own charts (custom chart builder is later)
 
-### Not built (the "later list", about 124 effort points, nothing faked)
+### Not built (the "later list", about 121 effort points, nothing faked)
 
 - Attachments on tasks
 - Project templates (custom)
@@ -61,7 +62,6 @@ Honest summary: this is a pilot-ready small work manager, not an enterprise plat
 - SCIM deprovisioning
 - Admin console: teams
 - Admin console: settings and access
-- Service accounts
 - Control who can invite guests
 - Trusted guest domains
 - Approved workspaces
@@ -127,6 +127,9 @@ Workspace roles: owner, admin, member, view-only (a read-only seat), and guest (
 | project:create | yes | yes | yes | yes | - | - |
 | project:list | no | yes | yes | yes | yes | yes |
 | report:read | no | yes | yes | yes | yes | yes |
+| service:whoami | no | - | - | - | - | - |
+| service_accounts:manage | yes | yes | yes | - | - | - |
+| service_accounts:read | no | yes | yes | - | - | - |
 | session:password | no | yes | yes | yes | yes | yes |
 | session:read | no | yes | yes | yes | yes | yes |
 | session:signout | no | yes | yes | yes | yes | yes |
@@ -526,7 +529,14 @@ The tamper-evident record of every change.
 
 ### Settings, integrations and machine access
 
-Planned enterprise and integration features.
+Service accounts and tokens are built; the rest are planned enterprise and integration features.
+
+**service_accounts** (used today)
+
+- user_id
+- workspace_id
+- created_by
+- created_at
 
 **workspace_settings** (defined for a planned feature; not used yet)
 
@@ -563,7 +573,7 @@ Planned enterprise and integration features.
 - last_used_at
 - revoked_at
 
-**api_tokens** (defined for a planned feature; not used yet)
+**api_tokens** (used today)
 
 - id
 - workspace_id
@@ -683,7 +693,7 @@ Every change to data writes an audit entry in the same database transaction as t
 
 ## 6. The API (how another system could talk to this)
 
-The web app is a thin page over a JSON API at /api/v1 (49 routes). **Today the API accepts only browser session cookies from a person who signed in with email and password. There are no API tokens, no service accounts, no outgoing webhooks and no MCP-style endpoint, so an AI system such as Zen AI cannot call it safely yet.** Public routes (no sign-in) exist only for invite links, reset links and the public request form, and they are rate limited.
+The web app is a thin page over a JSON API at /api/v1 (55 routes). **Today the API accepts browser session cookies from a person who signed in, and bearer tokens from service accounts. A token carries a scope (tasks:write or tasks:read) and may call only routes that name its scope. So far the only such route is /api/v1/service/whoami (to check a token works); the ingest and read routes for Zen are not built yet. There are no outgoing webhooks and no MCP-style endpoint.** Public routes (no sign-in) exist only for invite links, reset links and the public request form, and they are rate limited.
 
 | Method | Path | Who may call it | Changes data |
 | --- | --- | --- | --- |
@@ -728,6 +738,12 @@ The web app is a thin page over a JSON API at /api/v1 (49 routes). **Today the A
 | POST | /api/v1/resets/:token/complete | anyone (rate limited) | yes |
 | DELETE | /api/v1/sections/:id | project admin or higher | yes |
 | PATCH | /api/v1/sections/:id | project admin or higher | yes |
+| GET | /api/v1/service-accounts | owner, admin | no |
+| POST | /api/v1/service-accounts | owner, admin | yes |
+| DELETE | /api/v1/service-accounts/:id | owner, admin | yes |
+| POST | /api/v1/service-accounts/:id/tokens | owner, admin | yes |
+| DELETE | /api/v1/service-accounts/:id/tokens/:tokenId | owner, admin | yes |
+| GET | /api/v1/service/whoami |  | no |
 | DELETE | /api/v1/tasks/:id | project editor or higher | yes |
 | GET | /api/v1/tasks/:id | project viewer or higher | no |
 | PATCH | /api/v1/tasks/:id | project editor or higher | yes |
@@ -739,7 +755,7 @@ The web app is a thin page over a JSON API at /api/v1 (49 routes). **Today the A
 
 ### What connecting an AI would need first (recommendation)
 
-1. **Service accounts with scoped tokens** (not built, on the later list), so an AI has its own identity, read-only at first, and every call is audited under that identity.
+1. **Service accounts with scoped tokens** (built): an AI or another system gets its own identity, shown a token once, with every call audited under that identity. What is still missing is the routes a token may call (ingest and read), which are the next phases.
 2. A short **allow-list of fields** an AI may read. Treat these as sensitive and exclude them by default: client names and notes from the Job Register, comments, task descriptions (which can contain visitor email addresses), form submissions, and people's email addresses.
 3. **Decide read-only versus write**: creating tasks is safe to start with; changing status or assignment should be a later, separate decision.
 4. NotebookLM is a Google service. Upload only this brief and the other documents in the replica folder, never exports of real client data such as the Job Register.

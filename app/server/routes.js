@@ -1,5 +1,7 @@
 import { z } from 'zod';
-import { can, canAssignRole } from './authz.js';
+import { can, canAssignRole, ACTIONS } from './authz.js';
+import { resolveBearer } from './store.js';
+import { serviceRoutes } from './routes-service.js';
 import { mutate } from './audit.js';
 import { signIn, signOut, actorFromToken } from './auth.js';
 import { projectAccess } from './access.js';
@@ -28,11 +30,19 @@ export function registerRoutes(app, { db, config, limiters }) {
     app.route({
       method: spec.method, url: spec.url, ...(spec.bodyLimit ? { bodyLimit: spec.bodyLimit } : {}),
       handler: async (req, reply) => {
-        const actor = actorFromToken(db, req.cookies?.[SESSION_COOKIE]);
+        let actor, svc = null;
+        if (spec.action && req.headers.authorization) {
+          // A bearer token is the only credential considered: no fallback to a cookie, and every kind of bad token looks the same.
+          actor = resolveBearer(db, req.headers.authorization);
+          if (!actor) { if (!limiters.token.hit(req.ip)) return reply.code(429).send({ error: 'Too many tries. Wait a minute and try again.' }); return reply.code(401).send({ error: 'That token is not valid.' }); }
+          if (!limiters.tokenCalls.hit(actor.tokenId)) return reply.code(429).header('Retry-After', '60').send({ error: 'Too many calls for this token. Slow down and retry in a minute.' });
+          svc = req.svc = { actor, spec };
+        } else actor = actorFromToken(db, req.cookies?.[SESSION_COOKIE]);
         let access = null;
         if (spec.action) {
           if (!actor) return reply.code(401).send({ error: 'Sign in to continue.' });
           let resource;
+          if (actor.kind === 'service' && !ACTIONS[spec.action]?.service) return reply.code(403).send({ error: 'This token cannot do that.' });
           if (spec.projectOf) {
             // Hidden and missing look the same (404) so nobody can probe for projects they cannot see.
             const pid = spec.projectOf(req, db, actor);
@@ -81,6 +91,7 @@ export function registerRoutes(app, { db, config, limiters }) {
       return { ok: true };
     } });
 
+  serviceRoutes(define, db);
   projectRoutes(define, db);
   taskRoutes(define, db);
   peopleRoutes(define, db);

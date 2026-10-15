@@ -8,13 +8,13 @@ Updated: 2026-10-15
 
 | state | features |
 | --- | --- |
-| done | 21 |
+| done | 22 |
 | partly done | 3 |
-| later (deferred) | 46 |
+| later (deferred) | 45 |
 | skipped | 2 |
 | **total** | **72** |
 
-Demo scope: **66 of 76 points built (87%)**. Later pool: 124 points, not scheduled. One point is a small tested feature (a few routes, one screen state, its tests).
+Demo scope: **69 of 79 points built (87%)**. Later pool: 121 points, not scheduled. One point is a small tested feature (a few routes, one screen state, its tests).
 
 ## Budget
 
@@ -29,7 +29,7 @@ Used so far (proxy): **56.0%**. Rate: **0.31% of session per point** (measured o
 | M3 | Board view (rest of views and forms later) | demo | 3 | 0 | 18 | done | 0.0% | - |
 | M4 | Automation | later | 0 | 0 | 5 | later | 0.0% | - |
 | M5 | Simple dashboard (goals portfolios and approvals later) | demo | 4 | 0 | 22 | done, 1 partial | 0.0% | - |
-| M6 | Audit log screen and SIEM API and service accounts | later | 0 | 0 | 11 | later | 0.0% | - |
+| M6 | Audit log screen and SIEM API and service accounts | later | 0 | 0 | 8 | later | 0.0% | - |
 | M7 | Admin console SSO and provisioning | later | 0 | 0 | 32 | later | 0.0% | - |
 | M8 | Bundles branding and backup | later | 0 | 0 | 9 | later | 0.0% | - |
 | M9 | Integrations stubs and compliance docs | later | 0 | 0 | 13 | later | 0.0% | - |
@@ -37,6 +37,7 @@ Used so far (proxy): **56.0%**. Rate: **0.31% of session per point** (measured o
 | P1 | Pilot 1: admin reset and unlock and invites | demo | 8 | 0 | 0 | done | 0.0% | - |
 | P2 | Pilot 2: Job Register importer and Jobs view | demo | 15 | 0 | 0 | done | 0.0% | - |
 | P3 | Pilot 3: public request form and one rule | demo | 8 | 0 | 0 | done, 1 partial | 0.0% | - |
+| Z1 | Zen phase 1: machine access (service accounts and tokens) | demo | 3 | 0 | 0 | done | 0.0% | - |
 
 Fits inside the 60% stop line at this rate: nothing.
 (Gauge and Evolve are extra: see replica/run-plan.md.)
@@ -47,6 +48,7 @@ Fits inside the 60% stop line at this rate: nothing.
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | M1 | View-only seats | E | must | 2 | demo | done | M1: view-only and guest can never write; proven by route walk on every route. No billing or licence counting (A4) |
 | P1 | Invite by link (7 days, single use) with public join page | E | must | 4 | demo | done | PILOT item 1: admin sees the link once; no email is sent; the new person sets their own password under the 12-character rule; expired, used and invalid links look the same |
+| Z1 | Service accounts | E | should | 3 | demo | done | ZEN phase 1: service accounts (users of kind service, no password, no membership, never listed as people) with scoped tokens tasks:write and tasks:read; shown once, only a hash stored, revocable, optional expiry, last-used time; admin-only management in the browser, a token can never manage tokens; every token call audited under the account (actor_kind service); per-token rate limit; a token may call only routes that name its scope (today only /service/whoami) |
 | M1 | Workspaces, users, roles, password sign-in | C | must | 8 | demo | done | Sign-in with lockout, sessions, five roles enforced on the server, a tamper-evident audit trail written for every change, and fake seed data. Invites by link are built (see the pilot rows); custom password rules (an admin setting) are not built |
 | P1 | Admin password reset by one-time link (24 hours, single use) | E | must | 3 | demo | done | PILOT item 1: reset links never stored in the clear; ends all of the person's sessions and clears any lock; refused for yourself, for owners (unless you are one) and for anyone in more than one workspace |
 | P1 | Unlock a locked account (admin) | E | should | 1 | demo | done | PILOT item 1: clears the five-failure lock; audited |
@@ -86,7 +88,6 @@ Fits inside the 60% stop line at this rate: nothing.
 | M5 | Workload and resource management in a portfolio | C | should | 3 | later | later (deferred) |  |
 | M5 | Reporting dashboards with custom charts | C | must | 4 | demo | partly done | Demo slice built: four number tiles, tasks by status, open tasks by person, progress by project, each chart with a numbers table, counting only projects the viewer can see. NOT built: choosing or building your own charts (custom chart builder is later) |
 | M5 | Universal reporting across projects and teams | C | should | 3 | later | later (deferred) | kept simple |
-| M6 | Service accounts | E | should | 3 | later | later (deferred) |  |
 | M6 | Audit log of admin and user actions | E | must | 5 | later | later (deferred) | demo slice: admin screen with filters, before/after, verify chain; SIEM export API and service accounts are later (deferred 2026-10-12 to hold the 45% line with the Gauge and Evolve reserve; the audit trail itself is recorded and verifiable today, only the screen is later) |
 | M6 | Audit API suited to SIEM export | E | must | 3 | later | later (deferred) | JSON and NDJSON, cursor paging |
 | M7 | Control who can invite guests | E | should | 1 | later | later (deferred) |  |

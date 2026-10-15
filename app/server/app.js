@@ -8,6 +8,7 @@ import { fileURLToPath } from 'node:url';
 import { PRODUCT_NAME } from '../shared/brand.js';
 import { registerRoutes } from './routes.js';
 import { makeLimiter } from './rateLimit.js';
+import { appendAudit } from './audit.js';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const webDir = join(here, '..', 'web');
@@ -21,7 +22,7 @@ export function loadConfig(env = process.env) {
   };
 }
 
-export async function buildApp({ db, config = loadConfig(), logger = false, signinPerMinute = 30, tokenPerMinute = 30, formPerMinute = 10, formPerHour = 60 }) {
+export async function buildApp({ db, config = loadConfig(), logger = false, signinPerMinute = 30, tokenPerMinute = 30, formPerMinute = 10, formPerHour = 60, tokenCallsPerMinute = 600 }) {
   const app = Fastify({ logger: logger ? { redact: ['req.headers.cookie', 'req.headers.authorization'],
     // Query strings can hold typed client names (job search), so only the path is logged.
     serializers: { req: (req) => ({ method: req.method, url: String(req.url).split('?')[0], host: req.headers?.host, remoteAddress: req.ip }) },
@@ -46,6 +47,16 @@ export async function buildApp({ db, config = loadConfig(), logger = false, sign
       .header('Content-Security-Policy', "default-src 'self'; img-src 'self' data:; frame-ancestors 'none'; base-uri 'none'; form-action 'self'");
     if (req.url.startsWith('/api/')) reply.header('Cache-Control', 'no-store');
   });
+  // Every call made with a token is audited under the service account. Writes already record their own domain event, so only
+  // reads, refusals and failed writes get an api.call or api.denied entry. The route pattern is logged, never the real URL or any value.
+  app.addHook('onResponse', async (req, reply) => {
+    const s = req.svc;
+    if (!s || (s.spec.write && reply.statusCode < 400)) return;
+    try {
+      appendAudit(db, { workspaceId: s.actor.workspaceId, actorId: s.actor.userId, actorKind: 'service', action: reply.statusCode >= 400 ? 'api.denied' : 'api.call', targetType: 'api', targetId: s.spec.url,
+        summary: `${s.spec.method} ${s.spec.url} answered ${reply.statusCode}`, after: { status: reply.statusCode, token: s.actor.tokenId }, ip: req.ip, requestId: req.id });
+    } catch (e) { req.log.error({ err: { message: e.message } }, 'audit write failed'); }
+  });
   app.setErrorHandler((err, req, reply) => {
     if (err.statusCode && err.statusCode < 500) return reply.code(err.statusCode).send({ error: 'That request could not be read.' });
     req.log.error({ err: { message: err.message } }, 'request failed');
@@ -53,7 +64,7 @@ export async function buildApp({ db, config = loadConfig(), logger = false, sign
   });
 
   registerRoutes(app, { db, config, limiters: { signin: makeLimiter({ max: signinPerMinute, windowMs: 60000 }), token: makeLimiter({ max: tokenPerMinute, windowMs: 60000 }),
-      formSubmit: makeLimiter({ max: formPerMinute, windowMs: 60000 }), formHour: makeLimiter({ max: formPerHour, windowMs: 3600000 }) } });
+      formSubmit: makeLimiter({ max: formPerMinute, windowMs: 60000 }), formHour: makeLimiter({ max: formPerHour, windowMs: 3600000 }), tokenCalls: makeLimiter({ max: tokenCallsPerMinute, windowMs: 60000 }) } });
 
   const indexHtml = readFileSync(join(webDir, 'index.html'), 'utf8').replaceAll('{{PRODUCT_NAME}}', escapeHtml(PRODUCT_NAME));
   app.get('/', async (req, reply) => reply.type('text/html; charset=utf-8').send(indexHtml));

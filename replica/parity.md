@@ -1,11 +1,11 @@
-# Parity report (Gauge, pilot version)
+# Parity report (Gauge, after Zen phase 1)
 
 Two honest numbers, because the build was cut to a demo and then a pilot on purpose.
 
 | scored against | feature score | must-haves done | what it means |
 | --- | --- | --- | --- |
-| **the full public feature list** (62 counted rows) | **31.2 / 100** | 10 of 22 | A small part of the list. Not shippable as an enterprise product. |
-| **the demo and pilot scope** (16 counted rows) | **90.0 / 100** | 10 of 13 | Pilot-ready for a small team. The three partial must-haves are: dashboards (fixed widgets, no chart builder), automation (one rule type only) and the mobile checks on later screens. |
+| **the full public feature list** (62 counted rows) | **32.7 / 100** | 10 of 22 | A small part of the list. Not shippable as an enterprise product. |
+| **the demo and pilot scope** (17 counted rows) | **90.4 / 100** | 10 of 13 | Pilot-ready for a small team. The three partial must-haves are: dashboards (fixed widgets, no chart builder), automation (one rule type only) and the mobile checks on later screens. |
 
 The layout score is **not measured**: this was a clean-room build and no reference screenshots of the original were captured.
 
@@ -15,15 +15,15 @@ Register importer and Jobs view, the request form) are extras the original list 
 
 ## Built, partial, stubbed, missing
 
-- **Built and tested:** workspaces, roles and password sign-in; task fields, comments, subtasks, milestones, dependencies; projects and sections; list and board views; unlimited guests; per-project admin controls; view-only seats; **forms that create tasks** (no branching, no customisation). Extras: add a person, change own password, admin password reset and unlock, invites by link, Job Register import, Jobs view, public request form.
+- **Built and tested:** service accounts with scoped tokens (Zen phase 1); workspaces, roles and password sign-in; task fields, comments, subtasks, milestones, dependencies; projects and sections; list and board views; unlimited guests; per-project admin controls; view-only seats; **forms that create tasks** (no branching, no customisation). Extras: add a person, change own password, admin password reset and unlock, invites by link, Job Register import, Jobs view, public request form.
 - **Partly built:** dashboards (fixed widgets only); rules automation (one rule type: assign new form requests to a chosen person); mobile-friendly web app (every screen built is checked at 390px and 1440px).
 - **Stubs and mocks: none.** Nothing is faked. SAML, SCIM, connectors, hooks and AI features are **not built**.
-- **Not built, later list (124 points):** the audit log screen, JSON and NDJSON export and service accounts (moved here from the pilot because the budget gate failed); calendar and timeline views; custom fields; form branching and customisation; time tracking; status updates; portfolios; goals; workload and capacity; approvals and proofing; universal reporting; SAML and SCIM; the admin console and security settings; bundles; branding and onboarding; backup; integrations; DLP and archiving hooks; support page; compliance documents (all would be labelled not certified); AI features; attachments; project templates; the Toggl connector and time tracking (skipped by default).
+- **Not built, later list (124 points):** the audit log screen and JSON and NDJSON export (moved here from the pilot because the budget gate failed); calendar and timeline views; custom fields; form branching and customisation; time tracking; status updates; portfolios; goals; workload and capacity; approvals and proofing; universal reporting; SAML and SCIM; the admin console and security settings; bundles; branding and onboarding; backup; integrations; DLP and archiving hooks; support page; compliance documents (all would be labelled not certified); AI features; attachments; project templates; the Toggl connector and time tracking (skipped by default).
 - **Left out on purpose (not scored):** a catalogue of 100+ connectors; native mobile apps.
 
 ## The tool's own output, full list
 
-features 31.2  (62 counted, must-haves 10 of 22 done)
+features 32.7  (62 counted, must-haves 10 of 22 done)
 
 Not shippable yet: 12 must-have features are not done.
 
@@ -43,7 +43,7 @@ Not shippable yet: 12 must-have features are not done.
 - compliance                     0.0  (5 features)
 - support                        0.0  (1 features)
 - ai                             0.0  (5 features)
-- admin                         10.0  (9 features)
+- admin                         20.0  (9 features)
 - reporting                     30.0  (2 features)
 - projects                      42.9  (3 features)
 - forms                         50.0  (3 features)
@@ -73,7 +73,6 @@ Not shippable yet: 12 must-have features are not done.
 - [should] admin: Approved workspaces, no
 - [should] admin: Custom branding, no
 - [should] admin: Custom onboarding, no
-- [should] admin: Service accounts, no
 - [should] admin: Workflow bundles, no
 - [should] approvals: Approvals, no
 - [should] forms: Form branching logic, no
@@ -121,7 +120,7 @@ Not shippable yet: 12 must-have features are not done.
 
 ## The tool's own output, demo and pilot scope
 
-features 90.0  (16 counted, must-haves 10 of 13 done)
+features 90.4  (17 counted, must-haves 10 of 13 done)
 
 Not shippable yet: 3 must-have features are not done.
 
@@ -135,7 +134,7 @@ Not shippable yet: 3 must-have features are not done.
 - views                        100.0  (2 features)
 - forms                        100.0  (1 features)
 - access                       100.0  (2 features)
-- admin                        100.0  (1 features)
+- admin                        100.0  (2 features)
 
 ## Missing, in build order
 - [must] automation: Rules automation: trigger, condition, action, partial  (PILOT item 3: ONE rule type only, "assign new requests from a form to a chosen person"; every run is recorded; if the person loses access the task is still created, unassigned, and the problem is shown to admins. No conditions, no other triggers or actions)

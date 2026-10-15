@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url';
 import { newId, nowIso, openDb, openDbOrExplain, migrate, transaction } from '../server/db.js';
 import { hashPassword, randomPassword } from '../server/password.js';
 import { appendAudit } from '../server/audit.js';
+import { createServiceAccount, createToken } from '../server/store.js';
 
 // Everything here is fake: invented names, reserved example.test addresses. Passwords are random
 // each time the seed runs; they are returned to the caller and written to a gitignored file,
@@ -90,6 +91,13 @@ export function seedDemo(db) {
     const scratchForm = mkForm('Scratch form', 'demo-scratch-form-slug-00002');
     db.prepare('insert into form_questions(id,form_id,label,kind,options_json,required,position,maps_to) values (?,?,?,?,?,?,?,?)').run(newId(), scratchForm, 'Anything?', 'text', '[]', 0, 0, 'title');
     creds.forms = { pub: supportForm, slug: 'demo-support-form-slug-0001', disposable: scratchForm };
+    // Service accounts for Zen (invented). Tokens are random on every seed run, returned here and written only to the gitignored credentials file.
+    const mkSvc = (name, scopes) => { const accountId = createServiceAccount(db, demo, name, creds.admin.userId); const t = createToken(db, demo, accountId, `${name} token`, scopes, null); return { accountId, tokenId: t.id, token: t.token }; };
+    const svcWrite = mkSvc('Zen ingestion (test)', ['tasks:write']), svcRead = mkSvc('Zen reader (test)', ['tasks:read']);
+    const disposableAccountId = createServiceAccount(db, demo, 'Scratch account', creds.admin.userId);
+    const spare = createToken(db, demo, svcWrite.accountId, 'spare token', ['tasks:write'], null);
+    const otherSvc = (() => { const accountId = createServiceAccount(db, other, 'Other Co service', creds.outsider.userId); return { accountId, token: createToken(db, other, accountId, 'other token', ['tasks:read', 'tasks:write'], null).token }; })();
+    creds.svc = { write: svcWrite, read: svcRead, disposableAccountId, disposableTokenId: spare.id, other: otherSvc };
     creds.projects = { pub, priv, otherProj };
     creds.sections = { todo: sTodo, doing: sDoing, done: sDone, disposable: sDisposable };
     creds.tasks = { a, b, sub, disposable, secret, otherTask };
@@ -111,6 +119,7 @@ if (process.argv[1] && process.argv[1].endsWith('seed.js')) {
   try { db = openDbOrExplain(dbPath); migrate(db); } catch (e) { console.error(`\n${e.message}\n`); process.exit(1); }
   const creds = seedDemo(db);
   const lines = ['Demo sign-ins (fake accounts; workspace slug "demo"; passwords change every seed run)', ''];
+  for (const [k, v] of Object.entries(creds.svc || {})) if (v.token) lines.push(`${('svc-' + k).padEnd(9)} token      ${v.token}`);
   for (const [k, v] of Object.entries(creds)) if (v.email) lines.push(`${k.padEnd(9)} ${v.role.padEnd(10)} ${v.email}  ${v.password}`);
   const out = join(root, '.local', 'demo-credentials.txt');
   mkdirSync(dirname(out), { recursive: true });

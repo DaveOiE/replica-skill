@@ -21,7 +21,7 @@ export const GROUPS = [
   ['Forms and automation', 'Public request forms, what visitors send, the assignment rule and its run log.', ['forms', 'form_questions', 'form_submissions', 'rules', 'rule_runs', 'custom_field_defs', 'custom_field_values', 'approvals']],
   ['Reporting and goals', 'Planned: dashboards you build yourself, portfolios, goals.', ['dashboards', 'dashboard_widgets', 'portfolios', 'portfolio_projects', 'goals', 'goal_links']],
   ['Audit trail', 'The tamper-evident record of every change.', ['audit_events']],
-  ['Settings, integrations and machine access', 'Planned enterprise and integration features.', ['workspace_settings', 'feature_flags', 'sso_configs', 'scim_tokens', 'api_tokens', 'trusted_domains', 'approved_apps', 'bundles', 'backups', 'connectors', 'webhooks', 'webhook_deliveries', 'outbox']],
+  ['Settings, integrations and machine access', 'Service accounts and tokens are built; the rest are planned enterprise and integration features.', ['service_accounts', 'workspace_settings', 'feature_flags', 'sso_configs', 'scim_tokens', 'api_tokens', 'trusted_domains', 'approved_apps', 'bundles', 'backups', 'connectors', 'webhooks', 'webhook_deliveries', 'outbox']],
   ['Housekeeping', '', ['schema_migrations']],
 ];
 const NOTES = {
@@ -119,12 +119,12 @@ The importer reads a 13-column CSV exported from a Google Sheet: Job No, Job Tit
   o.push('Every change to data writes an audit entry in the same database transaction as the change: who (a person, the system, or an anonymous visitor), what happened, which record, and which fields changed. Entries are chained by hashes, so tampering is detectable, and the database refuses edits and deletes. Failed sign-ins are recorded. Reads are not recorded. Refused requests are not recorded because they change nothing. There is **no screen and no export for the audit trail yet** (it is on the later list).\n');
 
   o.push('## 6. The API (how another system could talk to this)\n');
-  o.push(`The web app is a thin page over a JSON API at /api/v1 (${app.routeTable.length} routes). **Today the API accepts only browser session cookies from a person who signed in with email and password. There are no API tokens, no service accounts, no outgoing webhooks and no MCP-style endpoint, so an AI system such as Zen AI cannot call it safely yet.** Public routes (no sign-in) exist only for invite links, reset links and the public request form, and they are rate limited.\n`);
+  o.push(`The web app is a thin page over a JSON API at /api/v1 (${app.routeTable.length} routes). **Today the API accepts browser session cookies from a person who signed in, and bearer tokens from service accounts. A token carries a scope (tasks:write or tasks:read) and may call only routes that name its scope. So far the only such route is /api/v1/service/whoami (to check a token works); the ingest and read routes for Zen are not built yet. There are no outgoing webhooks and no MCP-style endpoint.** Public routes (no sign-in) exist only for invite links, reset links and the public request form, and they are rate limited.\n`);
   const who = (r) => (r.public ? 'anyone (rate limited)' : ACTIONS[r.action]?.project ? `project ${ACTIONS[r.action].project} or higher` : ACTIONS[r.action].roles.join(', '));
   o.push(table(['Method', 'Path', 'Who may call it', 'Changes data'], [...app.routeTable].sort((a, b) => a.url.localeCompare(b.url) || a.method.localeCompare(b.method)).map((r) => [r.method, r.url, who(r), r.write ? 'yes' : 'no'])) + '\n');
   o.push(`### What connecting an AI would need first (recommendation)
 
-1. **Service accounts with scoped tokens** (not built, on the later list), so an AI has its own identity, read-only at first, and every call is audited under that identity.
+1. **Service accounts with scoped tokens** (built): an AI or another system gets its own identity, shown a token once, with every call audited under that identity. What is still missing is the routes a token may call (ingest and read), which are the next phases.
 2. A short **allow-list of fields** an AI may read. Treat these as sensitive and exclude them by default: client names and notes from the Job Register, comments, task descriptions (which can contain visitor email addresses), form submissions, and people's email addresses.
 3. **Decide read-only versus write**: creating tasks is safe to start with; changing status or assignment should be a later, separate decision.
 4. NotebookLM is a Google service. Upload only this brief and the other documents in the replica folder, never exports of real client data such as the Job Register.

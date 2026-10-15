@@ -56,3 +56,10 @@ Needs your decision first, because each needs an account or a key: **sending ema
 alerts would stop being copy-and-paste; needs an email service), and **time tracking with a push-only Toggl
 connector** (needs a Toggl account and token, stored encrypted; I would estimate points and wait for your go, and
 test against a mock first). After those: calendar and timeline views, SAML and SCIM against a local mock provider.
+
+## Direction change: Deskrail inside Zen (after the pilot)
+
+Deskrail's role is now fixed by the owner's architecture: the task-and-action system of record behind Zen, with Zen as its only
+connection. The rules are kept in `zen-integration.md`. Phase 1 (machine access) is built: service accounts and scoped tokens,
+every token call audited, a token able to call only routes that name its scope. Next: the ingest endpoint (phase 2) and the read
+API for Zen (phase 3). The Job Register importer and Jobs view are untouched and transitional.

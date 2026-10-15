@@ -48,7 +48,7 @@ test('passwords: scrypt hash verifies, wrong one does not, hashes are salted', (
 
 test('seed: fake people only, two workspaces, no password stored in plain text', () => {
   const { db, creds } = freshDb();
-  const users = db.prepare('select email, password_hash from users').all();
+  const users = db.prepare("select email, password_hash from users where kind = 'human'").all();
   assert.equal(users.length, 7);
   for (const u of users) {
     assert.match(u.email, /@example\.test$/, 'only reserved example.test addresses');

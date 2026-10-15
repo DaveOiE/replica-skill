@@ -39,7 +39,7 @@ SCIM deprovisioning,provisioning,must,yes,no,deactivation ends sessions,E,mock,M
 Admin console: teams,admin,must,yes,no,,E,done,M7,3,later
 Admin console: settings and access,admin,must,yes,no,,E,done,M7,5,later
 Per-project admin controls,admin,should,yes,yes,"M2: project admins rename, archive, manage sections and who is on the project, nothing wider",E,done,M2,2,demo
-Service accounts,admin,should,yes,no,,E,done,M6,3,later
+Service accounts,admin,should,yes,yes,"ZEN phase 1: service accounts (users of kind service, no password, no membership, never listed as people) with scoped tokens tasks:write and tasks:read; shown once, only a hash stored, revocable, optional expiry, last-used time; admin-only management in the browser, a token can never manage tokens; every token call audited under the account (actor_kind service); per-token rate limit; a token may call only routes that name its scope (today only /service/whoami)",E,done,Z1,3,demo
 View-only seats,access,must,yes,yes,M1: view-only and guest can never write; proven by route walk on every route. No billing or licence counting (A4),E,done,M1,2,demo
 Control who can invite guests,access,should,yes,no,,E,done,M7,1,later
 Trusted guest domains,access,should,yes,no,,E,done,M7,2,later

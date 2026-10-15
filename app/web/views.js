@@ -177,8 +177,8 @@ export async function peopleView(ctx) {
     out.replaceChildren(h('div', { class: 'card reveal' }, h('h3', {}, `${S.tempPasswordTitle}: ${r.data.email}`), h('code', { class: 'secret' }, r.data.temporaryPassword), h('p', { class: 'muted' }, S.tempPasswordNote)));
     form.reset();
   }) }, h('h2', {}, S.addPerson), nameI, emailI, roleS, h('button', { class: 'btn btn-primary', type: 'submit' }, S.createPerson));
-  const linkCard = (title, link, note) => h('div', { class: 'card reveal' }, h('h3', {}, title), h('code', { class: 'secret' }, `${location.origin}${link}`), h('p', { class: 'muted' }, note));
-  if (reveal) { out.append(linkCard(reveal.title, reveal.link, reveal.note)); reveal = null; }
+  const linkCard = (title, link, note, raw) => h('div', { class: 'card reveal' }, h('h3', {}, title), h('code', { class: 'secret' }, raw ?? `${location.origin}${link}`), h('p', { class: 'muted' }, note));
+  if (reveal) { out.append(linkCard(reveal.title, reveal.link, reveal.note, reveal.raw)); reveal = null; }
   const act = (label, who, fn) => h('button', { class: 'btn btn-secondary', type: 'button', 'aria-label': `${label}: ${who}`, onclick: fn }, label);
   const rows = data.members.map((m) => h('li', { class: 'row' }, h('span', { class: 'row-main' }, `${m.name} `, h('span', { class: 'muted' }, m.email)),
     select(`role-${m.userId}`, `${S.role}: ${m.name}`, Object.entries(S.roles), m.role, async (v) => { const r = await api('PATCH', `/api/v1/members/${m.userId}/role`, { role: v }); r.status === 200 ? toast(S.saved) : fail(r); ctx.refresh(); }),
@@ -194,7 +194,27 @@ export async function peopleView(ctx) {
   }) }, h('h2', {}, S.inviteHeading), iEmail, iRole, h('button', { class: 'btn btn-primary', type: 'submit' }, S.inviteButton));
   const pending = inv.data.invites.map((i) => h('li', { class: 'row' }, h('span', { class: 'row-main' }, `${i.email} `, h('span', { class: 'muted' }, `${S.roles[i.role]}, until ${i.expiresAt.slice(0, 10)}`)),
     act(S.revoke, i.email, async () => { const r = await api('DELETE', `/api/v1/invites/${i.id}`); r.status === 200 ? ctx.refresh() : fail(r); })));
-  return [h('h1', {}, S.peopleHeading), h('ul', { class: 'list' }, rows), form, inviteForm, h('h2', {}, S.pendingInvites), pending.length ? h('ul', { class: 'list' }, pending) : h('p', { class: 'muted' }, S.noInvites), out];
+  // ---- service accounts (other systems, such as Zen): admin-only, tokens shown once
+  const sa = await api('GET', '/api/v1/service-accounts');
+  const svcName = field('sa-name', S.svcName, { maxlength: '80' });
+  const newSvc = h('form', { class: 'inline-form', onsubmit: once(async () => { const r = await api('POST', '/api/v1/service-accounts', { name: svcName.querySelector('input').value.trim() }); r.status === 201 ? ctx.refresh() : fail(r); }) }, svcName, h('button', { class: 'btn btn-secondary', type: 'submit' }, S.svcCreate));
+  const accountBlock = (a) => {
+    const label = field(`tl-${a.id}`, `${S.tokenLabel}: ${a.name}`, { maxlength: '80' });
+    const boxes = [['tasks:write', S.scopeWrite], ['tasks:read', S.scopeRead]].map(([v, t]) => h('div', { class: 'field check' }, h('input', { id: `sc-${a.id}-${v}`, type: 'checkbox', value: v }), h('label', { for: `sc-${a.id}-${v}` }, t)));
+    const tokenForm = h('form', { class: 'card', onsubmit: once(async () => {
+      const scopes = boxes.map((b) => b.querySelector('input')).filter((i) => i.checked).map((i) => i.value);
+      const r = await api('POST', `/api/v1/service-accounts/${a.id}/tokens`, { label: label.querySelector('input').value.trim(), scopes });
+      if (r.status !== 201) return fail(r);
+      reveal = { title: `${S.tokenTitle}: ${a.name}`, raw: r.data.token, note: S.tokenNote }; ctx.refresh();
+    }) }, label, h('fieldset', { class: 'plain' }, h('legend', {}, `${S.scopesLegend} (${a.name})`), ...boxes), h('button', { class: 'btn btn-secondary', type: 'submit' }, `${S.tokenCreate}: ${a.name}`));
+    return h('li', { class: 'form-item' }, h('div', { class: 'page-head' }, h('h3', {}, a.name), a.status !== 'active' && h('span', { class: 'badge' }, S.closed)),
+      a.tokens.length ? h('ul', { class: 'list' }, a.tokens.map((t) => h('li', { class: 'row' }, h('span', { class: 'row-main' }, `${t.label} `, h('span', { class: 'muted' }, `${t.scopes.join(', ')}; ${S.lastUsed} ${t.lastUsedAt ? t.lastUsedAt.slice(0, 16).replace('T', ' ') : S.never}${t.expiresAt ? `; ${S.expires} ${t.expiresAt.slice(0, 10)}` : ''}${t.revokedAt ? `; ${S.revoked}` : ''}`)),
+        !t.revokedAt && act(S.revoke, t.label, async () => { const r = await api('DELETE', `/api/v1/service-accounts/${a.id}/tokens/${t.id}`); r.status === 200 ? ctx.refresh() : fail(r); })))) : h('p', { class: 'muted' }, S.noSvc),
+      a.status === 'active' && tokenForm,
+      a.status === 'active' && h('button', { class: 'btn btn-danger', type: 'button', onclick: async () => { if (!confirm(S.deactivate + '?')) return; const r = await api('DELETE', `/api/v1/service-accounts/${a.id}`); r.status === 200 ? ctx.refresh() : fail(r); } }, `${S.deactivate}: ${a.name}`));
+  };
+  return [h('h1', {}, S.peopleHeading), h('ul', { class: 'list' }, rows), form, inviteForm, h('h2', {}, S.pendingInvites), pending.length ? h('ul', { class: 'list' }, pending) : h('p', { class: 'muted' }, S.noInvites),
+    h('h2', {}, S.svcHeading), h('p', { class: 'muted' }, S.svcIntro), sa.data.accounts.length ? h('ul', { class: 'list' }, sa.data.accounts.map(accountBlock)) : h('p', { class: 'muted' }, S.noSvc), newSvc, out];
 }
 
 export async function accountView(ctx) {

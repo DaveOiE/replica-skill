@@ -47,7 +47,8 @@ test('walk: signed-out callers get 401 on every protected route', async () => {
 
 for (const role of ROLES) {
   test(`walk: ${role} gets exactly what the permission rules say on every route`, async () => {
-    const { app, db, creds, call } = await freshApp();
+    const { app, db, creds, call, signIn } = await freshApp();
+    await signIn(ROLE_KEY[role]); // signing in is itself audited, so do it before counting
     for (const r of order(app.routeTable.filter((x) => !x.public))) {
       const s = r.sample({ creds, who: creds[ROLE_KEY[role]] });
       const want = expected(db, creds, ROLE_KEY[role], r, s.url);

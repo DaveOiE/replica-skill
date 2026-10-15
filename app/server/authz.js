@@ -11,6 +11,10 @@ const READ_ONLY_ROLES = ['view_only', 'guest'];
 
 /** action -> who may, and whether it changes anything. */
 export const ACTIONS = {
+  // Machine access. `service` lists the token scopes that may call an action; an action with no `service` list is closed to every token.
+  'service:whoami': { roles: [], service: ['tasks:read', 'tasks:write'], write: false },
+  'service_accounts:read': { roles: MANAGERS, write: false },
+  'service_accounts:manage': { roles: MANAGERS, write: true },
   'session:read': { roles: ALL, write: false },
   // Signing out audits itself but changes no workspace data, so every role may do it (view-only included).
   'session:signout': { roles: ALL, write: false },
@@ -51,6 +55,10 @@ export function can(actor, action, resource) {
   if (!actor) return false;
   const rule = ACTIONS[action];
   if (!rule) return false;
+  if (actor.kind === 'service') { // a token: only actions that name one of its scopes, never anything else, whatever its role field says
+    if (!rule.service || !(actor.scopes || []).some((x) => rule.service.includes(x))) return false;
+    return !(resource && resource.workspaceId && resource.workspaceId !== actor.workspaceId);
+  }
   if (resource && resource.workspaceId && resource.workspaceId !== actor.workspaceId) return false;
   if (rule.project) return !!resource?.projectRole && PROJECT_RANK[resource.projectRole] >= PROJECT_RANK[rule.project];
   if (rule.write && READ_ONLY_ROLES.includes(actor.role)) return false;

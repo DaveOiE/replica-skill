@@ -1,8 +1,8 @@
 # Test plan and results (Gauge, pilot version)
 
-Suites, all passing at the time of writing: **102 JavaScript** (API, permissions, data, importer, forms, web hygiene),
-**69 Python** (the pack's tools and the brand sweep gate), **45 browser** (real Chromium at 390px and 1440px, including an
-accessibility scan of 19 screens and pages). Total 216. Run them: `npm test`, `python3 -m unittest discover -s tests`,
+Suites, all passing at the time of writing: **111 JavaScript** (API, permissions, data, importer, forms, web hygiene),
+**69 Python** (the pack's tools and the brand sweep gate), **48 browser** (real Chromium at 390px and 1440px, including an
+accessibility scan of 19 screens and pages). Total 228. Run them: `npm test`, `python3 -m unittest discover -s tests`,
 `npx playwright test`.
 
 ## Flows from the recon map
