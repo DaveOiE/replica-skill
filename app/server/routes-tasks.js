@@ -123,7 +123,8 @@ export function taskRoutes(define, db) {
     handler: async ({ ctx, req }) => {
       const t = taskRow(req.params.id);
       const subs = db.prepare('select count(*) n from tasks where parent_id = ?').get(t.id).n;
-      mutate(ctx, { action: 'task.delete', targetType: 'task', targetId: t.id, summary: subs ? `Task deleted (and ${subs} subtasks)` : 'Task deleted', before: { status: t.status, project: t.project_id } },
+      const blanked = db.prepare(`with recursive d(id) as (select ? union all select t.id from tasks t join d on t.parent_id = d.id) select count(*) n from form_submissions where task_id in (select id from d) and (answers_json != '{}' or submitter_email is not null)`).get(t.id).n;
+      mutate(ctx, { action: 'task.delete', targetType: 'task', targetId: t.id, summary: subs ? `Task deleted (and ${subs} subtasks)` : 'Task deleted', before: { status: t.status, project: t.project_id }, after: { submissionsBlanked: blanked } },
         () => db.prepare('delete from tasks where id = ?').run(t.id));
       return { ok: true };
     } });

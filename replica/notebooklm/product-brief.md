@@ -38,6 +38,7 @@ Honest summary: this is a pilot-ready small work manager, not an enterprise plat
 - **"AI/service-created" badge on tasks** (an extra, not on the original list): ZEN phase 4a: tasks whose source is ingestion show a badge and their source call in the list, the board and the task drawer, plus an Inferred marker when the sending system guessed. Shown to anyone who can see the task
 - **Lane and promised date in the task drawer** (an extra, not on the original list): ZEN phase 4a: two fields in the drawer, editable by editors and admins through the existing task update route (the server enforces it). Lane is free text, never a fixed list
 - **Audit trail holds ids and field names only** (an extra, not on the original list): Pre-data hardening group A: no titles, descriptions, comment text, form answers, emails, names or project names in any audit write; deny-by-default in the single write path; scan test over every kind of change
+- **Deleting a task blanks its form submission** (an extra, not on the original list): Pre-data hardening group B: answers and submitter email cleared by a database trigger (covers subtasks and cascades); migration 0007 also clears older orphaned rows; project delete and delete-by-client wait for the forget-me ruling
 
 ### Partly built
 

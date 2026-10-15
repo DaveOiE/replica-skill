@@ -107,7 +107,7 @@ keep; it describes the work for each place data sits, what exists today, and wha
 | **Tasks** | title, description, assignee, dates, job number, lane, client slug, source call id, context | `DELETE /api/v1/tasks/:id` removes one task and its subtasks (staff with edit access), audited | a "delete everything for client X" action by client slug that finds every task (ingested and hand-made), previews counts, asks for confirmation, runs in one transaction, and is owner/admin only |
 | **Client project** (one per client, named after the client) | the project name is the client's name; sections; members | there is **no project delete**, only archive | a project delete (cascades to sections, tasks and comments by the schema) or an anonymise-rename; also decide what happens to the Sales and Internal projects, which hold prospects' tasks |
 | **Comments** | free text written by staff, may name people | removed automatically when their task is deleted (schema cascade) | nothing, but comments on an *unrelated* task that mention the client would not be found |
-| **Form submissions** | the submitter's email and every answer, kept as raw text | removed only when the whole form is deleted. **Deleting a task leaves its submission row behind** (the link is set to empty, the answers stay) | delete submissions with the task, and a way to find submissions by email or content; this is a real gap today |
+| **Form submissions** | the submitter's email and every answer, kept as raw text | **Deleting a task now blanks its submission** (answers emptied, submitter email cleared, empty row kept so the request count stays honest), by a database trigger so subtasks and any future delete path are covered; older orphaned rows were blanked by migration 0007 | finding a submission by email without its task (not needed now, since the task is the way in) |
 | **Imported job projects** | client name, job number, notes, description from the Job Register import | same as projects: archive only | covered by the project delete above; the import file itself is never stored |
 | **Audit trail** | who changed what. **Audit rows no longer carry titles, text, names or emails (Group A of the pre-data hardening); they hold ids and field names**, so what remains is ids, dates, statuses and the caller's network address | append-only by design: the database blocks edits and deletes. Free text is no longer written, so there is nothing to blank for new data. **Rows written before the redaction change still hold text; use a fresh database before real data** | decide whether ids and the caller's network address count as personal data for forget-me (not decided here) |
 | **Backups** | every copy contains everything as it was that day | nothing removes data from a backup | the plan must state an expiry: data deleted today persists in up to 42 daily and monthly backups, so up to about 12 months at the monthly tier. Either accept and document that window, or shorten the monthly tier, or re-encrypt and purge on request. The owner and the Playbook must rule which |
@@ -119,8 +119,7 @@ fresh backup first (so a mistake can be undone), delete in one transaction, writ
 deleted content, then verify nothing remains by searching tasks, comments, submissions and projects. A restored backup must be re-run through the same
 deletions, so keep a short list of forget-me requests (ids and dates only, no personal data) to replay after any restore.
 
-Today the honest answer to "can you delete a client from Deskrail?" is: one task at a time, with leftovers in form submissions, the audit trail
-and backups, and no project delete.
+Today the honest answer to "can you delete a client from Deskrail?" is: one task at a time (its comments, subtasks and form answers go with it), with ids and dates left in the audit trail, everything still present in backups until they expire, and no project delete.
 ## Token rotation
 
 - Zen's write token and read token are separate tokens on separate service accounts (already supported). Rotate each every 90 days, and at once
@@ -224,7 +223,7 @@ point-in-time recovery is wanted. Sizes are rough token counts for my work (read
 | area | what changes | rough size |
 | --- | --- | --- |
 | Driver and calls | `node:sqlite` is synchronous; the 162 `prepare(` calls across 17 server files become async queries, so every handler, helper and the transaction wrapper in `audit.js` (`mutate`) need `await`. This is the bulk of the work | 70 to 100k |
-| Schema and migrations | six SQLite migrations rewritten for Postgres (types, booleans stored as 0 and 1, text timestamps, `insert or ignore`, partial unique indexes, `rowid` use if any), keeping 0001 equal to `schema.sql` and its guard test | 15 to 25k |
+| Schema and migrations | seven SQLite migrations rewritten for Postgres (types, booleans stored as 0 and 1, text timestamps, `insert or ignore`, partial unique indexes, `rowid` use if any), keeping 0001 equal to `schema.sql` and its guard test | 15 to 25k |
 | Audit chain | the append-only triggers become plpgsql; the sequence number and the hash chain must be appended under an advisory lock so two writers cannot fork the chain; verify-chain retested | 15 to 20k |
 | Race-safe writes | ingest idempotency and one-project-per-client rely on SQLite unique errors being raised inside a transaction; error codes and retry behaviour differ | 10 to 15k |
 | Store layer | `store*.js` (154 lines) are the intended seam and move first; older routes still bypass it and need moving into it | 20 to 30k |
