@@ -16,9 +16,15 @@ const sharedDir = join(here, '..', 'shared');
 const escapeHtml = (s) => s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
 export function loadConfig(env = process.env) {
+  const publicUrl = (env.PUBLIC_URL || `http://127.0.0.1:${Number(env.PORT || 3000)}`).replace(/\/+$/, '');
+  const https = publicUrl.startsWith('https://');
+  // The session cookie is Secure whenever the public address is https, unless someone says otherwise on purpose.
+  if (https && env.COOKIE_SECURE === 'false') throw new Error('PUBLIC_URL is https but COOKIE_SECURE=false. A session cookie must be Secure on an https site: remove COOKIE_SECURE or set it to true.');
   return {
     port: Number(env.PORT || 3000), dbPath: env.DB_PATH || join(here, '..', '..', 'data', 'app.db'),
-    sessionHours: Number(env.SESSION_HOURS || 12), publicUrl: (env.PUBLIC_URL || `http://127.0.0.1:${Number(env.PORT || 3000)}`).replace(/\/+$/, ''), cookieSecure: env.COOKIE_SECURE === 'true',
+    sessionHours: Number(env.SESSION_HOURS || 12), publicUrl, cookieSecure: env.COOKIE_SECURE === undefined ? https : env.COOKIE_SECURE === 'true',
+    // true only when a reverse proxy on this machine sits in front: then the caller's address comes from the proxy's forwarded header.
+    trustProxy: env.TRUST_PROXY === 'true',
   };
 }
 
@@ -26,7 +32,9 @@ export async function buildApp({ db, config = loadConfig(), logger = false, sign
   const app = Fastify({ logger: logger ? { redact: ['req.headers.cookie', 'req.headers.authorization'],
     // Query strings can hold typed client names (job search), so only the path is logged.
     serializers: { req: (req) => ({ method: req.method, url: String(req.url).split('?')[0], host: req.headers?.host, remoteAddress: req.ip }) },
-    ...(logger === true ? {} : logger) } : false, genReqId: () => randomUUID(), bodyLimit: 1_000_000 });
+    ...(logger === true ? {} : logger) } : false, genReqId: () => randomUUID(), bodyLimit: 1_000_000,
+    // The app only listens on this machine, so the only proxy it can trust is a local one; the right-most address that is not local is the caller.
+    trustProxy: config.trustProxy ? ['127.0.0.1', '::1'] : false });
   app.routeTable = [];
   app.seenApiRoutes = [];
   app.addHook('onRoute', (r) => { if (String(r.url).startsWith('/api/v1')) app.seenApiRoutes.push(`${[].concat(r.method).join(',')} ${r.url}`); });
@@ -46,6 +54,7 @@ export async function buildApp({ db, config = loadConfig(), logger = false, sign
     reply.header('X-Content-Type-Options', 'nosniff').header('X-Frame-Options', 'DENY').header('Referrer-Policy', 'no-referrer')
       .header('Content-Security-Policy', "default-src 'self'; img-src 'self' data:; frame-ancestors 'none'; base-uri 'none'; form-action 'self'");
     if (req.url.startsWith('/api/')) reply.header('Cache-Control', 'no-store');
+    if (config.cookieSecure) reply.header('Strict-Transport-Security', 'max-age=31536000'); // only sent when the site is https
   });
   // Every call made with a token is audited under the service account. Writes already record their own domain event, so only
   // reads, refusals and failed writes get an api.call or api.denied entry. The route pattern is logged, never the real URL or any value.

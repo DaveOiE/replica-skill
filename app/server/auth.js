@@ -15,17 +15,19 @@ const addMs = (iso, ms) => new Date(Date.parse(iso) + ms).toISOString();
 // and an attacker cannot tell which accounts exist. In memory: fine for one process.
 const unknownFailures = new Map();
 
-function unknownLocked(email, now) {
+export function unknownLocked(email, now) {
   const f = unknownFailures.get(email);
   return !!(f && f.until && f.until > now);
 }
-function noteUnknownFailure(email, now) {
+export function noteUnknownFailure(email, now) {
+  if (unknownFailures.size > 5000) for (const [k, f] of unknownFailures) if (!f.until || f.until <= now) unknownFailures.delete(k);   // bounded: only live locks are kept
   const f = unknownFailures.get(email) || { count: 0, until: null };
   if (f.until && f.until <= now) { f.count = 0; f.until = null; }
   f.count += 1;
   if (f.count >= MAX_FAILURES) f.until = addMs(now, LOCK_MINUTES * 60000);
   unknownFailures.set(email, f);
 }
+export const unknownFailureCount = () => unknownFailures.size;
 
 /**
  * Password sign-in. Returns { ok: true, token, actor } or { ok: false, status, error, workspaces? }.

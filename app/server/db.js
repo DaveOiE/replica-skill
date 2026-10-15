@@ -1,5 +1,5 @@
 import { DatabaseSync } from 'node:sqlite';
-import { readdirSync, readFileSync, mkdirSync } from 'node:fs';
+import { readdirSync, readFileSync, mkdirSync, chmodSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { randomUUID } from 'node:crypto';
@@ -12,10 +12,13 @@ export const newId = () => randomUUID();
 
 /** Open the database. Pass ':memory:' for tests. Foreign keys are always on. */
 export function openDb(path = ':memory:') {
-  if (path !== ':memory:') mkdirSync(dirname(path), { recursive: true });
+  if (path !== ':memory:') mkdirSync(dirname(path), { recursive: true, mode: 0o700 });
   const db = new DatabaseSync(path);
   db.exec('PRAGMA foreign_keys = ON; PRAGMA busy_timeout = 5000;');
-  if (path !== ':memory:') db.exec('PRAGMA journal_mode = WAL;');
+  if (path !== ':memory:') {
+    db.exec('PRAGMA journal_mode = WAL;');
+    try { chmodSync(path, 0o600); } catch { /* not supported on this system */ }   // the log files SQLite adds copy the main file's mode
+  }
   return db;
 }
 

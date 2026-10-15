@@ -1,7 +1,8 @@
-# Security basics (Gauge, pilot version)
+# Security basics (Gauge, after the pre-hosting review, 2026-10-15)
 
 Each line is something checked by a test that is in the suite, not a statement of intent. This is a
-demo build. It is **not certified** to any standard and makes no compliance claim.
+build that has **not been penetration tested** and is **not certified** to any standard. It makes no compliance claim.
+The pre-hosting review is at the end of this file.
 
 | check | result | evidence |
 | --- | --- | --- |
@@ -29,10 +30,58 @@ demo build. It is **not certified** to any standard and makes no compliance clai
 
 ## Not covered (be honest about these)
 
-- No penetration test, no manual security review, no fuzzing.
+- No penetration test. One self-review pass (below) by the same assistant that wrote the code, which is not independent. About 45 hostile inputs were sent to the ingest and read routes by hand; that is a spot check, not fuzzing.
 - No manual screen-reader pass; accessibility was checked with an automated scanner on 10 screens.
 - The rate limiter and the unknown-email lockout counter are in memory (one server process).
-- Sessions use a cookie without the Secure flag unless `COOKIE_SECURE=true` (needed behind HTTPS).
+- The session cookie is Secure automatically when `PUBLIC_URL` is https (and the app refuses to start if both are set against each other); on plain http it is not Secure. The proxy and TLS setup are not built or tested.
 - No encryption of the database file at rest, no backup. Invite and reset links are passed on by the admin by hand: no email is sent, so how they are shared is outside the app.
 - The public form has no CAPTCHA; the controls are rate limits and a honeypot. A determined spammer can still send up to the per-form hourly limit.
 - SAML, SCIM, a machine-readable audit feed and key management are not built. Nothing here is certified to any standard.
+
+## Pre-hosting review (2026-10-15)
+
+Scope: sign-in and lockout, session cookies, token handling and rate limits, cross-site writes, input validation on the ingest and read
+routes, headers, error messages, the public form, invite and reset links, and dependencies. Method: reading the code, running the
+existing suites, about 45 hand-made hostile requests, and a package audit. Severity uses `bugs.md` (S1 security hole, data loss or core
+flow blocked; S3 broken with a workaround; S4 cosmetic or hardening). **This is a self-review, not a penetration test, and nothing here is
+certified.**
+
+### Fixed in this pass (each has a test; the tests were sabotage-checked)
+
+| id | sev | finding | fix |
+| --- | --- | --- | --- |
+| R-1 | **S1 once hosted** (not live while only run locally) | Behind a reverse proxy every request would appear to come from the proxy's address, so the per-address sign-in, bad-token and public-form limits would share one bucket: one visitor could lock everyone out of sign-in or the form, and audit rows would record the proxy's address | `TRUST_PROXY=true` makes the app trust a local proxy only (loopback) and take the right-most non-local forwarded address; a client cannot choose the counted address by sending its own header; off by default, where the header is ignored |
+| R-2 | S3 | The session cookie's Secure flag defaulted to off with nothing tying it to https, so a forgotten setting would send the cookie over http | Secure is on automatically when `PUBLIC_URL` is https; https plus `COOKIE_SECURE=false` refuses to start; `Strict-Transport-Security` is sent when the cookie is Secure |
+| R-3 | S3 | The rate-limit tables and the unknown-email lock table never forgot an entry, so a long-running process could grow without bound | finished windows are swept once a table passes 5,000 entries; live locks are kept |
+| R-4 | S3 | `updated_since` on the read API accepted impossible times such as month 13 (no crash, but silently wrong) | validated as a real date and time, otherwise 400 |
+| R-5 | S3 | The database folder and file were created with the default permissions, readable by other users on a shared machine | folder 0700 and file 0600 when the app creates them (SQLite's log files copy the file's mode); an existing folder is not changed, so the service should also run with a private umask |
+
+### Proposed, not applied (your say-so needed)
+
+| id | sev | finding | proposal |
+| --- | --- | --- | --- |
+| P-1 | S4 (design trade-off) | Five wrong passwords lock a known account for 15 minutes, so anyone who knows an email can keep a person locked out. An admin can unlock; unknown emails behave identically on purpose | keep as is, or count failures per account and address pair, and alert admins on lock events |
+| P-2 | S4 | Anyone can add audit rows by failing sign-ins (up to the per-address limit); the trail is append-only so it cannot be pruned. Many addresses could grow the database slowly | collapse repeated failures from one address within a minute into one row; lower the sign-in limit to 10 a minute; the planned disk alert at 80 percent |
+| P-3 | S4 | Password hashing (scrypt) runs on the main thread, about tens of milliseconds per attempt, so many addresses signing in at once could slow the service. The scrypt cost (N=16384) is also below current recommendations | hash asynchronously with a small concurrency cap, raise the cost and re-hash on next sign-in (the parameters are stored in the hash, so old hashes keep working) |
+| P-4 | S4 | An unknown URL gets the framework's 404, which echoes the requested path in JSON (harmless, not HTML) | a plain "We could not find that" handler |
+| P-5 | S4 | No `Permissions-Policy` header; the cookie name has no `__Host-` prefix; sessions have a fixed 12 hours with no idle timeout; old session rows are never deleted | add the header and prefix; add an idle timeout and a clean-up of expired sessions |
+| P-6 | S4 | Password rule is length only (12); no check against common or breached passwords; custom rules are not built | a small common-password list, later the admin rules |
+| P-7 | blocker, not a finding | Two code items from the hosting plan remain: a first-owner command (today only the fake demo seed creates an owner) and a backup command. Do not host without them | build and test them first |
+| P-8 | note | `node:sqlite` is marked experimental by Node, and the proxy must overwrite the forwarded address header (the app copes with an appended one but not with a proxy that passes a client's header through untouched from a non-local source) | pin the Node version, watch release notes; put the proxy settings in the runbook |
+
+### Checked and found sound
+
+- **Roles and tenancy:** route walk with seven callers plus tokens (unchanged, passing). Cross-project and cross-workspace ids in request bodies (parent task, dependency, section, assignee, project member) are refused.
+- **SQL:** every statement is prepared; the few built from fragments use fixed column lists chosen by validated field names, never typed text.
+- **Cross-site writes:** a write with a foreign Origin is refused; cookies are HttpOnly and SameSite=Lax; no route that changes data answers GET; a form-encoded or text body is refused.
+- **Tokens:** `dsk_` plus 43 random characters, only a hash stored, shown once, never accepted in a URL, removed from logs and the audit trail; no fallback to a cookie when a bearer is sent; bad tokens look identical.
+- **Ingest and read validation:** 45 hostile inputs (bad and impossible dates, wrong types, control characters, oversize bodies, array and object values, extra fields, prototype keys, bad cursors and limits) all gave 400, 413 or 415; none gave a 500.
+- **Errors:** server faults say only "Something went wrong on our side"; hidden and missing projects both answer 404; bad credentials give one message; no stack traces or SQL text leave the server.
+- **Public form and links:** per-address and per-form limits, honeypot, uniform answers for unknown, closed and archived forms; invite and reset links are 32 random bytes, hash-stored, single use, expiring, throttled and give one message for every bad case.
+- **Dependencies:** `npm audit` reports 0 known vulnerabilities (fastify 5.12.5, @fastify/cookie 11.1.3, @fastify/static 10.1.6, zod 4.6.6). That only covers advisories published so far.
+
+### Not verified
+
+No penetration test or independent review; no timing measurements of sign-in; no load or denial-of-service testing; the reverse proxy, TLS and
+the VM are not built, so none of that is tested; the browser code is guarded by tests that ban unsafe DOM writes, but was not reviewed line by
+line for script injection; backups, restore and forget-me are plan only.

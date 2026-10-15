@@ -42,14 +42,14 @@ them exists yet and nothing here needs them to be created now.
   should be unable to reach them by identity even by accident.
 - The backup bucket is in a **second project** (or at least a second account), writable by the VM's backup identity but not readable or
   deletable by it.
-## Before it can be hosted: three small code items (not built)
+## Before it can be hosted: two small code items remain (not built), one is done
 
 These were found while writing the plan. Each is small and each needs its own tested commit and the owner's go.
 
-1. **Real client addresses behind the proxy.** The app does not set Fastify's `trustProxy`, so behind a proxy every request looks like it
-   comes from 127.0.0.1. The per-address sign-in limit, the bad-token guess limit and the public form limit would then share one bucket
-   (one noisy visitor locks out everyone), and audit rows would record the proxy's address. Fix: a `TRUST_PROXY=true` setting, tested with a
-   forwarded header, and the proxy must overwrite (not append to) the forwarded address header.
+1. **Real client addresses behind the proxy. DONE (review R-1):** set `TRUST_PROXY=true`. The app now trusts only a local proxy. Before the fix, behind a proxy every request looked like it
+   came from 127.0.0.1. The per-address sign-in limit, the bad-token guess limit and the public form limit would then share one bucket
+   (one noisy visitor locks out everyone), and audit rows would record the proxy's address. Fixed with a `TRUST_PROXY=true` setting, tested with a
+   forwarded header. The proxy should set the forwarded address header itself; the app also copes with a proxy that appends to it.
 2. **A first owner without the fake seed.** Today the only way to get an owner is `npm run seed`, which makes the fake demo workspace. A
    real instance needs a one-off command that creates the workspace and the first owner, reading the password from a prompt (never from
    a file or the command line) and recording the event in the audit trail. Until then, do not host.
@@ -60,7 +60,7 @@ These were found while writing the plan. Each is small and each needs its own te
 ## HTTPS and PUBLIC_URL
 
 - The reverse proxy gets and renews a free public certificate for the chosen domain automatically; HTTP on port 80 only redirects.
-- Set `PUBLIC_URL=https://<the domain>` (no trailing slash; the app strips it) and `COOKIE_SECURE=true`. Links shown to admins (invites,
+- Set `PUBLIC_URL=https://<the domain>` (no trailing slash; the app strips it). The cookie is then Secure automatically and HSTS is sent; leave `COOKIE_SECURE` unset. Set `TRUST_PROXY=true`. Links shown to admins (invites,
   resets, ingest results) are built from `PUBLIC_URL`, so a wrong value shows wrong links, not a security hole.
 - The app already refuses cross-site writes by comparing the Origin header with the Host header, so the proxy must pass the original Host
   through unchanged.

@@ -32,6 +32,6 @@ None.
 - The public request form and the Job Register import have no server-side duplicate protection either: a double click is stopped in the screen, but two tabs or a replayed call can still send twice (an import is idempotent by job number, so only the form can duplicate).
 - Task creation has no server-side duplicate protection. B-004 is fixed in the screen only. Two tabs or a replayed API call can still duplicate.
 - The lockout counter for unknown emails, the sign-in, link and public-form rate limits live in memory and reset when the server restarts.
-- The session cookie's Secure flag is off by default for localhost (`COOKIE_SECURE=true` behind HTTPS).
+- The session cookie's Secure flag is off on plain http (localhost) and automatic when `PUBLIC_URL` is https. See the review in `security.md`.
 - Reads are not audited, and refused calls (403 or 404) are not audited because they change nothing. Failed sign-ins are.
 - Team-visible projects work in the API but there is no UI to create a team.

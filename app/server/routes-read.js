@@ -2,7 +2,8 @@ import { z } from 'zod';
 import { readTasks, readProjects, encodeCursor, decodeCursor } from './store-read.js';
 
 const MAX_LIMIT = 500;
-const iso = z.string().regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{1,6})?Z$/, 'Use a UTC time like 2026-10-31T09:00:00Z.');
+const iso = z.string().regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{1,6})?Z$/, 'Use a UTC time like 2026-10-31T09:00:00Z.')
+  .refine((s) => { const t = Date.parse(s); return !Number.isNaN(t) && new Date(t).toISOString().slice(0, 19) === s.slice(0, 19); }, 'That is not a real date and time.');
 const plain = (n) => z.string().min(1).max(n).refine((s) => !/[\u0000-\u001f\u007f]/.test(s), 'No control characters.');
 const query = z.object({
   job_number: plain(60).optional(), client_slug: z.string().regex(/^[a-z0-9][a-z0-9-]{0,62}$/).optional(),

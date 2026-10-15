@@ -13,7 +13,7 @@
 | dependencies audited | done | `npm audit`: 0 vulnerabilities at install (re-run before release) |
 | webhooks verify signatures | n/a yet | M9 |
 | no user data in URLs or logs | partial | logger redacts cookie and authorization; request bodies are not logged |
-| Secure cookie flag | setting | `COOKIE_SECURE=true` behind HTTPS; off on localhost by design |
+| Secure cookie flag | setting | automatic when `PUBLIC_URL` is https (refuses to start if `COOKIE_SECURE=false` contradicts it); off on localhost by design; `TRUST_PROXY=true` behind a local reverse proxy |
 
 M2 additions: project-level permissions are resolved per request (`access.js`), hidden projects and tasks
 answer 404 like missing ones, assignees must be able to see the project, temporary passwords are shown
