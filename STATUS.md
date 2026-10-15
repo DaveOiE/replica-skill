@@ -8,13 +8,13 @@ Updated: 2026-10-15
 
 | state | features |
 | --- | --- |
-| done | 31 |
+| done | 32 |
 | partly done | 3 |
 | later (deferred) | 44 |
 | skipped | 2 |
-| **total** | **80** |
+| **total** | **81** |
 
-Demo scope: **99 of 109 points built (91%)**. Later pool: 116 points, not scheduled. One point is a small tested feature (a few routes, one screen state, its tests).
+Demo scope: **100 of 110 points built (91%)**. Later pool: 116 points, not scheduled. One point is a small tested feature (a few routes, one screen state, its tests).
 
 ## Budget
 
@@ -40,7 +40,7 @@ Used so far (proxy): **56.0%**. Rate: **0.31% of session per point** (measured o
 | Z1 | Zen phase 1: machine access (service accounts and tokens) | demo | 3 | 0 | 0 | done | 0.0% | - |
 | Z2 | Zen phase 2: ingest endpoint and task fields | demo | 10 | 0 | 0 | done | 0.0% | - |
 | Z3 | Zen phase 3: read API for Zen | demo | 10 | 0 | 0 | done | 0.0% | - |
-| Z4 | Zen phase 4a: badge, lane and promised date in the drawer, audit log screen with CSV export | demo | 10 | 0 | 0 | done | 0.0% | - |
+| Z4 | Zen phase 4a: badge, lane and promised date in the drawer, audit log screen with CSV export | demo | 11 | 0 | 0 | done | 0.0% | - |
 
 Fits inside the 60% stop line at this rate: nothing.
 (Gauge and Evolve are extra: see replica/run-plan.md.)
@@ -85,6 +85,7 @@ Fits inside the 60% stop line at this rate: nothing.
 | M3 | Timeline view (Gantt-style) | C | should | 5 | later | later (deferred) |  |
 | Z3 | Read API for Zen: GET /api/v1/read/tasks and /read/projects (read token only) | E | must | 8 | demo | done | ZEN phase 3: filters job_number, client_slug (all tasks in the client project, hand-made included), ids and updated_since; keyset paging (limit up to 500, cursor) with stable order; returns the agreed fields plus source, context and project kind, never the description; a read token sees only ingested projects (Sales, Internal, client), never imported or staff projects or the people directory; reads audited by route pattern only; no outgoing webhooks |
 | Z3 | Staff can set job number, promised date and lane on a task by hand (API only, no screen yet) | E | must | 2 | demo | done | ZEN phase 3: checked, audited by field names; client slug is inherited from a client project, not editable; migration 0006 stores the routing context and backfills slugs |
+| Z4 | First-owner command (empty database only) | E | must | 1 | demo | done | Pre-hosting: npm run first-owner creates the workspace and first owner with a generated one-time password shown once in a terminal, stored only as a hash, never logged or audited; refuses if any owner exists or if the output is not a terminal |
 | Z4 | Audit log of admin and user actions | E | must | 5 | demo | done | ZEN phase 4a: owners and admins only. Screen with filters (who, action, from and to date), newest first, load-more paging; CSV export (fields only: seq, time, who, action, target, summary, names of changed fields, ip, request id; never before or after values, never secrets; formula-looking cells neutralised; capped at 50,000 rows). Each export is itself audited. SQL lives in store-audit.js. Verify-chain button, search box and a JSON or NDJSON feed for other systems are NOT built |
 | M4 | Project status updates | C | should | 2 | later | later (deferred) |  |
 | Z4 | Audit trail holds ids and field names only | E | must | 2 | demo | done | Pre-data hardening group A: no titles, descriptions, comment text, form answers, emails, names or project names in any audit write; deny-by-default in the single write path; scan test over every kind of change |

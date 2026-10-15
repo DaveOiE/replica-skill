@@ -66,7 +66,7 @@ certified.**
 | P-4 | S4 | An unknown URL gets the framework's 404, which echoes the requested path in JSON (harmless, not HTML) | a plain "We could not find that" handler |
 | P-5 | S4 | No `Permissions-Policy` header; the cookie name has no `__Host-` prefix; sessions have a fixed 12 hours with no idle timeout; old session rows are never deleted | add the header and prefix; add an idle timeout and a clean-up of expired sessions |
 | P-6 | S4 | Password rule is length only (12); no check against common or breached passwords; custom rules are not built | a small common-password list, later the admin rules |
-| P-7 | blocker, not a finding | Two code items from the hosting plan remain: a first-owner command (today only the fake demo seed creates an owner) and a backup command. Do not host without them | build and test them first |
+| P-7 | blocker, not a finding | Two code items from the hosting plan: a first-owner command (**built**, `npm run first-owner`) and a backup command (see the later update) | built and tested |
 | P-8 | note | `node:sqlite` is marked experimental by Node, and the proxy must overwrite the forwarded address header (the app copes with an appended one but not with a proxy that passes a client's header through untouched from a non-local source) | pin the Node version, watch release notes; put the proxy settings in the runbook |
 
 ### Checked and found sound

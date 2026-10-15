@@ -33,6 +33,10 @@ npm run seed     # creates data/app.db with invented people; sign-ins are writte
 npm start        # http://127.0.0.1:3000
 ```
 
+For a real instance (not the demo), use a new database file and create the first owner instead of seeding:
+`npm run first-owner -- --workspace "Your Company" --name "Your Name" --email you@your-company.example`. It shows a one-time password
+once in the terminal, stores only a hash, writes nothing secret to any log, and refuses to run if an owner already exists.
+
 Needs Node 22.13 or newer (Python 3.8 or newer for the pack's tools). No account, key or paid service.
 Seed passwords are random each time and live only in the gitignored file. Tests:
 `npm test`, `python3 -m unittest discover -s tests`, `npx playwright test`. No email is sent by the app: invite

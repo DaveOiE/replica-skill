@@ -11,6 +11,7 @@
     "test": "node --no-warnings --test \"app/tests/**/*.test.js\"",
     "start": "node --no-warnings app/server/index.js",
     "seed": "node --no-warnings app/seed/seed.js",
+    "first-owner": "node --no-warnings app/cli/first-owner.js",
     "tokens": "python3 tools/tokens_css.py replica/design/tokens.json app/web/styles/tokens.css",
     "e2e": "playwright test",
     "brief": "node --no-warnings tools/notebooklm-brief.mjs",
