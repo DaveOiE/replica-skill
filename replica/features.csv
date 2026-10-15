@@ -1,5 +1,5 @@
 feature,area,priority,original,clone,notes,tag,ceiling,milestone,effort,scope
-"Workspaces, users, roles, password sign-in",foundation,must,yes,yes,"M1: scrypt sign-in, lockout, sessions, 5 roles, can(), hash-chained audit via mutate(), fake seed. Invites and password-rule settings come in M7",C,done,M1,8,demo
+"Workspaces, users, roles, password sign-in",foundation,must,yes,yes,"Sign-in with lockout, sessions, five roles enforced on the server, a tamper-evident audit trail written for every change, and fake seed data. Invites by link are built (see the pilot rows); custom password rules (an admin setting) are not built",C,done,M1,8,demo
 "Task fields: owner, assignee, due date, start date, status, description",tasks,must,yes,yes,"M2: create, edit, delete; assignee must be able to see the project; dates validated; every change audited with before and after",C,done,M2,3,demo
 Comments on tasks,tasks,must,yes,yes,M2: commenters and up; author and time set by the server,C,done,M2,2,demo
 Attachments on tasks,tasks,should,yes,no,"local disk, size and type limits",C,done,M2,3,later
