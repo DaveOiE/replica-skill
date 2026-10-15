@@ -12,7 +12,7 @@ been penetration tested; this plan does not change that.
 2. **Hosting location is NOT STATED in the Playbook.** This plan therefore does not assume `oie-zen-core` or any existing project. It is
    written for a **separate GCP project dedicated to Deskrail**. Minimum acceptable fallback: a separate service account with no access to
    the Credential Service or the Reseller key. Which of the two, and the project name, is the owner's call.
-3. **Backups:** daily, encrypted, off the machine, restore tested, plus a backup before every migration. Counts kept are in the Backups section.
+3. **Backups:** hourly, daily, monthly and pre-migration, all encrypted and off the machine, restore tested. Counts kept are in the Backups section.
 4. **Forget-me:** not ruled by the Playbook (Blockers #7). The forget-me section describes what would be involved and what exists today.
 
 ## Shape
@@ -25,7 +25,7 @@ with a token. Deskrail makes no outgoing calls.
 internet -> :443 reverse proxy (certificates renewed automatically)
               -> 127.0.0.1:3000 Deskrail (node, run by systemd, own unprivileged user)
                     -> /var/lib/deskrail/app.db  (+ app.db-wal, app.db-shm), on the persistent disk
-backup timer (daily, and before each migration) -> consistent copy -> encrypted -> storage bucket in a different project
+backup timer (hourly, plus before each migration; the daily and monthly sets are promoted from the hourly ones) -> consistent copy -> encrypted -> storage bucket in a different project
 ```
 
 Sizing: 1 to 2 vCPU, 2 GB memory, 20 to 40 GB disk is plenty for a few staff and Zen's task traffic. SQLite writes are serialised, which
@@ -80,11 +80,13 @@ These were found while writing the plan. Each is small and each needs its own te
 
 | what | when | where | kept |
 | --- | --- | --- | --- |
-| **daily** consistent copy of the database (backup command, below), encrypted | every night | storage bucket in the second project | **30 daily backups, plus 12 monthly (the first of each month), so at most 42** |
+| **hourly** consistent copy of the database (backup command, below), encrypted | every hour, all day | storage bucket in the second project | **the last 48** (two days) |
+| **daily** copy: the first hourly copy after midnight, kept longer | every night | same bucket, own folder | **the last 30** |
+| **monthly** copy: the first daily copy of each month | monthly | same bucket, own folder | **the last 12** |
 | **pre-migration** backup, taken by the deploy step before any migration runs | before every deploy that adds a migration | same bucket, separate folder | **the last 5**, never deleted by the daily clean-up |
 | disk snapshot (extra safety, not the main backup) | nightly | GCP snapshot schedule | 7 |
 
-So at any time there are up to 47 off-machine backups. Older ones are removed by a bucket lifecycle rule, not by the VM.
+So at any time there are up to 95 off-machine backups (48 + 30 + 12 + 5). Older ones are removed by a bucket lifecycle rule, not by the VM.
 
 - The copy is encrypted before it leaves the VM (for example with `age`), to a key whose private half is held by the owner off the VM. The
   VM's backup identity can add objects but not read, overwrite or delete them (use bucket retention or object versioning), so a break-in
@@ -92,10 +94,13 @@ So at any time there are up to 47 off-machine backups. Older ones are removed by
 - **Restore is tested, not assumed:** once before go-live and monthly after. Fetch the latest backup to a scratch machine, decrypt, run the
   integrity check and `verifyChain`, start the app on it, sign in as a fake test user, read the audit log. Record date and result in
   `replica/ops-log.md` (created when hosting is actually built). A backup that has never been restored counts as no backup.
-- **Honest recovery goal:** with daily backups, a failure could lose up to one day of changes. Whether Zen can safely re-send a day of
-  ingestion (ingest is idempotent on its key, so a replay creates no duplicates, but staff edits and comments in that day would be lost) is
-  **NOT STATED** in the Playbook. If a day is too much, hourly copies can be added; that is a decision for the owner, not assumed here.
-- Alert if the newest backup is older than 30 hours (a check-in ping carrying no data).
+- **Honest recovery goal:** with hourly copies, a failure could lose up to about one hour of changes (plus the time the failure went
+  unnoticed if the alert below is late). Whether Zen can safely re-send an hour of ingestion (ingest is idempotent on its key, so a replay
+  creates no duplicates, but staff edits and comments in that hour would be lost) is **NOT STATED** in the Playbook, so it is not assumed.
+  Hourly is this plan's proposal; the owner may choose daily only, or more often, at no real cost difference.
+- Alert if the newest backup is older than 3 hours (a check-in ping carrying no data). The restore test also confirms the newest
+  hourly copy really restores, not only the oldest monthly one.
+- Each hourly run takes the copy with SQLite's online backup, so it does not stop the app; it checks the copy with an integrity check before upload and does not upload a copy that fails.
 - Deleting data interacts with backups; see the forget-me section.
 ## Forget-me: what deleting a client's data would involve
 
@@ -110,7 +115,7 @@ keep; it describes the work for each place data sits, what exists today, and wha
 | **Form submissions** | the submitter's email and every answer, kept as raw text | **Deleting a task now blanks its submission** (answers emptied, submitter email cleared, empty row kept so the request count stays honest), by a database trigger so subtasks and any future delete path are covered; older orphaned rows were blanked by migration 0007 | finding a submission by email without its task (not needed now, since the task is the way in) |
 | **Imported job projects** | client name, job number, notes, description from the Job Register import | same as projects: archive only | covered by the project delete above; the import file itself is never stored |
 | **Audit trail** | who changed what. **Audit rows no longer carry titles, text, names or emails (Group A of the pre-data hardening); they hold ids and field names**, so what remains is ids, dates, statuses and the caller's network address | append-only by design: the database blocks edits and deletes. Free text is no longer written, so there is nothing to blank for new data. **Rows written before the redaction change still hold text; use a fresh database before real data** | decide whether ids and the caller's network address count as personal data for forget-me (not decided here) |
-| **Backups** | every copy contains everything as it was that day | nothing removes data from a backup | the plan must state an expiry: data deleted today persists in up to 42 daily and monthly backups, so up to about 12 months at the monthly tier. Either accept and document that window, or shorten the monthly tier, or re-encrypt and purge on request. The owner and the Playbook must rule which |
+| **Backups** | every copy contains everything as it was that day | nothing removes data from a backup | the plan must state an expiry: data deleted today persists in the hourly copies for 2 days, the daily copies for 30 days and the monthly copies for up to about 12 months. Either accept and document that window, or shorten the monthly tier, or re-encrypt and purge on request. The owner and the Playbook must rule which |
 | **Logs** | request ids and paths, no bodies, no query strings | already free of client content by test | nothing |
 | **Zen's own copy** | Zen reads tasks live and keeps its own records | out of scope for Deskrail | Zen must be part of any forget-me process; **NOT STATED** how |
 
@@ -176,12 +181,12 @@ Today the honest answer to "can you delete a client from Deskrail?" is: one task
 | small VM (2 GB memory, 1 to 2 vCPU) | 6 | 14 |
 | disk 20 to 40 GB, if not bundled | 0 | 4 |
 | provider snapshots | 1 | 3 |
-| off-machine backup storage, different account (a few GB, lifecycle rules) | 0.5 | 2 |
+| off-machine backup storage, different account (up to 95 copies, a few GB in all while the database is small; standard storage class, lifecycle rules) | 0.5 | 3 |
 | domain name (about 10 to 20 a year) | 1 | 2 |
 | uptime monitor and certificates | 0 | 0 |
-| **total** | **about 9** | **about 25** |
+| **total** | **about 9** | **about 26** |
 
-Add 10 percent for tax and exchange rate. Expect roughly USD 15 a month for a comfortable setup. A managed database would add about
+Add 10 percent for tax and exchange rate. Expect roughly USD 15 a month for a comfortable setup. Hourly backups add almost nothing: the cost is storage for up to 95 copies, and the number of uploads (about 24 a day) is trivial. If the database grew to 1 GB, 95 copies would be about 95 GB, roughly USD 2 to 3 a month at typical standard-storage prices, so check the size every quarter and thin the hourly set if it ever matters. A managed database would add about
 USD 15 to 30 a month on its own, which is one reason to stay on SQLite until it hurts. One-off: my build time for the three code items and
 the runbook is about 60 to 90 thousand tokens, plus the owner's time to create the accounts.
 
@@ -192,9 +197,9 @@ the runbook is about 60 to 90 thousand tokens, plus the owner's time to create t
 | Database for the task system | not set (ADL-062 is Zen's own database only) | SQLite chosen as a Deskrail decision, recorded here; revisit if the Playbook sets one |
 | Hosting location | **NOT STATED** | separate GCP project proposed; the choice of project and cloud is the owner's. The plan does not assume `oie-zen-core` |
 | Cloud provider itself | **NOT STATED** | GCP used for wording only, because the owner named it; nothing depends on it except bucket and identity wording |
-| Backup frequency and retention | **NOT STATED** | daily, 30 daily plus 12 monthly plus the last 5 pre-migration is **this plan's proposal**, not a rule |
-| Recovery point and time targets | **NOT STATED** | a day of possible loss is stated plainly, not hidden |
-| Whether Zen can replay a lost day | **NOT STATED** | not assumed; idempotent ingest makes a replay safe but does not recover staff edits |
+| Backup frequency and retention | **NOT STATED** | hourly (last 48), daily (last 30), monthly (last 12) and pre-migration (last 5) is **this plan's proposal**, not a rule |
+| Recovery point and time targets | **NOT STATED** | up to about an hour of possible loss is stated plainly, not hidden; the restore time goal is unproven until the restore test is run |
+| Whether Zen can replay a lost hour | **NOT STATED** | not assumed; idempotent ingest makes a replay safe but does not recover staff edits |
 | Forget-me scope, audit retention, backup expiry for deleted data | **NOT STATED** (Blockers #7) | described, not decided |
 | Domain name and DNS control | **NOT STATED** | left open |
 | Network path from Zen (public HTTPS or private) | **NOT STATED** | public HTTPS with tokens is the default here; a private path is possible |
@@ -203,14 +208,14 @@ the runbook is about 60 to 90 thousand tokens, plus the owner's time to create t
 | Token rotation interval (90 days) and expiry policy | **NOT STATED** | proposal only |
 | Staff access (anywhere or VPN) | **NOT STATED** | left open |
 
-Anything in this document phrased as a number (90 days, 30 daily backups, USD cost) is a proposal for the owner to accept or change.
+Anything in this document phrased as a number (90 days, 48 hourly and 30 daily backups, USD cost) is a proposal for the owner to accept or change.
 ## Open decisions for the owner (do not guess)
 
 1. Which GCP project (a new dedicated one is proposed) or, at minimum, a dedicated service account with no access to the Credential Service or the Reseller key.
 2. Region.
 3. The domain name and who controls its DNS.
-4. Backup retention (the 30 + 12 + 5 proposal) and who holds the backup key and runs the monthly restore test.
-5. Whether a day of possible data loss is acceptable, or hourly copies are wanted.
+4. Backup retention (the 48 + 30 + 12 + 5 proposal) and who holds the backup key and runs the monthly restore test.
+5. Whether up to an hour of possible data loss is acceptable (hourly is proposed), and who is told when the backup alert fires.
 6. The forget-me ruling (Blockers #7), including audit-trail handling and how long deleted data may sit in backups.
 7. Whether Zen reaches Deskrail over public HTTPS or a private path, and whether staff need a VPN.
 ## Postgres: not planned (reference only)
