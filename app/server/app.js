@@ -27,9 +27,12 @@ export function loadConfig(env = process.env) {
   // The session cookie is Secure whenever the public address is https, unless someone says otherwise on purpose.
   // The service runs with NODE_ENV=production: there, an address that is missing or not https is a mistake to stop on, not to guess around.
   if (env.NODE_ENV === 'production' && !https) throw new Error('NODE_ENV is production, so PUBLIC_URL must be set to the public https address (for example https://tasks.example.test).');
+  // Where the app listens. Always this machine unless a test container needs it wider. In production a wider address is refused: Caddy on this machine is the only thing that may reach the app.
+  const host = env.HOST || '127.0.0.1';
+  if (env.NODE_ENV === 'production' && !['127.0.0.1', '::1', 'localhost'].includes(host)) throw new Error('NODE_ENV is production, so HOST must stay on this machine (127.0.0.1). Only the reverse proxy may be reachable from outside.');
   if (https && env.COOKIE_SECURE === 'false') throw new Error('PUBLIC_URL is https but COOKIE_SECURE=false. A session cookie must be Secure on an https site: remove COOKIE_SECURE or set it to true.');
   return {
-    port: Number(env.PORT || 3000), dbPath: env.DB_PATH || join(here, '..', '..', 'data', 'app.db'),
+    host, port: Number(env.PORT || 3000), dbPath: env.DB_PATH || join(here, '..', '..', 'data', 'app.db'),
     sessionHours: Number(env.SESSION_HOURS || 12), publicUrl, cookieSecure: env.COOKIE_SECURE === undefined ? https : env.COOKIE_SECURE === 'true',
     // true only when a reverse proxy on this machine sits in front: then the caller's address comes from the proxy's forwarded header.
     trustProxy: env.TRUST_PROXY === 'true',

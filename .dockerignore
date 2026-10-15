@@ -1,0 +1,15 @@
+.git
+node_modules
+data
+.local
+test-results
+playwright-report
+app/tests
+app/e2e
+tests
+tools
+replica*
+*.csv
+import
+.env
+.env.*

@@ -1,0 +1,41 @@
+# TEST-ONLY: runs the app on a home server for people to try with INVENTED data. See replica/deploy/zimaos-test.md.
+# Plain http, not production mode. Never expose this to the internet. Set LAN_IP to this server's address on your home network
+# (for example in a file passed with --env-file; see replica/deploy/zimaos-test.env.example).
+name: taskapp-test
+
+services:
+  app:
+    build: .
+    image: taskapp-test:local
+    init: true
+    restart: unless-stopped
+    environment:
+      NODE_ENV: development
+      HOST: 0.0.0.0
+      PORT: "3000"
+      PUBLIC_URL: "http://${LAN_IP:?set LAN_IP to this server's home network address}:3000"
+      DB_PATH: /data/app.db
+      BACKUP_DEST: file:/data/backups
+      BACKUP_KEY_FILE: /data/backup-key
+      DEMO_CREDENTIALS_FILE: /data/demo-credentials.txt
+    ports:
+      # Bound to the LAN address only, never 0.0.0.0, so it is not offered on every network the server is on.
+      - "${LAN_IP:?set LAN_IP}:3000:3000"
+    volumes:
+      - taskapp-test-data:/data
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/api/v1/health').then(r=>process.exit(r.ok?0:1),()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      start_period: 15s
+      retries: 3
+
+volumes:
+  taskapp-test-data:

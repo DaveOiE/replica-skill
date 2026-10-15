@@ -34,6 +34,7 @@ and cannot erase or overwrite a backup; and someone who steals the upload creden
 | `firewall/taskapp.nft.template`, `bin/install-firewall.sh` | host firewall: 80, 443 and SSH from one range you state (IPv4 no wider than /16, IPv6 no wider than /48), SSH slowed per source address; the app port is never open |
 | `ssh/10-taskapp.conf` | key-only SSH hardening |
 | `gcs/lifecycle.json` | age-based clean-up of the backup bucket by name prefix (replaces "keep the last N") |
+| `zimaos-test.md`, `zimaos-test.env.example`, and `Dockerfile`, `docker-compose.yml`, `.dockerignore` at the repository root | a **test-only** container setup for trying the app on a home server with invented data, over http, in non-production mode. It exercises none of the pieces above (systemd, Caddy, firewall, credentials, Google Cloud Storage) |
 | `logging/journald-taskapp.conf` | log retention (14 days, 1 GB). Caddy rotates its own access log |
 | `bin/snapshot.sh`, `backup.sh`, `backup-check.sh`, `restore-drill.sh`, `verify-storage.sh` | the scripts the units run |
 | `bin/install-credential.sh` | installs one credential as a root-only file, reading the value from standard input (never a command line) |
