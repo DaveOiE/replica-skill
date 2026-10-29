@@ -1,0 +1,18 @@
+{
+  "_about": "Light theme. Role names are stable; values are a neutral placeholder until /replica-brand. Check with: python3 ../replica-design/contrast.py design/tokens.light.json",
+  "color": {
+    "bg": "#ffffff", "surface": "#f4f5f7", "surface-2": "#e9ebef", "border": "#d5d9e0", "border-input": "#6b7280",
+    "text": "#14171c", "text-muted": "#4b5563",
+    "accent": "#0b6b5a", "on-accent": "#ffffff", "accent-soft": "#dff3ee", "on-accent-soft": "#084d41",
+    "danger": "#b42318", "on-danger-soft": "#7a1a12", "danger-soft": "#fde8e6",
+    "success": "#157347", "success-soft": "#e1f5ea", "on-success-soft": "#0e5233",
+    "warning": "#8a5a00", "warning-soft": "#fff3d6", "on-warning-soft": "#6b4600"
+  },
+  "pairs": [
+    ["text", "bg"], ["text", "surface"], ["text", "surface-2"], ["text-muted", "bg"], ["text-muted", "surface"], ["text-muted", "surface-2"],
+    ["on-accent", "accent"], ["accent", "bg"], ["accent", "surface"], ["on-accent-soft", "accent-soft"],
+    ["danger", "bg"], ["on-danger-soft", "danger-soft"], ["success", "bg"], ["on-success-soft", "success-soft"],
+    ["warning", "bg"], ["on-warning-soft", "warning-soft"],
+    ["border-input", "bg", "ui"], ["border-input", "surface", "ui"], ["accent", "bg", "ui"]
+  ]
+}

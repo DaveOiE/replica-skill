@@ -1,0 +1,45 @@
+{
+  "emulation": {
+    "cpuSlowdown": 1,
+    "note": "Chromium CPU throttling on a server CPU; not a real tablet"
+  },
+  "coldStartToReadyMs": 8304,
+  "browserRssMb": {
+    "idleAfterSetup": 1141,
+    "afterBenchmark": 1657
+  },
+  "when": "2026-10-29T23:43:44.948Z",
+  "products": 2000,
+  "checkouts": 100,
+  "device": {
+    "userAgent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36",
+    "cores": 4,
+    "memoryGb": 8,
+    "screen": "1280x720@1",
+    "online": true,
+    "storageUsedMb": 48,
+    "storageQuotaMb": 993,
+    "persisted": false,
+    "heapUsedMb": 728
+  },
+  "ms": {
+    "engineStart": 3061.6,
+    "migrate": 758.9,
+    "seedDefaults": 341.9,
+    "insertProducts": 3361.7,
+    "insertPerProduct": 1.7,
+    "gridFirst60Median": 135.8,
+    "searchNameMedian": 119.5,
+    "scanBarcodeMedian": 97.2,
+    "checkoutMedian": 582.5,
+    "checkoutP95": 767.6,
+    "checkoutMax": 822.2,
+    "pbkdf2_100k": 53.8,
+    "lockSetupAndUnlock": 1348.2,
+    "logicalExport": 8798,
+    "logicalExportKb": 317,
+    "physicalBackup": 1023.2,
+    "physicalBackupKb": 6723
+  },
+  "notes": []
+}

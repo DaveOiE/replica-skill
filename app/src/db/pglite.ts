@@ -1,5 +1,16 @@
-import type { PGlite } from '@electric-sql/pglite';
+import { PGlite, types } from '@electric-sql/pglite';
 import type { Db } from './types';
+
+/** Open a PGlite database. bigint columns (money in cents) come back as JS numbers; numeric stays a string for Decimal. */
+export function createPglite(dataDir?: string, extra: Record<string, unknown> = {}): PGlite {
+  const opts = { parsers: { [types.INT8]: (v: string) => safe(v) }, ...extra };
+  return dataDir ? new PGlite(dataDir, opts) : new PGlite(opts);
+}
+export function safe(v: string): number {
+  const n = Number(v);
+  if (!Number.isSafeInteger(n)) throw new RangeError(`bigint ${v} does not fit a safe integer`);
+  return n;
+}
 
 export function fromPglite(pg: PGlite): Db {
   const wrap = (c: { query: PGlite['query']; exec: PGlite['exec'] }, tx: boolean): Db => ({

@@ -1,41 +1,48 @@
+import { getTableColumns } from 'drizzle-orm';
 import type { Db } from '../db/types';
+import { REGISTRY, type SyncClass } from '../schema/helpers';
+import '../schema/index';
 
 export interface Change { seq: number; table: string; op: string; payload: Record<string, unknown>; origin?: string }
 
-type Strategy = 'append' | 'lww' | 'owner';
-// How each synced table converges. Anything not listed is not synced.
-const TABLES: Record<string, Strategy> = {
-  devices: 'owner',            // only the owning device writes its own row
-  products: 'lww',             // versioned last-write-wins
-  stock_movements: 'append',   // immutable ledger
-  orders: 'append',
-  order_lines: 'append',
-  order_payments: 'append',
-};
-export const SYNCED_TABLES = Object.keys(TABLES);
+/** Every synced table converges by the rule its class dictates. Local tables are never synced. */
+export const SYNCED_TABLES = [...REGISTRY.entries()].filter(([, v]) => v.cls !== 'local').map(([k]) => k).sort();
+export const classOf = (table: string): SyncClass | undefined => REGISTRY.get(table)?.cls;
 
-const LWW_COLS = ['sku', 'name', 'price_cents', 'active', 'version', 'updated_at', 'updated_by_device'];
-
+const cache = new Map<string, string>();
 function sqlFor(table: string): string {
+  const hit = cache.get(table); if (hit) return hit;
+  const entry = REGISTRY.get(table);
+  if (!entry || entry.cls === 'local') throw new Error(`table ${table} is not synced`);
   const base = `INSERT INTO ${table} SELECT * FROM jsonb_populate_record(null::${table}, $1::jsonb)`;
-  switch (TABLES[table]) {
-    case 'append': return `${base} ON CONFLICT (id) DO NOTHING`;
-    case 'owner': return `${base} ON CONFLICT (id) DO UPDATE SET name=excluded.name, order_prefix=excluded.order_prefix`;
-    case 'lww': return `${base} ON CONFLICT (id) DO UPDATE SET ${LWW_COLS.map((c) => `${c}=excluded.${c}`).join(', ')}
-      WHERE (excluded.version, excluded.updated_at, excluded.updated_by_device::text) > (${table}.version, ${table}.updated_at, ${table}.updated_by_device::text)`;
-    default: throw new Error(`table ${table} is not synced`);
+  let sql: string;
+  if (entry.cls === 'ledger') {
+    sql = `${base} ON CONFLICT (id) DO NOTHING`;
+  } else {
+    const cols = Object.values(getTableColumns(entry.table)).map((c) => c.name).filter((n) => n !== 'id');
+    if (entry.cls === 'lww') {
+      // a higher (version, time, device) wins everywhere; an older edit can never overwrite a newer one
+      sql = `${base} ON CONFLICT (id) DO UPDATE SET ${cols.map((c) => `${c}=excluded.${c}`).join(', ')}
+        WHERE (excluded.version, excluded.updated_at, excluded.updated_by_device::text) > (${table}.version, ${table}.updated_at, ${table}.updated_by_device::text)`;
+    } else { // owner: only the owning device writes it, so the latest state it sends is right
+      sql = `${base} ON CONFLICT (id) DO UPDATE SET ${cols.map((c) => `${c}=excluded.${c}`).join(', ')}`;
+    }
   }
+  cache.set(table, sql);
+  return sql;
 }
 
 /**
  * Apply remote changes. Idempotent: replaying a batch changes nothing.
- * device: suppress change capture (do not echo back). server: record who each change came from.
+ * device: suppress change capture (do not echo back).
+ * import: a restore from a file; capture stays on so the restored data is pushed to the server.
+ * server: record who each change came from, and serialise writes so outbox sequence numbers become visible in order.
  */
-export async function applyChanges(db: Db, changes: Change[], opts: { as: 'device' } | { as: 'server'; origin: string }) {
+export async function applyChanges(db: Db, changes: Change[], opts: { as: 'device' } | { as: 'import' } | { as: 'server'; origin: string }) {
   await db.transaction(async (tx) => {
     if (opts.as === 'device') await tx.query("SELECT set_config('tillbox.suppress','on',true)");
+    else if (opts.as === 'import') { /* capture stays ON: restored rows become pending and are pushed to the server */ }
     else {
-      // Serialise server writes so outbox sequence numbers become visible in order; a puller can then never skip one.
       await tx.query('SELECT pg_advisory_xact_lock(7001)');
       await tx.query("SELECT set_config('tillbox.origin',$1,true)", [opts.origin]);
     }

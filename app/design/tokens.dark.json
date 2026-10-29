@@ -1,0 +1,18 @@
+{
+  "_about": "Dark theme: same roles, new values. Check with: python3 ../replica-design/contrast.py design/tokens.dark.json",
+  "color": {
+    "bg": "#0f1216", "surface": "#171b21", "surface-2": "#1f242c", "border": "#2c333d", "border-input": "#8b95a5",
+    "text": "#e8ebf0", "text-muted": "#a3adbb",
+    "accent": "#3fc3a8", "on-accent": "#06130f", "accent-soft": "#123a33", "on-accent-soft": "#b6efe1",
+    "danger": "#ff8a80", "danger-soft": "#4a1c18", "on-danger-soft": "#ffd2cd",
+    "success": "#5dd39e", "success-soft": "#133a28", "on-success-soft": "#bff0d8",
+    "warning": "#f2c14e", "warning-soft": "#45330a", "on-warning-soft": "#ffe3a0"
+  },
+  "pairs": [
+    ["text", "bg"], ["text", "surface"], ["text", "surface-2"], ["text-muted", "bg"], ["text-muted", "surface"], ["text-muted", "surface-2"],
+    ["on-accent", "accent"], ["accent", "bg"], ["accent", "surface"], ["on-accent-soft", "accent-soft"],
+    ["danger", "bg"], ["on-danger-soft", "danger-soft"], ["success", "bg"], ["on-success-soft", "success-soft"],
+    ["warning", "bg"], ["on-warning-soft", "warning-soft"],
+    ["border-input", "bg", "ui"], ["border-input", "surface", "ui"], ["accent", "bg", "ui"]
+  ]
+}

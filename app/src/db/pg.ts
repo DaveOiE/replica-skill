@@ -1,7 +1,17 @@
-import type { Pool, PoolClient } from 'pg';
+import pg, { type Pool, type PoolClient } from 'pg';
 import type { Db } from './types';
+import { safe } from './pglite';
+
+let configured = false;
+/** Same rule as the device: bigint -> number, numeric stays a string. Call once at start-up. */
+export function configurePg() {
+  if (configured) return;
+  pg.types.setTypeParser(20, safe);
+  configured = true;
+}
 
 export function fromPool(pool: Pool): Db {
+  configurePg();
   const wrap = (c: Pool | PoolClient, inTx: boolean): Db => ({
     exec: async (sql) => { await c.query(sql); },
     query: async (sql, params) => (await c.query(sql, params as any[])).rows as any[],

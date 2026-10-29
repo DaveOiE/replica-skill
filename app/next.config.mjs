@@ -1,3 +1,4 @@
-// Static export: the app is plain files, so it can be served by anything (or by the device itself) and cached offline.
+// Static export: the app is plain files, so anything can serve it (a static host, the shop's mini PC, or the device
+// itself in a wrapper) and a service worker can cache all of it for offline use.
 /** @type {import('next').NextConfig} */
-export default { output: 'export', images: { unoptimized: true }, reactStrictMode: false };
+export default { output: 'export', trailingSlash: true, images: { unoptimized: true }, reactStrictMode: false };

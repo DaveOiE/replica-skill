@@ -7,28 +7,43 @@
   "scripts": {
     "gen:migrations": "node scripts/gen-migrations.mjs",
     "dev": "next dev",
-    "build": "npm run gen:migrations && next build && node scripts/precache.mjs",
+    "build": "npm run gen:migrations && node scripts/gen-tokens.mjs && next build && node scripts/precache.mjs",
     "test": "vitest run",
     "test:e2e": "playwright test",
-    "sync-server": "tsx server/index.ts"
+    "sync-server": "tsx server/index.ts",
+    "db:generate": "rm -rf drizzle && drizzle-kit generate --name schema && tsx scripts/gen-sql.ts && node scripts/gen-migrations.mjs",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "test:coverage": "vitest run --coverage",
+    "perf": "PERF=1 playwright test e2e/perf.spec.ts"
   },
   "dependencies": {
     "@electric-sql/pglite": "^0.5.9",
+    "decimal.js": "^10.6.0",
     "drizzle-orm": "^0.45.4",
+    "intl-messageformat": "^12.1.4",
     "next": "^16.4.0",
     "pg": "^8.23.1",
     "react": "^19.3.0",
-    "react-dom": "^19.3.0"
+    "react-dom": "^19.3.0",
+    "zod": "^4.6.7"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "@playwright/test": "^1.64.0",
     "@types/node": "^26.6.5",
     "@types/pg": "^8.23.1",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
+    "@vitest/coverage-v8": "^5.0.5",
     "drizzle-kit": "^0.31.11",
+    "eslint": "^10.13.0",
+    "fast-check": "^4.10.2",
+    "s3rver": "^3.7.1",
     "tsx": "^4.23.15",
-    "typescript": "^7.0.2",
-    "vitest": "^5.0.4"
+    "typescript": "6.0",
+    "typescript-eslint": "^8.72.1",
+    "vitest": "^5.0.4",
+    "yaml": "^2.9.1"
   }
 }

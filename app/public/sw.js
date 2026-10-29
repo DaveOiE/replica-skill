@@ -1,6 +1,6 @@
-// Offline app shell. Install pre-caches every file listed in precache.json (written at build time);
-// afterwards the cache answers first and refreshes quietly when online.
-const CACHE = 'tillbox-shell-v1';
+// Offline app shell. Install pre-caches every file listed in precache.json (written at build time); afterwards the
+// cache answers first and refreshes quietly when online. Data never passes through here: it lives in the database.
+const CACHE = 'tillbox-shell-v2';
 self.addEventListener('install', (e) => {
   e.waitUntil((async () => {
     const list = await (await fetch('/precache.json', { cache: 'no-store' })).json();
@@ -9,10 +9,13 @@ self.addEventListener('install', (e) => {
     await self.skipWaiting();
   })());
 });
-self.addEventListener('activate', (e) => e.waitUntil(self.clients.claim()));
+self.addEventListener('activate', (e) => e.waitUntil((async () => {
+  for (const k of await caches.keys()) if (k !== CACHE) await caches.delete(k);
+  await self.clients.claim();
+})()));
 self.addEventListener('fetch', (e) => {
   const u = new URL(e.request.url);
-  if (e.request.method !== 'GET' || u.origin !== self.location.origin) return;
+  if (e.request.method !== 'GET' || u.origin !== self.location.origin) return;   // sync traffic goes straight to the network
   e.respondWith((async () => {
     const c = await caches.open(CACHE);
     const hit = await c.match(e.request, { ignoreSearch: true });
