@@ -1,6 +1,11 @@
 FROM node:22-slim
 WORKDIR /app
 COPY package.json package-lock.json ./
-RUN npm ci
-COPY . .
+RUN npm ci --omit=dev && npm install --no-save tsx
+COPY src ./src
+COPY server ./server
+COPY drizzle ./drizzle
+COPY server-migrations ./server-migrations
+COPY tsconfig.json ./
+EXPOSE 4100
 CMD ["npx", "tsx", "server/index.ts"]

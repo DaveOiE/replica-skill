@@ -5,3 +5,5 @@ out/
 next-env.d.ts
 test-results/
 playwright-report/
+deploy/.env
+backups/

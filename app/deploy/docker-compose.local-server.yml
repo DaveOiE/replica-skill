@@ -1,20 +1,35 @@
-# Mode 2: a mini PC on the shop network. UNTESTED in the spike (no Docker daemon in the build sandbox).
+# Mode 2: a mini PC on the shop network. WRITTEN BUT NEVER RUN: the build sandbox has no Docker daemon.
+# First real test is on your hardware (an Intel N100-class mini PC with 8 GB is plenty).
+#
+#   cp deploy/.env.example deploy/.env      # then edit both secrets
+#   docker compose -f deploy/docker-compose.local-server.yml --env-file deploy/.env up -d --build
+#   # create a one-time pairing code for each tablet:
+#   curl -s -X POST http://MINI-PC:4100/admin/pairing-codes -H "Authorization: Bearer $ADMIN_TOKEN" -d '{"label":"front till"}'
 services:
   db:
     image: postgres:16
     restart: unless-stopped
     environment:
-      POSTGRES_PASSWORD: ${DB_PASSWORD:?set DB_PASSWORD}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?set DB_PASSWORD in deploy/.env}
       POSTGRES_DB: tillbox
     volumes: [dbdata:/var/lib/postgresql/data]
+    healthcheck: { test: ['CMD-SHELL', 'pg_isready -U postgres -d tillbox'], interval: 5s, timeout: 5s, retries: 10 }
   sync:
     build: { context: .., dockerfile: deploy/Dockerfile.sync }
     restart: unless-stopped
-    depends_on: [db]
+    depends_on: { db: { condition: service_healthy } }
     environment:
       DATABASE_URL: postgres://postgres:${DB_PASSWORD}@db:5432/tillbox
-      SYNC_TOKEN: ${SYNC_TOKEN:?set SYNC_TOKEN}
+      ADMIN_TOKEN: ${ADMIN_TOKEN:?set ADMIN_TOKEN (24+ characters) in deploy/.env}
       PORT: "4100"
     ports: ["4100:4100"]
+  backup:
+    # nightly logical dump of the server's database to ./backups on the mini PC (copy that folder off the machine too)
+    image: postgres:16
+    restart: unless-stopped
+    depends_on: { db: { condition: service_healthy } }
+    environment: { PGPASSWORD: "${DB_PASSWORD}" }
+    volumes: ['../backups:/backups']
+    entrypoint: ['/bin/sh', '-c', 'while true; do pg_dump -h db -U postgres tillbox | gzip > /backups/tillbox-$$(date +%Y%m%d-%H%M).sql.gz; find /backups -name "*.sql.gz" -mtime +14 -delete; sleep 86400; done']
 volumes:
   dbdata:

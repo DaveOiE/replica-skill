@@ -5,6 +5,21 @@ const orders = (p: Page) => p.getByTestId('count-orders');
 const badge = (p: Page) => p.getByTestId('sync-state');
 async function goSync(p: Page) { await p.getByRole('link', { name: 'Server & sync' }).click(); await expect(p.getByRole('heading', { name: 'Server & sync' })).toBeVisible(); }
 async function goHome(p: Page) { await p.getByRole('link', { name: 'Home' }).click(); }
+/** Press "Sync now" and wait until THAT sync has finished (the result line appears), not until some earlier status says "synced". */
+async function syncNow(p: Page) {
+  await p.getByTestId('sync-now').click();
+  await expect(p.getByTestId('sync-msg')).toContainText('↑', { timeout: 60_000 });
+  await expect(p.getByTestId('sync-detail-state')).toHaveText('synced');
+}
+/** Connect with a pairing code; if the server already holds data the person is asked, and says yes. Waits for whichever happens. */
+async function connectAndSync(p: Page, code: string) {
+  await p.getByTestId('server-url').fill(SYNC); await p.getByTestId('pairing-code').fill(code);
+  await p.getByTestId('connect').click();
+  const ask = p.getByTestId('merge-ask'), done = p.getByTestId('sync-detail-state').filter({ hasText: 'synced' });
+  await ask.or(done).first().waitFor({ timeout: 60_000 });
+  if (await ask.isVisible()) await p.getByTestId('merge-yes').click();
+  await expect(done).toBeVisible({ timeout: 60_000 });
+}
 
 test('mode 1 -> server with no data loss, a second device joins, two offline tills converge', async ({ browser }) => {
   // --- device A trades standalone ---
@@ -15,10 +30,7 @@ test('mode 1 -> server with no data loss, a second device joins, two offline til
 
   // --- later it is connected to a server: nothing is rewritten ---
   await goSync(a);
-  await a.getByTestId('server-url').fill(SYNC); await a.getByTestId('pairing-code').fill(await pairingCode());
-  await a.getByTestId('connect').click();
-  if (await a.getByTestId('merge-ask').isVisible({ timeout: 3000 }).catch(() => false)) await a.getByTestId('merge-yes').click();
-  await expect(a.getByTestId('sync-detail-state')).toHaveText('synced', { timeout: 60_000 });
+  await connectAndSync(a, await pairingCode());
   await expect(a.getByTestId('sync-pending')).toHaveText('0');
   await expect(badge(a)).toHaveText('Synced');
   await goHome(a);
@@ -32,8 +44,7 @@ test('mode 1 -> server with no data loss, a second device joins, two offline til
   await b.getByTestId('pin-1').fill(PIN); await b.getByTestId('pin-2').fill(PIN); await b.getByTestId('pin-set').click();
   await expect(b.getByTestId('sync-badge')).toBeVisible();
   await goSync(b);
-  await b.getByTestId('sync-now').click();
-  await expect(b.getByTestId('sync-detail-state')).toHaveText('synced', { timeout: 60_000 });
+  await syncNow(b);
   await goHome(b);
   await expect.poll(async () => Number(await orders(b).textContent())).toBeGreaterThanOrEqual(2);
   await expect(b.getByTestId('count-products')).not.toHaveText('0');
@@ -51,7 +62,7 @@ test('mode 1 -> server with no data loss, a second device joins, two offline til
   // --- the network returns: everything flows, both end identical ---
   await ctxA.setOffline(false); await ctxB.setOffline(false);
   await expect(badge(a)).toHaveText(/changes? waiting/);
-  for (const p of [a, b, a]) { await goSync(p); await p.getByTestId('sync-now').click(); await expect(p.getByTestId('sync-detail-state')).toHaveText('synced', { timeout: 60_000 }); await goHome(p); }
+  for (const p of [a, b, a]) { await goSync(p); await syncNow(p); await goHome(p); }
   await expect(orders(a)).toHaveText(/^\d+$/); await expect(orders(b)).toHaveText(/^\d+$/);
   const total = Number(await orders(a).textContent());
   await expect(orders(b)).toHaveText(String(total), { timeout: 30_000 });      // both copies hold exactly the same orders
@@ -86,9 +97,7 @@ test('a wrong or reused pairing code is refused with a clear message', async ({ 
 test('the same data after a lock and unlock: the connection survives', async ({ browser }) => {
   const ctx = await browser.newContext(); const p = await openApp(ctx); await newStore(p);
   await goSync(p);
-  await p.getByTestId('server-url').fill(SYNC); await p.getByTestId('pairing-code').fill(await pairingCode()); await p.getByTestId('connect').click();
-  if (await p.getByTestId('merge-ask').isVisible({ timeout: 3000 }).catch(() => false)) await p.getByTestId('merge-yes').click();
-  await expect(p.getByTestId('sync-detail-state')).toHaveText('synced', { timeout: 60_000 });
+  await connectAndSync(p, await pairingCode());
   await p.reload(); await unlock(p);
   await expect(p.getByTestId('sync-state')).toHaveText(/Synced|changes? waiting/, { timeout: 30_000 });
   await ctx.close();

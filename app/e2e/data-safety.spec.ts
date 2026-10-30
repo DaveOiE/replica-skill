@@ -40,7 +40,7 @@ test('a replacement device is restored from the file: data back, a NEW device id
   await pa.getByTestId('sample-sale').click(); await expect(pa.getByTestId('count-orders')).toHaveText('1');
   await pa.getByTestId('sample-sale').click(); await expect(pa.getByTestId('count-orders')).toHaveText('2');
   const originalPrefix = await pa.getByTestId('prefix').textContent();
-  await pa.getByRole('link', { name: 'Data safety' }).click();
+  await pa.goto('/data-safety/?save=download'); await unlock(pa);   // the plain download route; the save dialog cannot be driven headless
   await pa.getByTestId('backup-pass').fill(PASS);
   const dl = pa.waitForEvent('download');
   await pa.getByTestId('backup-file').click();
@@ -74,7 +74,7 @@ test('a portable (logical) export is added to another shop\'s records without de
   const a = await browser.newContext(); const pa = await openApp(a, '/data-safety/?save=download'); await newStore(pa);
   await pa.goto('/?save=download'); await unlock(pa);
   await pa.getByTestId('sample-sale').click(); await expect(pa.getByTestId('count-orders')).toHaveText('1');
-  await pa.getByRole('link', { name: 'Data safety' }).click();
+  await pa.goto('/data-safety/?save=download'); await unlock(pa);
   await pa.getByTestId('backup-pass').fill(PASS); await pa.getByTestId('backup-kind').selectOption('logical');
   const dl = pa.waitForEvent('download'); await pa.getByTestId('backup-file').click();
   const path = info.outputPath('logical.tbx'); await (await dl).saveAs(path);
