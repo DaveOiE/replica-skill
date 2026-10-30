@@ -4,6 +4,7 @@ import { deviceId, getMeta, setMeta } from '../domain/store';
 import { randomPrefix } from '../domain/ids';
 import { SCHEMA_VERSION } from '../schema/migrations.generated';
 import { reconcileDuplicateSkus } from './reconcile';
+import { flush } from '../db/durability';
 
 export type SyncState = 'standalone' | 'synced' | 'pending' | 'offline' | 'error' | 'update-required' | 'unauthorised';
 export interface SyncStatus { mode: 'standalone' | 'connected'; pending: number; lastSyncAt: string | null; lastError: string | null; state: SyncState; storeId: string | null }
@@ -89,6 +90,7 @@ export async function syncOnce(db: Db, over: { fetch?: F } = {}): Promise<{ push
     return body as any;
   };
   try {
+    await flush(db);   // never send what this device could still lose in a crash (it would reuse the order number)
     let pushed = 0;
     for (;;) {
       const from = Number((await getMeta(db, 'sync_pushed_seq')) ?? 0);

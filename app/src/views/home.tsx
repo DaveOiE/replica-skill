@@ -9,6 +9,7 @@ import { stockExceptions, stockGrid, createSimpleProduct } from '../services/cat
 import { keyExceptions } from '../sync/reconcile';
 import { createSale } from '../services/sales';
 import { formatMoney } from '../domain/format';
+import { flush } from '../db/durability';
 
 export default function Home() {
   const { t } = useI18n(); const { local, ctx } = useSession();
@@ -40,6 +41,7 @@ export default function Home() {
       const { quoteSale } = await import('../services/sales');
       const q = await quoteSale(local.db, { lines });
       const r = await createSale(ctx, { lines, payments: [{ paymentTypeId: card, amountCents: q.totalCents }] });
+      await flush(local.db);   // only tell the customer "recorded" once it is safely in browser storage
       const cur = await getSetting(local.db, 'currency');
       setMsg(t('home.sampleDone', { number: r.number, total: formatMoney(r.totalCents, cur) }));
       data.refresh();

@@ -25,15 +25,15 @@ Decimal quantities (toggle),pos,should,yes,no,
 Change unit on a cart line (price and stock follow the unit),pos,must,yes,no,
 Unit-price override (permission-gated),pos,must,yes,no,
 "Price tier choice: sale, wholesale, custom",pos,should,yes,no,
-"Line discount, percentage or flat",pos,must,yes,no,permission-gated
-"Cart discount, percentage or flat",pos,must,yes,no,permission-gated
-Discount can never exceed its base amount,pos,must,yes,no,
-Coupon entry and validation at POS,pos,must,yes,no,
+"Line discount, percentage or flat",pos,must,yes,partial,permission-gated
+"Cart discount, percentage or flat",pos,must,yes,partial,permission-gated
+Discount can never exceed its base amount,pos,must,yes,yes,
+Coupon entry and validation at POS,pos,must,yes,partial,
 "Cart tax selection (group, inclusive/exclusive)",pos,must,yes,no,
 "Shipping amount, flat or percentage",pos,must,yes,no,
-Order type: takeaway,pos,must,yes,no,
-"Order type: delivery (shipping address, driver)",pos,must,yes,no,
-Order type: dine-in,pos,must,module,no,brief lists it; NexoPOS sells it in a paid module. See open question 3
+Order type: takeaway,pos,must,yes,partial,
+"Order type: delivery (shipping address, driver)",pos,must,yes,partial,
+Order type: dine-in,pos,must,module,partial,brief lists it; NexoPOS sells it in a paid module. See open question 3
 Hold order,pos,must,yes,no,
 Resume held order,pos,must,yes,no,
 Held orders expire after configured time,pos,should,yes,no,daily job
@@ -44,25 +44,25 @@ Order-level settings popup (extensible fields),pos,should,yes,no,
 Quick (ad-hoc) product,pos,should,yes,no,
 Customer select and search at POS,pos,must,yes,no,
 Customer quick-create with addresses at POS,pos,must,yes,no,
-Pay: single payment,pos,must,yes,no,
-Pay: multiple payment lines,pos,must,yes,no,
+Pay: single payment,pos,must,yes,partial,
+Pay: multiple payment lines,pos,must,yes,partial,
 Pay: partial payment (toggle),pos,must,yes,no,
 Pay: unpaid order / pay later (toggle),pos,should,yes,no,
 Pay: instalments / layaway,pos,must,yes,no,dated parts; strict mode
-Pay: customer account balance,pos,must,yes,no,
-Change due calculation and preset tender buttons,pos,must,yes,no,
-Custom payment types,pos,must,yes,no,
+Pay: customer account balance,pos,must,yes,partial,
+Change due calculation and preset tender buttons,pos,must,yes,partial,
+Custom payment types,pos,must,yes,partial,
 Receipt print after sale (auto-print option),pos,must,yes,no,
 Invoice print,pos,must,yes,no,
 "Reprint receipt, refund receipt, payment receipt",pos,should,yes,no,
-Receipt template with placeholders,pos,should,yes,no,
+Receipt template with placeholders,pos,should,yes,partial,
 Keyboard shortcuts on POS (configurable),pos,must,yes,no,
 Fullscreen POS,pos,should,yes,no,
-Touch and tablet layout,pos,must,yes,no,
+Touch and tablet layout,pos,must,yes,partial,
 Sound on sale complete / new item,pos,could,yes,no,
 Protected actions needing approval from a privileged user,pos,could,yes,no,time-boxed grant
 Scale/weighed-item barcodes with PLU ranges,pos,could,yes,no,
-Cash register CRUD,registers,must,yes,no,
+Cash register CRUD,registers,must,yes,partial,
 Open register with opening float,registers,must,yes,no,
 Close register with counted cash and difference,registers,must,yes,no,session balancing
 Cash in / cash out with reason,registers,must,yes,no,
@@ -74,7 +74,7 @@ Register session history,registers,should,yes,no,
 Order detail view,orders,must,yes,no,
 Add payment to unpaid/partial order,orders,must,yes,no,
 "Instalments: create, edit, delete, pay, list due",orders,should,yes,no,
-"Payment status, process status, delivery status",orders,must,yes,no,three independent fields
+"Payment status, process status, delivery status",orders,must,yes,partial,three independent fields
 Change process and delivery status,orders,should,yes,no,
 Refund whole order,orders,must,yes,no,
 Refund selected lines and quantities,orders,must,yes,no,
@@ -83,7 +83,7 @@ Restock option on return,orders,must,partial,no,original decides by condition; b
 Delete order (permission-gated),orders,should,yes,no,
 "Order code schemes (date+seq, random, sequence)",orders,should,yes,no,
 Order coupons tracked,orders,should,yes,no,
-Order taxes stored per tax,orders,must,yes,no,
+Order taxes stored per tax,orders,must,yes,partial,
 Order bulk actions,orders,could,yes,no,
 Product types: simple (materialized),catalogue,must,yes,no,
 Product type: dematerialized (no stock/service),catalogue,should,yes,no,
@@ -93,7 +93,7 @@ Units and unit groups with base unit and ratios,catalogue,must,yes,no,
 "Per-unit price, stock, barcode and low-stock threshold",catalogue,must,yes,no,
 Convert stock between units,catalogue,should,yes,no,
 SKU generation,catalogue,must,yes,no,
-Barcode generation (several symbologies),catalogue,must,yes,no,"ean13, upc-a, code128, code39, codabar"
+Barcode generation (several symbologies),catalogue,must,yes,partial,"ean13, upc-a, code128, code39, codabar"
 Stock management on/off per product,catalogue,must,yes,no,
 Expiry date and block-sales-on-expiry,catalogue,could,yes,no,
 Product status available / unavailable,catalogue,should,yes,no,
@@ -103,8 +103,8 @@ Product CSV export,catalogue,must,yes,no,from list screens
 Product CSV import,catalogue,must,no,no,absent from NexoPOS core; asked for in brief
 Categories with parent and image,catalogue,must,yes,no,
 Category 'show on POS' flag and product counts,catalogue,should,yes,no,
-Taxes and tax groups,catalogue,must,yes,no,
-Tax per product: inclusive / exclusive,catalogue,must,yes,no,
+Taxes and tax groups,catalogue,must,yes,partial,
+Tax per product: inclusive / exclusive,catalogue,must,yes,partial,
 Print labels / barcode sheets,catalogue,must,yes,no,
 Product history (every stock movement),catalogue,must,yes,no,
 Low-stock threshold and alert flag,catalogue,must,yes,no,
@@ -139,7 +139,7 @@ Customer orders view,customers,must,yes,no,
 Reward programmes with spend-range rules,customers,must,yes,no,
 Customer reward points and target-to-coupon,customers,must,yes,no,
 Coupons: percentage or flat,customers,must,yes,no,
-"Coupon rules: validity, hours, min/max cart, usage limits",customers,must,yes,no,
+"Coupon rules: validity, hours, min/max cart, usage limits",customers,must,yes,partial,
 "Coupon restrictions: products, categories, customers, groups",customers,should,yes,no,
 Coupon usage history,customers,should,yes,no,
 Customer import (CSV),customers,could,partial,no,permission exists in original with no screen
@@ -149,7 +149,7 @@ Recurring expenses,accounting,must,yes,no,several recurrence patterns
 Scheduled one-off expenses,accounting,should,yes,no,
 "Transaction history (debit/credit, status)",accounting,must,yes,no,
 Account history,accounting,must,yes,no,
-"Payment types CRUD (active flag, priority)",accounting,must,yes,no,
+"Payment types CRUD (active flag, priority)",accounting,must,yes,partial,
 Accounting rules engine (event to journal lines),accounting,should,yes,no,
 Journals,accounting,could,yes,no,
 Daily and monthly balance roll-ups,accounting,should,yes,no,
@@ -176,31 +176,31 @@ Print report,reports,must,yes,no,
 Export report to CSV / PDF / XLSX,reports,must,no,no,original has CSV on lists only; brief wants export or print
 Scheduled report email,reports,could,partial,no,settings key exists; behaviour not verified
 Users CRUD with active flag,admin,must,yes,no,
-"Roles CRUD, clone role",admin,must,yes,no,
-Permission matrix manager,admin,must,yes,no,94 permissions in original
-Per-route permission enforcement,admin,must,yes,no,
+"Roles CRUD, clone role",admin,must,yes,partial,
+Permission matrix manager,admin,must,yes,partial,94 permissions in original
+Per-route permission enforcement,admin,must,yes,partial,
 "User profile (name, avatar, language, theme)",admin,must,yes,no,
-"Settings: general (identity, currency, date, registration)",admin,must,yes,no,
-"Settings: POS (features, layout, VAT, registers, printing, shortcuts, scale)",admin,must,yes,no,
+"Settings: general (identity, currency, date, registration)",admin,must,yes,partial,
+"Settings: POS (features, layout, VAT, registers, printing, shortcuts, scale)",admin,must,yes,partial,
 Settings: orders,admin,must,yes,no,
 Settings: customers,admin,must,yes,no,
 Settings: invoices and receipts,admin,must,yes,no,
 Settings: workers,admin,should,yes,no,background-worker toggle and health check
 Settings: reports,admin,should,yes,no,
-Settings: accounting,admin,must,yes,no,
+Settings: accounting,admin,must,yes,partial,
 Settings: email and notifications,admin,must,partial,no,SMTP and templates; no screen in original core
-Multi-language UI,admin,must,yes,no,
-RTL layout,admin,must,yes,no,Arabic in original
-Themes incl. dark mode,admin,must,yes,no,
+Multi-language UI,admin,must,yes,yes,
+RTL layout,admin,must,yes,yes,Arabic in original
+Themes incl. dark mode,admin,must,yes,yes,
 Dashboard with per-user widget layout,admin,must,yes,no,
 "Dashboard widgets: sales, orders, chart, best customers, best cashiers, expenses, incomplete sales",admin,should,yes,no,
 "In-app notifications (stored, listed, cleared)",admin,must,yes,no,
 Realtime notifications over websocket,admin,could,yes,no,
-"Activity log (who did what, when)",admin,must,no,no,absent from NexoPOS core; asked for in brief
+"Activity log (who did what, when)",admin,must,no,partial,absent from NexoPOS core; asked for in brief
 Guided tours,admin,could,yes,no,
 "Module / plugin system (upload, enable, disable, migrate, delete)",admin,must,yes,no,
-Event surface for modules (before/after events),admin,must,yes,no,
-Filter/action hooks,admin,must,yes,no,
+Event surface for modules (before/after events),admin,must,yes,partial,
+Filter/action hooks,admin,must,yes,partial,
 "Webhooks (outbound, signed, retried)",admin,must,no,no,absent from NexoPOS core; asked for in brief
 REST API with token auth,admin,must,yes,no,
 API documentation,admin,should,no,no,original docs unreachable; we write our own
@@ -215,28 +215,28 @@ Original translation files,out of scope,skip,yes,no,owned by the vendor; we writ
 Multi-store,out of scope,skip,module,no,paid module; confirm in question 5
 "Restaurant suite: tables, waiters, kitchen display",out of scope,skip,module,no,paid module (Gastro); see question 3
 "PIN login, 2FA, rentals, commissions, workforce, bookings, QR menu, print-server adapter",out of scope,skip,module,no,paid modules
-Standalone mode: full operation on one device with no server,local-first,must,no,no,default mode; original needs a server
-"Offline checkout, including app restart with no network",local-first,must,no,no,service-worker cached shell
-Per-device order-number prefixes,local-first,must,no,no,
-Sync status badge on every screen (standalone/synced/pending/offline/error),local-first,must,no,no,
-"Sync detail panel: unsynced counts, conflicts, stock exceptions",local-first,should,no,no,
-Connect a standalone device to a local server or cloud with no data loss,local-first,must,no,no,proven in spike
-"Join an existing store from a new device (pull, never seed)",local-first,must,no,no,
-Switch server (local to cloud) and disconnect back to standalone,local-first,must,no,no,store-id guard
-Stock exceptions list for offline overselling,local-first,must,no,no,allow and flag by default
-Duplicate SKU/barcode merge rule across devices,local-first,must,no,no,known gap in spike
-Schema-version handshake between devices and server,local-first,must,no,no,
-Per-device sync tokens issued by pairing code,local-first,must,no,no,
-Local-server Docker setup (Postgres + sync service),deploy,must,no,no,"written, untested"
+Standalone mode: full operation on one device with no server,local-first,must,no,partial,default mode; original needs a server
+"Offline checkout, including app restart with no network",local-first,must,no,partial,service-worker cached shell
+Per-device order-number prefixes,local-first,must,no,yes,
+Sync status badge on every screen (standalone/synced/pending/offline/error),local-first,must,no,yes,
+"Sync detail panel: unsynced counts, conflicts, stock exceptions",local-first,should,no,partial,
+Connect a standalone device to a local server or cloud with no data loss,local-first,must,no,yes,proven in spike
+"Join an existing store from a new device (pull, never seed)",local-first,must,no,yes,
+Switch server (local to cloud) and disconnect back to standalone,local-first,must,no,yes,store-id guard
+Stock exceptions list for offline overselling,local-first,must,no,partial,allow and flag by default
+Duplicate SKU/barcode merge rule across devices,local-first,must,no,yes,known gap in spike
+Schema-version handshake between devices and server,local-first,must,no,yes,
+Per-device sync tokens issued by pairing code,local-first,must,no,yes,
+Local-server Docker setup (Postgres + sync service),deploy,must,no,partial,"written, untested"
 "Cloud deployment recipe, Australian region",deploy,must,no,no,no provider chosen
-Persistent-storage request and status display,data safety,must,no,no,
-Backup prompts and 'last verified backup' banner,data safety,must,no,no,
-One-tap backup export to file,data safety,must,no,no,
+Persistent-storage request and status display,data safety,must,no,yes,
+Backup prompts and 'last verified backup' banner,data safety,must,no,yes,
+One-tap backup export to file,data safety,must,no,yes,
 One-tap backup export to Google Drive (backup files only),data safety,should,no,no,needs OAuth client; your decision
-One-tap backup export to S3-compatible storage,data safety,should,no,no,
-Scheduled encrypted backups (when app open; true schedule on server/wrapper),data safety,must,no,no,
-Backup verified by scratch restore before reported good,data safety,must,no,no,proven in spike
-Restore in place and restore as new device,data safety,must,no,no,new-device path proven in spike
-Portable logical export of all data,data safety,should,no,no,
-Held cart re-priced on resume with changed-line notice (old and new price),pos,must,no,no,tested in Phase 0b
+One-tap backup export to S3-compatible storage,data safety,should,no,yes,
+Scheduled encrypted backups (when app open; true schedule on server/wrapper),data safety,must,no,partial,
+Backup verified by scratch restore before reported good,data safety,must,no,yes,proven in spike
+Restore in place and restore as new device,data safety,must,no,yes,new-device path proven in spike
+Portable logical export of all data,data safety,should,no,yes,
+Held cart re-priced on resume with changed-line notice (old and new price),pos,must,no,partial,tested in Phase 0b
 PC wrapper (Tauri or Electron) for reliable storage and scheduled backups,deploy,could,no,no,after spike review

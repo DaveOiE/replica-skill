@@ -5,16 +5,17 @@ import { migrate } from '../db/migrate';
 import { initDevice } from '../domain/store';
 import { startNewStore } from '../installer';
 import { stockGrid } from '../services/catalogue';
-import { createSale } from '../services/sales';
+import { createSale, quoteSale } from '../services/sales';
 import { createBus } from '../events/bus';
 import { insertRow } from '../db/sql';
 import { newId } from '../domain/ids';
 import { createLogicalExport, createPhysicalBackup } from '../backup/backup';
 import { setupLock, unlock } from '../security/lock';
 import type { Ctx } from '../services/runner';
+import { flush } from '../db/durability';
 
 export interface BenchResult {
-  when: string; products: number; checkouts: number;
+  when: string; products: number; checkouts: number; durability: 'strict' | 'relaxed';
   device: { userAgent: string; cores: number | null; memoryGb: number | null; screen: string; online: boolean; storageUsedMb: number | null; storageQuotaMb: number | null; persisted: boolean | null; heapUsedMb: number | null };
   ms: Record<string, number>;
   notes: string[];
@@ -24,19 +25,25 @@ const round = (n: number) => Math.round(n * 10) / 10;
 
 async function timeIt<T>(f: () => Promise<T>): Promise<[T, number]> { const t = performance.now(); const r = await f(); return [r, performance.now() - t]; }
 
-export async function runBench(opts: { products: number; checkouts?: number; onStep?: (s: string) => void; dataDir?: string }): Promise<BenchResult> {
+export async function runBench(opts: { products: number; checkouts?: number; onStep?: (s: string) => void; dataDir?: string; durability?: 'strict' | 'relaxed' }): Promise<BenchResult> {
+  const mode = opts.durability ?? 'relaxed';
   const step = opts.onStep ?? (() => {});
   const checkouts = opts.checkouts ?? 100;
   const ms: Record<string, number> = {}; const notes: string[] = [];
   const dir = opts.dataDir ?? 'idb://tillbox-bench';
   step('open');
-  const [pg, openMs] = await timeIt(async () => { const p = createPglite(dir); await p.waitReady; return p; });
+  const [pg, openMs] = await timeIt(async () => { const p = createPglite(dir, { relaxedDurability: mode === 'relaxed' }); await p.waitReady; return p; });
   ms.engineStart = round(openMs);
   const db = fromPglite(pg);
   const [, migMs] = await timeIt(() => migrate(db)); ms.migrate = round(migMs);
   const info = await initDevice(db, 'Bench');
   const [, seedMs] = await timeIt(() => startNewStore(db, info.id)); ms.seedDefaults = round(seedMs);
   const ctx: Ctx = { db, bus: createBus(), deviceId: info.id, actor: 'system' };
+
+  // What does one committed write cost on this device? Everything else is built from these.
+  const commits: number[] = [];
+  for (let i = 0; i < 30; i++) commits.push((await timeIt(() => db.query("INSERT INTO meta(key,value) VALUES($1,'x') ON CONFLICT (key) DO UPDATE SET value = excluded.value", ['bench' + (i % 3)])))[1]);
+  ms.commitMedian = round(q(commits, 0.5)); ms.commitMax = round(Math.max(...commits));
 
   step('products');
   const unit = (await db.query<{ id: string }>("SELECT u.id FROM units u WHERE u.name = 'Each'"))[0].id;
@@ -63,16 +70,18 @@ export async function runBench(opts: { products: number; checkouts?: number; onS
   step('checkouts');
   const some = await stockGrid(db, { limit: 20 });
   const card = (await db.query<{ id: string }>("SELECT id FROM payment_types WHERE key='card'"))[0].id;
-  const times: number[] = [];
-  for (let i = 0; i < checkouts; i++) {
+  const oneSale = async (i: number) => {
     const a = some[i % some.length], b = some[(i + 7) % some.length];
-    const [, t] = await timeIt(async () => {
-      const quote = await import('../services/sales').then((m) => m.quoteSale(db, { lines: [{ productUnitId: a.product_unit_id, qty: 2 }, { productUnitId: b.product_unit_id, qty: 1 }] }));
-      await createSale(ctx, { lines: [{ productUnitId: a.product_unit_id, qty: 2 }, { productUnitId: b.product_unit_id, qty: 1 }], payments: [{ paymentTypeId: card, amountCents: quote.grossCents }] });
-    });
-    times.push(t);
-  }
-  ms.checkoutMedian = round(q(times, 0.5)); ms.checkoutP95 = round(q(times, 0.95)); ms.checkoutMax = round(Math.max(...times));
+    const lines = [{ productUnitId: a.product_unit_id, qty: 2 }, { productUnitId: b.product_unit_id, qty: 1 }];
+    const quote = await quoteSale(db, { lines });
+    await createSale(ctx, { lines, payments: [{ paymentTypeId: card, amountCents: quote.grossCents }] });
+  };
+  // visible: how long the cashier waits for the sale to go through. durable: until it is safely in browser storage.
+  const visible: number[] = [], durable: number[] = [];
+  for (let i = 0; i < checkouts; i++) { visible.push((await timeIt(() => oneSale(i)))[1]); await flush(db); }
+  for (let i = 0; i < checkouts; i++) durable.push((await timeIt(async () => { await oneSale(i + 3); await flush(db); }))[1]);
+  ms.checkoutMedian = round(q(visible, 0.5)); ms.checkoutP95 = round(q(visible, 0.95)); ms.checkoutMax = round(Math.max(...visible));
+  ms.checkoutDurableMedian = round(q(durable, 0.5)); ms.checkoutDurableP95 = round(q(durable, 0.95));
 
   step('security');
   const [, pbk] = await timeIt(async () => { const k = await crypto.subtle.importKey('raw', new TextEncoder().encode('x'), 'PBKDF2', false, ['deriveBits']); await crypto.subtle.deriveBits({ name: 'PBKDF2', salt: new Uint8Array(16), iterations: 100_000, hash: 'SHA-256' }, k, 256); });
@@ -82,18 +91,20 @@ export async function runBench(opts: { products: number; checkouts?: number; onS
   if (pbk > 400) notes.push('PBKDF2 is slow on this device: unlocking costs about ' + Math.round(pbk * 3) + ' ms at the default strength.');
 
   step('backup');
+  await flush(db);
   const [lg, lgMs] = await timeIt(() => createLogicalExport(db, 'bench passphrase long', { iterations: 100_000 }));
   ms.logicalExport = round(lgMs); ms.logicalExportKb = Math.round(lg.bytes.length / 1024);
   const [ph, phMs] = await timeIt(() => createPhysicalBackup(pg, 'bench passphrase long', { iterations: 100_000 }));
   ms.physicalBackup = round(phMs); ms.physicalBackupKb = Math.round(ph.length / 1024);
 
+  await flush(db);
   const est = await navigator.storage?.estimate?.().catch(() => undefined);
   const heap = (performance as unknown as { memory?: { usedJSHeapSize: number } }).memory?.usedJSHeapSize;
   await pg.close();
   await new Promise<void>((resolve) => { const r = indexedDB.deleteDatabase('/pglite/' + dir.replace('idb://', '')); r.onsuccess = r.onerror = r.onblocked = () => resolve(); });
   if (!heap) notes.push('This browser does not report JavaScript memory; the WebAssembly engine memory is not visible to the page either.');
   return {
-    when: new Date().toISOString(), products: opts.products, checkouts,
+    when: new Date().toISOString(), products: opts.products, checkouts, durability: mode,
     device: {
       userAgent: navigator.userAgent, cores: navigator.hardwareConcurrency ?? null, memoryGb: (navigator as unknown as { deviceMemory?: number }).deviceMemory ?? null,
       screen: `${screen.width}x${screen.height}@${devicePixelRatio}`, online: navigator.onLine, storageUsedMb: est?.usage != null ? Math.round(est.usage / 1e6) : null,

@@ -6,6 +6,7 @@ import { SYNCED_TABLES, applyChanges, type Change } from '../sync/apply';
 import { SCHEMA_VERSION } from '../schema/migrations.generated';
 import { getMeta } from '../domain/store';
 import { newId } from '../domain/ids';
+import { flush } from '../db/durability';
 
 export const APP_VERSION = '0.0.0-phase0b';
 
@@ -28,6 +29,7 @@ async function headerFor(db: Db, kind: BackupHeader['kind']) {
 
 export async function createPhysicalBackup(pg: PGlite, passphrase: string, over: { iterations?: number } = {}): Promise<Uint8Array> {
   const db = fromPglite(pg);
+  await flush(db);
   const dump = await pg.dumpDataDir('gzip');
   return encrypt(new Uint8Array(await dump.arrayBuffer()), passphrase, await headerFor(db, 'physical'), over.iterations);
 }
@@ -83,6 +85,13 @@ async function gunzip(data: Uint8Array): Promise<Uint8Array> {
 }
 
 export async function createLogicalExport(db: Db, passphrase: string, over: { iterations?: number } = {}): Promise<{ bytes: Uint8Array; rows: number; check: Fingerprint }> {
+  // one transaction = one consistent snapshot of the shop, and one storage flush instead of dozens
+  const { lines, rows, check } = await db.transaction(async (tx) => readAll(tx));
+  const plain = await gzip(new TextEncoder().encode(lines.join('\n')));
+  return { bytes: await encrypt(plain, passphrase, await headerFor(db, 'logical'), over.iterations), rows, check };
+}
+
+async function readAll(db: Db): Promise<{ lines: string[]; rows: number; check: Fingerprint }> {
   const lines: string[] = [];
   let rows = 0;
   for (const table of SYNCED_TABLES) {
@@ -96,8 +105,7 @@ export async function createLogicalExport(db: Db, passphrase: string, over: { it
   }
   const check = await fingerprint(db);
   lines.push(JSON.stringify({ end: true, rows }));
-  const plain = await gzip(new TextEncoder().encode(lines.join('\n')));
-  return { bytes: await encrypt(plain, passphrase, await headerFor(db, 'logical'), over.iterations), rows, check };
+  return { lines, rows, check };
 }
 
 /**

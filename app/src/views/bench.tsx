@@ -5,12 +5,12 @@ import { runBench, type BenchResult } from '../client/bench';
 
 export default function Bench() {
   const { t } = useI18n();
-  const [n, setN] = useState(2000); const [step, setStep] = useState(''); const [busy, setBusy] = useState(false);
+  const [n, setN] = useState(2000); const [dur, setDur] = useState<'strict' | 'relaxed'>('relaxed'); const [step, setStep] = useState(''); const [busy, setBusy] = useState(false);
   const [res, setRes] = useState<BenchResult | null>(null); const [err, setErr] = useState('');
   const json = res ? JSON.stringify(res, null, 2) : '';
   const run = async () => {
     setBusy(true); setErr(''); setRes(null);
-    try { setRes(await runBench({ products: n, onStep: setStep })); } catch (e) { setErr(e instanceof Error ? e.message : String(e)); } finally { setBusy(false); setStep(''); }
+    try { setRes(await runBench({ products: n, durability: dur, onStep: setStep })); } catch (e) { setErr(e instanceof Error ? e.message : String(e)); } finally { setBusy(false); setStep(''); }
   };
   return (
     <div className="stack">
@@ -19,6 +19,8 @@ export default function Bench() {
       <div className="card stack">
         <div className="field"><label htmlFor="bn">{t('bench.products')}</label>
           <select id="bn" className="input" value={n} onChange={(e) => setN(Number(e.target.value))} data-testid="bench-n">{[500, 2000, 5000, 10000].map((x) => <option key={x} value={x}>{x.toLocaleString()}</option>)}</select></div>
+        <div className="field"><label htmlFor="bd">Storage mode</label>
+          <select id="bd" className="input" value={dur} onChange={(e) => setDur(e.target.value as 'strict' | 'relaxed')} data-testid="bench-durability"><option value="relaxed">Relaxed (what the app uses): saved to browser storage right after, confirmed once safe</option><option value="strict">Strict: browser storage after every statement (slow; for comparison)</option></select></div>
         <button className="btn primary" onClick={run} disabled={busy} data-testid="bench-run">{t('bench.run')}</button>
         {busy && <p role="status" data-testid="bench-step">{t('bench.running')} {step}</p>}
         {err && <p role="alert" data-testid="bench-error">{err}</p>}

@@ -13,12 +13,14 @@ const rssMb = (): number => {
   } catch { return -1; }
 };
 
-const RUNS: { throttle: number; products: number }[] = [
-  { throttle: 1, products: 2000 }, { throttle: 4, products: 2000 }, { throttle: 6, products: 2000 }, { throttle: 1, products: 10000 }, { throttle: 4, products: 10000 },
+const RUNS: { throttle: number; products: number; mode: 'relaxed' | 'strict' }[] = [
+  { throttle: 1, products: 2000, mode: 'relaxed' }, { throttle: 1, products: 2000, mode: 'strict' },
+  { throttle: 4, products: 2000, mode: 'relaxed' }, { throttle: 6, products: 2000, mode: 'relaxed' },
+  { throttle: 1, products: 10000, mode: 'relaxed' }, { throttle: 4, products: 10000, mode: 'relaxed' },
 ];
 
 for (const r of RUNS) {
-  test(`device speed: ${r.products} products at ${r.throttle}x CPU slowdown`, async ({ browser }) => {
+  test(`device speed: ${r.products} products at ${r.throttle}x CPU slowdown, ${r.mode} storage`, async ({ browser }) => {
     test.setTimeout(900_000);
     const ctx = await browser.newContext(); const p = await openApp(ctx);
     const t0 = Date.now();
@@ -29,14 +31,15 @@ for (const r of RUNS) {
     await cdp.send('Emulation.setCPUThrottlingRate', { rate: r.throttle });
     await p.getByRole('link', { name: 'Device speed' }).click();
     await p.getByTestId('bench-n').selectOption(String(r.products));
+    await p.getByTestId('bench-durability').selectOption(r.mode);
     await p.getByTestId('bench-run').click();
     await expect(p.getByTestId('bench-result')).toBeVisible({ timeout: 800_000 });
     const result = JSON.parse((await p.getByTestId('bench-result').textContent())!);
     const rssAfter = rssMb();
     const out = { emulation: { cpuSlowdown: r.throttle, note: 'Chromium CPU throttling on a server CPU; not a real tablet' }, coldStartToReadyMs: coldStartMs, browserRssMb: { idleAfterSetup: rssIdle, afterBenchmark: rssAfter }, ...result };
     mkdirSync('../replica/perf', { recursive: true });
-    writeFileSync(`../replica/perf/sandbox-${r.throttle}x-${r.products}.json`, JSON.stringify(out, null, 2));
-    console.log(`PERF ${r.throttle}x/${r.products}: ` + JSON.stringify({ coldStartMs, rssIdle, rssAfter, ...result.ms }));
+    writeFileSync(`../replica/perf/sandbox-${r.throttle}x-${r.products}-${r.mode}.json`, JSON.stringify(out, null, 2));
+    console.log(`PERF ${r.throttle}x/${r.products}/${r.mode}: ` + JSON.stringify({ coldStartMs, rssIdle, rssAfter, ...result.ms }));
     await ctx.close();
   });
 }

@@ -4,6 +4,7 @@ import { openLocal, isSetUp, OpenElsewhereError, type Local } from './localdb';
 import { isLockSet, setupLock, unlock as unlockWith, createInactivityLock, type Vault } from '../security/lock';
 import { createBus } from '../events/bus';
 import { startNewStore } from '../installer';
+import { flush } from '../db/durability';
 import { getSetting } from '../settings/service';
 import type { Ctx } from '../services/runner';
 
@@ -37,7 +38,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   }, [decide]);
   useEffect(reopen, [reopen]);
 
-  const lock = useCallback(() => { idle.current?.stop(); setVault(null); if (local) setPhase('locked'); }, [local]);
+  const lock = useCallback(() => { idle.current?.stop(); setVault(null); if (local) { void flush(local.db); setPhase('locked'); } }, [local]);
 
   // lock after a period with no taps or keys (the period is a setting)
   useEffect(() => {

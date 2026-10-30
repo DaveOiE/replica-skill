@@ -4,6 +4,7 @@ import { createPglite, fromPglite } from '../db/pglite';
 import { migrate } from '../db/migrate';
 import { initDevice, getMeta, type DeviceInfo } from '../domain/store';
 import type { Db } from '../db/types';
+import { flushOnPageHide } from '../db/durability';
 
 export interface Local { pg: PGlite; db: Db; info: DeviceInfo; persisted: boolean | null; openMs: number; dataDir: string }
 export const DATA_DIR = 'idb://tillbox';
@@ -35,6 +36,7 @@ export function openLocal(dataDir = DATA_DIR): Promise<Local> {
     const db = fromPglite(pg);
     await migrate(db);
     const info = await initDevice(db, 'Till');
+    flushOnPageHide(db);
     return { pg, db, info, persisted, openMs: Math.round(performance.now() - t0), dataDir };
   })();
   return opening;
