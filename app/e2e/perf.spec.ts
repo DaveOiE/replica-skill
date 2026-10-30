@@ -39,7 +39,7 @@ for (const r of RUNS) {
       if (Date.now() > deadline) throw new Error('bench timed out at step: ' + lastStep);
       const step = (await p.getByTestId('bench-step').textContent({ timeout: 60_000 }).catch(() => '')) ?? '';
       if (step !== lastStep) { lastStep = step; console.log(`PERF step ${r.throttle}x/${r.products} +${Math.round((Date.now() - deadline + 800_000) / 1000)}s: ${step}`); }
-      await p.mouse.move(100 + (Date.now() % 50), 100).catch(() => {}); // real users touch the screen; the inactivity lock would otherwise end a long run
+      await p.evaluate(() => document.body.dispatchEvent(new Event('pointerdown', { bubbles: true }))).catch(() => {}); // a real user touches the screen; the inactivity lock (pointerdown/keydown) would otherwise end a long run
       await p.waitForTimeout(2000);
     }
     const result = JSON.parse((await p.getByTestId('bench-result').textContent())!);
