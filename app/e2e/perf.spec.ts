@@ -33,7 +33,14 @@ for (const r of RUNS) {
     await p.getByTestId('bench-n').selectOption(String(r.products));
     await p.getByTestId('bench-durability').selectOption(r.mode);
     await p.getByTestId('bench-run').click();
-    await expect(p.getByTestId('bench-result')).toBeVisible({ timeout: 800_000 });
+    const deadline = Date.now() + 800_000; let lastStep = '';
+    while (!(await p.getByTestId('bench-result').isVisible())) {
+      if (await p.getByTestId('bench-error').isVisible()) throw new Error('bench failed: ' + (await p.getByTestId('bench-error').textContent()));
+      if (Date.now() > deadline) throw new Error('bench timed out at step: ' + lastStep);
+      const step = (await p.getByTestId('bench-step').textContent({ timeout: 1000 }).catch(() => '')) ?? '';
+      if (step !== lastStep) { lastStep = step; console.log(`PERF step ${r.throttle}x/${r.products}: ${step}`); }
+      await p.waitForTimeout(2000);
+    }
     const result = JSON.parse((await p.getByTestId('bench-result').textContent())!);
     const rssAfter = rssMb();
     const out = { emulation: { cpuSlowdown: r.throttle, note: 'Chromium CPU throttling on a server CPU; not a real tablet' }, coldStartToReadyMs: coldStartMs, browserRssMb: { idleAfterSetup: rssIdle, afterBenchmark: rssAfter }, ...result };
