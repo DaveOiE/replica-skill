@@ -49,3 +49,5 @@ This is low on purpose. Phase 0b builds the foundation (database, pricing engine
 | Google Drive backup (`drive.file` scope only) | Phase 9 |
 | Tauri desktop wrapper | Phase 9b |
 | Vite versus Next.js | your decision, see `framework-decision.md` |
+| Console error `reading 'FS'` from the engine's save step during restore-from-file (same on both builds; test passes, data correct). Likely a save running just after a scratch database closes. | fix in Phase 1 |
+| Long tasks (import, backup, benchmark) must count as activity so the inactivity lock cannot fire mid-task | Phase 2 |

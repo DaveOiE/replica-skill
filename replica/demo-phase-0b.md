@@ -54,7 +54,7 @@ On the first device: *Server & sync* → address `http://127.0.0.1:4100`, the co
 
 ```bash
 cd app
-npx vitest run --coverage     # 270+ tests; the pricing engine must be 100% covered
+npx vitest run --coverage     # 257 tests; the pricing engine must be 100% covered
 npm run lint && npm run typecheck
 PW_CHROMIUM=/path/to/chromium npx playwright test     # real browser: offline, two devices, backups, kill -9
 ```

@@ -10,7 +10,7 @@ export async function pairingCode(): Promise<string> {
 }
 export async function openApp(ctx: BrowserContext, path = '/'): Promise<Page> {
   const p = await ctx.newPage();
-  p.on('pageerror', (e) => console.log('PAGE ERROR:', e.message));
+  p.on('pageerror', (e) => console.log('PAGE ERROR:', e.message, process.env.PAGE_STACK ? e.stack : ''));
   await p.goto(path);
   return p;
 }

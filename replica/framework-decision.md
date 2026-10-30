@@ -16,7 +16,7 @@ I built the **same source** (`app/src`, unchanged) under Vite 8 in a scratch fol
 | JavaScript shipped | 1.69 MB | 1.23 MB (27% less) |
 | Database engine files (wasm and data) | same | same |
 | Total download | 18 MB | 18 MB |
-| Browser tests run against it | all passing (shell 8, modes 4, data safety 5, hard-kill 2) | shell 8/8 and modes 4/4 pass, including **offline start and trading with no network**; data safety and hard-kill: see below |
+| Browser tests run against it | all 19 passing (shell 8, modes 4, data safety 5, hard-kill 2) | **all 19 pass**: shell 8/8, modes 4/4 (including **offline start and trading with no network**), data safety 5/5, hard-kill 2/2 |
 
 Both share the same application code, the same database engine and the same service worker, so run-time speed of a sale is the same code path. I did **not** re-run the speed benchmark on the Vite build, so I make no speed claim; the gain is in build time and download size.
 
@@ -56,3 +56,5 @@ Rough effort: half a day to a day, mostly the router. **The real cost is a decis
 | C. Switch at the start of Phase 3 (the POS screen) | more information about routing needs | more code to move; I would not wait past Phase 1 |
 
 If you pick A, I will do it as the first change of Phase 1, in its own commit, with the full test suite green on both sides of the change, and I will add the thin `Link` wrapper first so the app code never imports a router directly.
+
+One thing I saw while testing: the restore-from-file test prints a page error (`Cannot read properties of undefined (reading 'FS')`) from the database engine's own save step. It appears identically on the Next.js build, so it is not a framework difference; the test passes and the data is correct. It looks like the engine saving to storage just after a scratch database was closed. Logged as a known minor issue (`progress.md`), not yet fixed.

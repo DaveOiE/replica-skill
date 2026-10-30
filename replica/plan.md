@@ -387,10 +387,10 @@ The full list with severities is in `spike-report.md` (R1 to R13). The ones that
 
 ## 9. What I need from you
 
-1. **Review `spike-report.md` and this revision.** Do the risks change your mind about mode 1 as the default, or about browser-only versus a PC wrapper?
-2. **Approve the Prisma to Drizzle change** (2.3), and say whether to **revisit Next.js versus Vite** for a client-only app.
-3. **Decide on Google Drive:** do you want me to prepare the OAuth setup steps for you to run, or should Drive be dropped in favour of file and S3-compatible?
-4. **Hardware:** which tablet and which mini PC do you target? Measuring on a real low-end tablet is the next most valuable test.
-5. Confirm A5 (build-time plugins), A9 (Australian region), A10 (device-side permissions are advisory) and A12 (full replicas).
+1. **Review the Phase 0b demo** (`demo-phase-0b.md`, about 15 minutes) and `perf/summary.md`.
+2. **Vite or Next.js.** Read `framework-decision.md`. I recommend switching to Vite now, as the first change of Phase 1. Say A (switch), B (stay) or C (later).
+3. **Run the Device speed screen on the real tablet** (and the N100 mini PC if you have one) and send me the copied results. The sandbox numbers say the sale itself is fine on a fast CPU and marginal on a slow one, and that memory may be too high for a 3 GB tablet. Only the real device settles it. If it is bad, I would spike OPFS storage before Phase 1 rather than after.
+4. **Agree the speed and memory budget** (`perf/README.md` has my provisional figures) once the tablet reading exists.
+5. **Server-side permission checks** (2.12) are designed but not built; confirm that Phase 1 is the right place, since no server mode should be offered to a shop before then.
 
-On approval I will start **Phase 0b** and stop at its demo.
+On your go-ahead I start **Phase 1** and stop at its demo.

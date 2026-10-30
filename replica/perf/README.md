@@ -7,9 +7,10 @@ The numbers in this folder come from the build sandbox: a 4-core server CPU with
 1. Put the built app (`app/out/`) on any web server the tablet can reach, or use the shop's mini PC. Any static host works.
 2. On the tablet, open the address in **Chrome**. Install it to the home screen if offered (this also affects how long the browser keeps the data).
 3. Choose **Start a new store**, set a PIN, then open **Device speed** in the menu.
-4. Leave **Number of products** at 2,000 and **Storage mode** on *Relaxed*. Tap **Run the test** and leave the tablet alone until it finishes.
+4. Leave **Number of products** at 2,000 and **Storage mode** on *Write-behind (what the app uses)*. Tap **Run the test** and stay with it until it finishes (see step 7).
 5. Tap **Copy results** (or **Download results**) and send me the text. Do it a second time with **10,000** products if the shop's catalogue is that large.
 6. For a fair comparison also run once with **Strict** storage and send that too.
+7. Keep touching the screen now and then during a long run: the app locks itself after the idle time (default 5 minutes) and a lock ends the test.
 
 The test uses a separate temporary database. It never touches the shop's real data and deletes itself when done.
 
