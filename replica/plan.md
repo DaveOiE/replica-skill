@@ -1,10 +1,12 @@
 # Build plan: working title "Tillbox"
 
-Status: **architecture revised to local-first. Phase 0a (spike) is done and reported in `spike-report.md`. Waiting for your review; Phase 0b and later are not started.**
-Inputs: `recon.md` (what to build), `features.csv` (the checklist), `spike-report.md` (what was proven), decisions in recon section 18.
-Licence: GPL-3.0. Stack: Next.js (static export) + PGlite on the device + PostgreSQL on the server + Drizzle (one schema).
+Status: **Phase 0b (foundation) is built and waiting for your review at its demo (`demo-phase-0b.md`). Phase 1 and later are not started.**
+Inputs: `recon.md` (what to build), `features.csv` (the checklist), `spike-report.md` (Phase 0a: what was proven), `framework-decision.md` (Vite versus Next.js, with the trade-off; **nothing has been switched**), `perf/summary.md` (device-speed numbers), decisions in recon section 18.
+Licence: GPL-3.0. Stack: Next.js (static export, for now) + PGlite on the device + PostgreSQL on the server + Drizzle (one schema).
 
-> **Change from the approved plan:** Prisma is replaced by Drizzle. Reason in 2.3. Everything else you approved (4b, the ten fixed items, held-cart re-pricing) still stands.
+> **Approved since the first plan:** Prisma is replaced by Drizzle (you approved this). Mode 1 stays the default, delivered as a browser PWA first, with a Tauri wrapper for shop PCs as a later phase. Google Drive is dropped from Phase 0b and comes back later with the `drive.file` scope only. Everything else you approved earlier (4b, the ten fixed items, held-cart re-pricing) still stands.
+>
+> **Phase 0b changes the design in one place worth knowing about:** browser storage turned out to be the slow part, not the database, so saving now works as "write to memory, then confirm only after the data is safely in browser storage" (section 2.11). Every sale is still on disk before the till says it is paid.
 
 ---
 
@@ -21,9 +23,9 @@ Licence: GPL-3.0. Stack: Next.js (static export) + PGlite on the device + Postgr
 | A7 | Name "Tillbox" is a placeholder; no trademark checks yet. | `/replica-brand` does that later |
 | A8 | The docs site stays unreachable, so behaviour is specified from the repo audit plus normal retail practice. | some behaviour will differ in detail; the demo scripts make that visible |
 | A9 | **Cloud mode runs in an Australian region** (for example AWS Sydney, Azure Australia East or GCP Sydney), managed Postgres, TLS in transit, encryption at rest. I will not sign up to any provider without your approval. | data residency |
-| A10 | **Permissions on a device protect against mistakes, not against a hostile owner of that device** (R10). Server modes re-check on the server. | mode 1 has no server to be the authority |
+| A10 | **Confirmed by you:** in mode 1 permissions protect against mistakes and casual misuse, not against a hostile owner of the device (R10). **In modes 2 and 3 the server must enforce permissions itself** and must never trust what a device claims. Phase 0b does *not* do this yet: the server only checks the device token and schema version. The design and the phase it lands in are in 2.12. | mode 1 has no server to be the authority |
 | A11 | **Held carts are re-priced on resume**, with a visible notice that lists every line whose price changed (old and new). Covered by a test in Phase 0b. | your decision |
-| A12 | Every device is a **full replica** of its store's data. | simplest and safest for offline use; large shops need archiving later (R7) |
+| A12 | **Confirmed, with your condition:** every device is a **full replica** of its store's data, so every device must have a **PIN or passphrase lock** and every backup is **encrypted**. Both are built (PIN 6 to 12 digits or a passphrase of 10+ characters; backups cannot be saved unencrypted). One limit to state plainly: the lock stops casual access, but the browser database itself is **not encrypted at rest** (R14). | simplest and safest for offline use; large shops need archiving later (R7) |
 
 ---
 
@@ -76,11 +78,11 @@ Rules that keep it honest (unchanged in spirit):
 | --- | --- |
 | **PGlite** (Postgres compiled to WebAssembly) | **Chosen.** It is real Postgres, so the device and the server share one schema, one set of SQL migrations, triggers, constraints and `numeric`. Proven in the spike. Cost: 16 MB download, young project (0.x), single connection. |
 | SQLite-wasm | Rejected. Different SQL dialect from the server Postgres, so two schemas or a lowest-common-denominator one, and every ledger trigger and constraint written twice. |
-| Tauri or Electron wrapper | **Not required, recommended later for PCs.** It would give reliable file storage and truly scheduled backups (R2, R13). It wraps the same static app; PGlite also runs in Node, so the same code works. Deferred until after the spike review. |
+| Tauri or Electron wrapper | **Decided (yours): browser PWA first, Tauri wrapper for shop PCs as a later phase.** It gives reliable file storage and truly scheduled backups (R2, R13). It wraps the same static app, so nothing built now is thrown away. It moves earlier only if real devices show storage eviction is a real risk; the spike could not show that (headless Chromium, no real device). Placed as Phase 9b in section 5. |
 
-**How it fits Next.js.** The app is a static export: plain files, no Next server. Every screen is a client component that talks to the on-device database through the service layer. Next.js server components and route handlers are not used, because they cannot reach the device's database. The sync service (modes 2 and 3) is a separate small Node process. This is a good reason to ask whether Vite would be a lighter shell than Next.js for a purely client app; I kept Next.js because you approved it, it built and ran the full spike, and it gives routing and tooling. Say if you want that revisited.
+**How it fits Next.js.** The app is a static export: plain files, no Next server. Every screen is a client component that talks to the on-device database through the service layer. Next.js server components and route handlers are not used, because they cannot reach the device's database. The sync service (modes 2 and 3) is a separate small Node process. You asked me to revisit Vite versus Next.js using what the spike showed; the comparison, the trade-off and my recommendation are in `framework-decision.md`. **I have not switched.**
 
-**What replaces Prisma.** Drizzle ORM. I did not try Prisma against PGlite in a browser, so I cannot say it fails; I chose not to carry that unknown. Drizzle has first-party drivers for both PGlite and node-postgres, and the spike ran the same table definition against both. Drizzle also generates the SQL migrations, which are applied byte-for-byte on device and server. The shared engine itself talks to a thin `Db` interface (query, exec, transaction), so it does not depend on either ORM.
+**What replaces Prisma.** Drizzle ORM (approved by you). Drizzle has first-party drivers for both PGlite and node-postgres, and the same table definition ran against both. It generates the SQL migrations, which are applied byte-for-byte on device and server. The shared engine talks to a thin `Db` interface (query, exec, transaction, optional `durable()`), so it does not depend on either ORM.
 
 ### 2.4 Sync design
 
@@ -126,12 +128,12 @@ The device is the only copy, so this is a product feature, not an afterthought.
 
 - **Persistent storage.** On first run the app asks the browser for persistent storage and shows the result in Settings > Data safety. If it is refused, a standing banner explains the risk. Prompt the user to install the app to the home screen or desktop, which makes browsers far more likely to grant it. (Not testable in headless; real devices pending.)
 - **Backup prompts.** Setup ends with "Set up backups". A banner shows "last verified backup: N days ago" and escalates after 3 and 7 days. The cash-register close screen offers a backup. The backup status is part of the sync badge in mode 1.
-- **One-tap export, three destinations:**
-  - **File:** save to the device (File System Access API where available, otherwise a download; the share sheet on tablets). Needs nothing external.
-  - **Google Drive:** upload the encrypted file to a "Tillbox Backups" folder using the narrow `drive.file` scope. This needs an OAuth client registered in a Google Cloud project, which is an external signup I will not do without your approval. Alternative: you register it once and give me the client ID, or each shop owner supplies their own. Whether the app can ship to the public unverified with that scope needs checking, not assuming.
-  - **S3-compatible** (including Australian providers or a NAS running MinIO): upload with a write-only access key stored on the device, encrypted with the backup passphrase. The bucket needs CORS enabled. In modes 2 and 3 the server uploads with its own key, so no key lives on tablets.
+- **One-tap export, destinations (file and S3-compatible now, Drive later):**
+  - **Google Drive: deferred (your decision).** Not in Phase 0b. It comes back in Phase 9 using only the `drive.file` scope. It needs an OAuth client in a Google Cloud project, an external signup I will not do without you. Drive stays for backup files only; the live database is never synced through it.
+  - **S3-compatible** (including Australian providers or a NAS running MinIO): **built in Phase 0b.** Upload with a signed request (SigV4, checked against AWS's published examples and an independent verifying fake S3), then read back and compare a SHA-256 before the backup is called good. The key is stored on the device inside the encrypted vault. The bucket needs CORS enabled. In modes 2 and 3 the server can upload with its own key instead, so no key needs to live on tablets.
+  - **File:** **built.** Save picker where the browser has one, share sheet or download otherwise.
 - **Scheduled encrypted backups.** Browsers cannot run code when the app is closed. So "scheduled" means: when the app is open and a backup is due (daily by default), and at register close. A Tauri/Electron wrapper can schedule properly and write to a chosen folder. In modes 2 and 3 the server does real scheduled `pg_dump` backups.
-- **Encryption.** AES-256-GCM, key from the shop owner's passphrase (PBKDF2, 600,000 iterations), authenticated (tampering is detected). Lose the passphrase and the backup is unreadable by design; setup prints a recovery code to store with the passphrase.
+- **Encryption.** AES-256-GCM, key from the shop owner's passphrase (PBKDF2, 600,000 iterations), authenticated (tampering is detected; the file header is covered too). There is **no unencrypted option** and the passphrase must be 12 or more characters. Lose the passphrase and the backup is unreadable by design. (A printed recovery code was proposed and is **not built**; it is a Phase 9 item.)
 - **Tested restore.** Every backup is restored into a scratch database and compared with the live one (row counts and stock total) **before** it is reported as good. A "restore drill" prompt runs this monthly against the stored file. A restore screen checks version compatibility and offers two choices: **restore in place** (disaster recovery, same identity) or **restore as a new device** (new identity and order prefix, so receipts can never clash; tested).
 - **Drive is for backup files only.** The live database is never synced through Drive, a shared folder or any file-sync tool. Backups are written once under a timestamped name and never opened as a live database. The UI has no "open from Drive" path, only "restore from this file", which first verifies it.
 - **Portable export.** Besides the physical snapshot there will be a logical export (NDJSON of the same change records used for sync) so a backup survives engine upgrades (R5, R11).
@@ -140,7 +142,7 @@ The device is the only copy, so this is a product feature, not an afterthought.
 
 - **Mode 2:** `deploy/docker-compose.local-server.yml` runs Postgres 16 plus the sync service on a mini PC. **Written but never executed** (no Docker daemon in this sandbox); first real test is on your hardware. Needs a fixed LAN address, a token, and a backup volume. Plain HTTP on a closed LAN is acceptable; HTTPS via a local certificate is recommended and is a Phase 9 task.
 - **Mode 3:** the same sync service container, deployed to an Australian region with managed Postgres. No provider chosen and nothing signed up.
-- Auth in both: per-device tokens issued by an admin pairing code (the spike uses one shared token; not for production).
+- Auth in both: **built in Phase 0b.** An admin issues a single-use pairing code (valid 15 minutes, rate-limited); the device exchanges it for its own bearer token, which the server stores only as a hash. A device can be revoked without touching the others. The shared spike token now only guards the admin endpoints.
 
 ### 2.9 What the new architecture changes in the rest of the plan
 
@@ -177,6 +179,37 @@ The device is the only copy, so this is a product feature, not an afterthought.
 | Backups | encrypted PGlite snapshot + logical export; Drive/S3/file destinations; `pg_dump` on the server | |
 | Tests | Vitest (unit + integration on real Postgres and PGlite), Playwright (Chromium, tablet viewport, offline and two-device scenarios) | |
 | CI | GitHub Actions with a Postgres service container | |
+
+### 2.11 Durability: what Phase 0b found and how saving works now
+
+**Finding.** With PGlite on IndexedDB, the cost is not the database. It is writing to browser storage: about 120 ms for every statement that touches it, and about 1.1 s per write when the processor is slowed 4x, because the storage layer rescans every database file each time. A sale is several statements, so the first spike's 160 ms checkout would have been far slower on a weak tablet.
+
+**What I tried, and what failed.**
+1. *Let the engine skip flushing between statements (its "relaxed durability" setting).* Fast, but a hard kill (`kill -9`) lost a sale the till had already confirmed, and it raced with closing the database. **Rejected**, because a confirmed sale that disappears is the one failure a till cannot have.
+2. *Flush after every statement.* Safe, but a durable sale took 570 to 670 ms at normal speed. Too slow.
+
+**What is built.** An explicit write-behind layer (`src/db/writebehind.ts`):
+- Work happens in memory. A commit becomes durable when the layer has written it to IndexedDB under an exclusive lock.
+- Every service action (`runService`) waits for that write before it returns, so **"paid" on screen means the sale is on disk.** Locking, identity changes, the installer, migrations, pairing and backup import do the same.
+- Sync flushes before it pushes (so a crash cannot reuse an order number that already went to the server), and so do backup, lock and page-hide.
+- Background flushes are debounced (750 ms) so read-only work does not pay for storage.
+- Proven by a Playwright test that kills the browser process with `kill -9` straight after a confirmed sale and finds the sale on restart.
+
+**Result** (1x CPU, 2,000 products, headless Chromium; the full table and the throttled runs are in `perf/summary.md`): a sale is visible to the cashier in about 23 ms and durable in about 163 ms median, against about 680 ms for flush-every-statement. These are sandbox numbers. **No real tablet has been measured yet**; the app has a built-in Device speed screen (`/bench/`) and `perf/README.md` explains how to run it.
+
+**Next lever, not tried:** PGlite's file-system storage on OPFS inside a Web Worker. It may avoid the full-file rescans. It is a Phase 1 spike item once a real tablet gives us a baseline, because it also changes the single-window rule.
+
+### 2.12 Server-side permission enforcement (modes 2 and 3)
+
+You confirmed A10 on the condition that the server enforces permissions in modes 2 and 3. **Phase 0b does not do this.** Today the server checks only that a device is paired and its schema version matches; it accepts any valid row from a paired device. That is fine for the foundation and **not acceptable for modes 2 and 3 in production.** Design, to land in **Phase 1 (Auth and roles)**, before any server mode is offered to a shop:
+
+1. Every synced row carries the id of the user who made it (`actor_id`), written by the service layer on the device.
+2. The server holds its own copy of users, roles and grants (they sync like any versioned data, but the server decides which version is authoritative).
+3. On push, for each row the server maps (table, operation) to the permission the service layer would have required, looks up the actor's grants **as the server knows them**, and rejects the row if the permission is missing. Rejected rows come back to the device as visible exceptions, not silent drops.
+4. Rows that would break a rule the device was supposed to enforce (a price below a floor, a refund above a limit) are checked by the same pure domain code, run on the server.
+5. A device can never grant itself permissions: role and user rows are accepted only from a device whose actor holds `users.manage`.
+6. Offline caveat: a till that was offline when an admin removed a permission can still push work done under the old grants. The server accepts rows by the actor's grants **at the row's timestamp**, so a revocation never rewrites history, and it flags the case for review.
+7. A test walks the table-to-permission map and fails if any synced table has no entry (the same idea as the planned route-permission test).
 
 ---
 
@@ -285,7 +318,7 @@ These rules become executable tests in Phase 0, before any screen exists.
 
 **Verification (added to the quality gates).** For each editable item above, a test changes the setting through the service and asserts that behaviour changes (15% tax changes a cart total, half-even changes a .5 case, cash rounding off removes the rounding line, a new order type appears at the POS, a new payment type of cash kind gives change). A schema test fails if a default literal appears outside `seed/`.
 
-**Held carts (decided).** A cart held before a tax, price or rounding change is re-priced when resumed. The cashier sees a notice that names every line whose unit price changed, with the old and the new price, and any change in the cart total. A line whose price did not change is not listed. If nothing changed, no notice is shown. The re-pricing is a pure function (`repriceHeldCart(held, currentConfig, currentCatalogue)` returning the new cart and a list of `{line, oldPrice, newPrice}`), and it has tests in Phase 0b for: unchanged cart (empty notice), one price changed, a tax-rate change moving a tax-inclusive price, a rounding-mode change, a product that became inactive or was removed (flagged, not silently dropped), and a quantity-based price tier change.
+**Held carts (decided).** A cart held before a tax, price or rounding change is re-priced when resumed. The cashier sees a notice that names every line whose unit price changed, with the old and the new price, and any change in the cart total. A line whose price did not change is not listed. If nothing changed, no notice is shown. The re-pricing is a pure function (`repriceHeldCart(held, currentConfig, currentCatalogue)` returning the new cart and a list of `{line, oldPrice, newPrice}`), and it has tests in Phase 0b for: unchanged cart (empty notice), one price changed, a tax-rate change moving a tax-inclusive price, a rounding-mode change, a product that became inactive or was removed (flagged, not silently dropped). There is no quantity-break pricing in the model, so there is no tier case; if it is added later it gets its own test.
 
 ## 5. Build order
 
@@ -294,8 +327,8 @@ Each phase ends with: the code runs; unit + integration + e2e tests pass in CI; 
 | phase | scope | demo ends with |
 | --- | --- | --- |
 | **0a Spike (done)** | on-device DB, offline checkout, sync to a server, backup/restore; see `spike-report.md` | the report |
-| **0b Foundation** | repo layout and CI (Postgres service), Drizzle schema v1 for the whole model, **money/tax/discount/rounding engine with property tests, incl. rounding mode and cash rounding as inputs**, **held-cart re-pricing with the changed-line notice and its test**, settings store (versioned) and the `seed/` import rule, audit-log wrapper, event bus + hook registry, sync hardening (schema-version handshake, store id guard, SKU/barcode merge rule, per-device tokens), device performance baseline on the cheapest target tablet, design tokens, app shell with i18n, RTL, dark mode | green CI; engine tests; a page that renders LTR/RTL, light/dark, with the sync badge |
-| **1 Auth and roles** | first-run wizard (new store / join), on-device accounts, users, roles, permission matrix, last-admin guard, device pairing, activity log v1, profile | fresh install, create a cashier, sign in as the cashier, pair a second device |
+| **0b Foundation (built, awaiting your review)** | repo layout and CI (Postgres service), Drizzle schema v1 for the whole model, money/tax/discount/rounding engine with property tests (rounding mode and cash rounding as inputs), held-cart re-pricing with the changed-line notice and its test, settings store (versioned) and the `seed/` import rule, audit-log wrapper, event bus, sync hardening (schema-version handshake, store-id guard, SKU/barcode merge rule, per-device tokens), device lock (PIN or passphrase), encrypted backups (file and S3-compatible) with verified restore, write-behind durability, device speed screen, design tokens, app shell with i18n (English, Arabic), RTL, dark mode. **Not done, deliberately:** a measurement on a real tablet or mini PC (needs your hardware), server-side permission enforcement (2.12, Phase 1), Docker run on real hardware | green CI; engine tests; a shell that renders LTR/RTL, light/dark, with the sync badge, a sample sale, backup and restore, two-device sync |
+| **1 Auth and roles** | first-run wizard (new store / join), on-device accounts, users, roles, permission matrix, last-admin guard, device pairing, activity log v1, profile, **server-side permission enforcement for modes 2 and 3 (2.12)**, **OPFS storage spike once a real tablet baseline exists (2.11)** | fresh install, create a cashier, sign in as the cashier, pair a second device; a forged push from a cashier's device is rejected by the server |
 | **2 Catalogue** | taxes, units, categories, products (simple, dematerialised, grouped, variable), SKU and barcode generation, media, stock ledger, adjustments, product history, CSV import and export, labels, indexes for the grid and search | import 200 products, adjust stock, print labels; both devices see it |
 | **3 POS checkout (vertical slice)** | grid, search, scan, cart, units, price override, discounts, taxes, coupon entry, customer pick, order types incl. dine-in label, hold/resume/void, cash + card, change due, receipt print, shortcuts, touch layout | ring up a sale on a tablet **with the network off**, then sync |
 | **4 Orders and payments** | orders list/detail, multi-payment, partial, unpaid, instalments, payment types, refunds and returns with restock option, registers (device-bound sessions, Z-report), invoices | a day on the till |
@@ -304,6 +337,7 @@ Each phase ends with: the code runs; unit + integration + e2e tests pass in CI; 
 | **7 Accounting** | chart, expenses incl. recurring (idempotent runners), journals, roll-ups | recurring expense posts once even with two runners |
 | **8 Reports** | all reports, print, CSV, PDF, XLSX | totals reconcile to the ledger |
 | **9 Settings, extensibility, ops** | all settings pages, build-time plugins with events/hooks, webhooks and email (server modes), **backups to file, Drive and S3-compatible, scheduled backups, restore drill, restore-as-new-device UI**, local-server Docker tested on real hardware, cloud deployment recipe, notifications, dashboard widgets, language packs, themes, API docs | backup, wipe, restore; switch mode 1 to 2 to 3 on real devices |
+| **9b Desktop wrapper (Tauri)** | package the same static app for shop PCs: reliable file storage, real scheduled backups to a chosen folder, no browser eviction. Pulled earlier if real devices show eviction | install on a shop PC, schedule a backup with the app closed, restore it |
 | **10 Hardening and parity report** | accessibility, performance budget, security review, load test with several tills, translation review, final parity report | the report |
 
 Order follows your brief, with foundation first and registers in phase 4.
@@ -341,7 +375,8 @@ The full list with severities is in `spike-report.md` (R1 to R13). The ones that
 | risk | mitigation |
 | --- | --- |
 | **R2 browser storage can be evicted** (largest mode-1 data-loss risk; Safari clears unused site data after about 7 days unless installed) | persistent-storage request, install prompt, escalating verified-backup prompts, wrapper for PCs, advise mode 2/3 for shops that cannot accept it |
-| **R4 speed on low-end tablets is unmeasured** | measure on the target tablet at the start of Phase 0b; it can change the stack decision |
+| **R4 speed on low-end tablets is unmeasured** | only sandbox numbers exist (`perf/summary.md`); they find storage, not the database, is the cost (2.11). A real reading on the 3 to 4 GB Android tablet is the next most valuable test, and it can still change the stack decision |
+| **R14 the browser database is not encrypted at rest** | the device lock stops casual access and backups are always encrypted, but someone with browser developer tools on an unlocked profile can read the data. Said plainly in the UI; the Tauri wrapper can encrypt the file |
 | R5 PGlite is young | pin the version, portable logical export |
 | R6 duplicate SKUs across offline devices | merge rule in Phase 0b, exceptions inbox |
 | R9 devices on different versions | version handshake |

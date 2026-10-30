@@ -1,0 +1,50 @@
+{
+  "emulation": {
+    "cpuSlowdown": 1,
+    "note": "Chromium CPU throttling on a server CPU; not a real tablet"
+  },
+  "coldStartToReadyMs": 6095,
+  "browserRssMb": {
+    "idleAfterSetup": 1118,
+    "afterBenchmark": 1619
+  },
+  "when": "2026-10-30T02:35:20.170Z",
+  "products": 2000,
+  "checkouts": 100,
+  "durability": "relaxed",
+  "device": {
+    "userAgent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36",
+    "cores": 4,
+    "memoryGb": 8,
+    "screen": "1280x720@1",
+    "online": true,
+    "storageUsedMb": 43,
+    "storageQuotaMb": 961,
+    "persisted": false,
+    "heapUsedMb": 729
+  },
+  "ms": {
+    "engineStart": 1943.3,
+    "migrate": 2212.4,
+    "seedDefaults": 320.1,
+    "commitMedian": 0.3,
+    "commitMax": 1.1,
+    "insertProducts": 3147.6,
+    "insertPerProduct": 1.6,
+    "gridFirst60Median": 74.2,
+    "searchNameMedian": 26.3,
+    "scanBarcodeMedian": 16.4,
+    "checkoutMedian": 22.6,
+    "checkoutP95": 30.9,
+    "checkoutMax": 58.3,
+    "checkoutDurableMedian": 162.7,
+    "checkoutDurableP95": 208,
+    "pbkdf2_100k": 50.3,
+    "lockSetupAndUnlock": 1019,
+    "logicalExport": 470.8,
+    "logicalExportKb": 377,
+    "physicalBackup": 935.1,
+    "physicalBackupKb": 7032
+  },
+  "notes": []
+}
