@@ -25,14 +25,14 @@ describe('durability rules for browser storage', () => {
     expect(usesWriteBehind('memory://x')).toBe(false);
     expect(usesWriteBehind('idb://x', { writeBehind: false })).toBe(false);     // the benchmark compares both
   });
-  it('on the device, flush asks the engine for a strict write; elsewhere it is a no-op query', async () => {
+  it('on the device, flush asks the engine for a strict write; on the server it does nothing', async () => {
     const d = await makeDevice('flush');
     const log: string[] = []; await flush(spy(d.db, log));
     expect(log).toEqual(['DURABLE']);
     expect(d.db.durable).toBeTypeOf('function');
     const plain: Db = { exec: d.db.exec, query: d.db.query, transaction: d.db.transaction };   // like the server's database
     const log2: string[] = []; await flush(spy(plain, log2));
-    expect(log2).toEqual(['SELECT 1 AS durable']);
+    expect(log2).toEqual([]);                                                      // nothing to do on the server
   });
   it('a transaction handle has no durable(): flushing inside a transaction would wait on itself', async () => {
     const d = await makeDevice('tx');

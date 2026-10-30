@@ -127,6 +127,7 @@ export async function importLogicalExport(db: Db, bytes: Uint8Array, passphrase:
     const batch: Change[] = body.slice(i, i + CHUNK).map((r) => ({ seq: ++seq, table: r.t, op: 'INSERT', payload: r.p }));
     await applyChanges(db, batch, { as: 'import' });
   }
+  await flush(db);
   return { rows: body.length };
 }
 

@@ -39,6 +39,7 @@ export async function runBench(opts: { products: number; checkouts?: number; onS
   const info = await initDevice(db, 'Bench');
   const [, seedMs] = await timeIt(() => startNewStore(db, info.id)); ms.seedDefaults = round(seedMs);
   const ctx: Ctx = { db, bus: createBus(), deviceId: info.id, actor: 'system' };
+  const manual: Ctx = { ...ctx, deferDurable: true };   // 'visible' = what the cashier waits for if confirmation could wait
 
   // What does one committed write cost on this device? Everything else is built from these.
   const commits: number[] = [];
@@ -70,16 +71,16 @@ export async function runBench(opts: { products: number; checkouts?: number; onS
   step('checkouts');
   const some = await stockGrid(db, { limit: 20 });
   const card = (await db.query<{ id: string }>("SELECT id FROM payment_types WHERE key='card'"))[0].id;
-  const oneSale = async (i: number) => {
+  const oneSale = async (i: number, c: Ctx = manual) => {
     const a = some[i % some.length], b = some[(i + 7) % some.length];
     const lines = [{ productUnitId: a.product_unit_id, qty: 2 }, { productUnitId: b.product_unit_id, qty: 1 }];
     const quote = await quoteSale(db, { lines });
-    await createSale(ctx, { lines, payments: [{ paymentTypeId: card, amountCents: quote.grossCents }] });
+    await createSale(c, { lines, payments: [{ paymentTypeId: card, amountCents: quote.grossCents }] });
   };
-  // visible: how long the cashier waits for the sale to go through. durable: until it is safely in browser storage.
+  // visible: the sale without waiting for storage. durable: the real path, where the service flushes before it returns.
   const visible: number[] = [], durable: number[] = [];
   for (let i = 0; i < checkouts; i++) { visible.push((await timeIt(() => oneSale(i)))[1]); await flush(db); }
-  for (let i = 0; i < checkouts; i++) durable.push((await timeIt(async () => { await oneSale(i + 3); await flush(db); }))[1]);
+  for (let i = 0; i < checkouts; i++) durable.push((await timeIt(() => oneSale(i + 3, ctx)))[1]);   // the real path: durable before it returns
   ms.checkoutMedian = round(q(visible, 0.5)); ms.checkoutP95 = round(q(visible, 0.95)); ms.checkoutMax = round(Math.max(...visible));
   ms.checkoutDurableMedian = round(q(durable, 0.5)); ms.checkoutDurableP95 = round(q(durable, 0.95));
 

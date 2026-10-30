@@ -2,6 +2,7 @@ import type { Db } from '../db/types';
 import { PermissionError, can, type Access } from '../auth/access';
 import type { Bus, EventMap } from '../events/bus';
 import { newId } from '../domain/ids';
+import { flush } from '../db/durability';
 
 export interface Ctx {
   db: Db;
@@ -9,6 +10,11 @@ export interface Ctx {
   deviceId: string;
   /** 'system' = the installer or a background job. Real users always carry their access. */
   actor: Access | 'system';
+  /**
+   * Normally every service call is made durable (written to browser storage) before it returns. A batch job or a
+   * benchmark may set this and then owns the call to flush(). Never set it for anything a person triggers.
+   */
+  deferDurable?: boolean;
 }
 export const actorId = (ctx: Ctx): string | null => (ctx.actor === 'system' ? null : ctx.actor.userId);
 export interface ServiceSpec<T> {
@@ -42,6 +48,7 @@ export async function runService<T>(ctx: Ctx, spec: ServiceSpec<T>, fn: (tx: Db)
     }
     return out;
   });
+  if (!ctx.deferDurable) await flush(ctx.db);   // a person was told it worked, so it must survive a crash or a reload
   const ev = spec.events?.(result);
   if (ev) for (const [name, payload] of Object.entries(ev)) await ctx.bus.emit(name as never, payload as never);
   return result;

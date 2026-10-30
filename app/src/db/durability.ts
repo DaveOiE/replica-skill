@@ -22,7 +22,7 @@ import type { Db } from './types';
 
 /** Resolves once everything committed so far is safely in browser storage. */
 export async function flush(db: Db): Promise<void> {
-  if (db.durable) await db.durable(); else await db.query('SELECT 1 AS durable');
+  if (db.durable) await db.durable();   // the server's Postgres makes every commit durable by itself, so there is nothing to do there
 }
 
 /** Flush when the page is hidden or going away (tab switched, app backgrounded, window closing). Returns an unsubscribe. */

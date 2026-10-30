@@ -1,4 +1,5 @@
 import type { Db } from './types';
+import { flush } from './durability';
 import { migrations, serverMigrations } from '../schema/migrations.generated';
 
 async function run(db: Db, list: { name: string; sql: string }[]): Promise<string[]> {
@@ -17,6 +18,6 @@ async function run(db: Db, list: { name: string; sql: string }[]): Promise<strin
 }
 
 /** The shared schema: identical on every device and on the server. */
-export const migrate = (db: Db) => run(db, migrations);
+export const migrate = async (db: Db) => { const ran = await run(db, migrations); if (ran.length) await flush(db); return ran; };
 /** The server also has a few tables devices never see (tokens, pairing codes). */
 export const migrateServer = async (db: Db) => [...(await run(db, migrations)), ...(await run(db, serverMigrations.map((m) => ({ ...m, name: 'server:' + m.name }))))];

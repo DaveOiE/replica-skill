@@ -4,6 +4,7 @@
 // it. A short PIN also gives little protection against someone who has copied the stored data and can guess offline,
 // so vault secrets should be least-privilege (write-only) keys.
 import type { Db } from '../db/types';
+import { flush } from '../db/durability';
 
 const enc = new TextEncoder(), dec = new TextDecoder();
 const b64 = (u: Uint8Array) => btoa(String.fromCharCode(...u));
@@ -35,7 +36,8 @@ async function aes(key: CryptoKey, data: Uint8Array, mode: 'enc' | 'dec', iv: Ui
 }
 
 async function get(db: Db, k: string) { return (await db.query<{ value: string }>('SELECT value FROM device_secrets WHERE key=$1', [k]))[0]?.value ?? null; }
-async function put(db: Db, k: string, v: string) { await db.query('INSERT INTO device_secrets(key,value) VALUES($1,$2) ON CONFLICT (key) DO UPDATE SET value=excluded.value', [k, v]); }
+// every write here is made durable at once: a PIN that vanishes on reload, or a wrong-guess counter that resets, would defeat the lock
+async function put(db: Db, k: string, v: string) { await db.query('INSERT INTO device_secrets(key,value) VALUES($1,$2) ON CONFLICT (key) DO UPDATE SET value=excluded.value', [k, v]); await flush(db); }
 
 export interface Vault {
   /** Encrypt and store a secret under a name. */
@@ -56,7 +58,7 @@ function makeVault(db: Db, vaultKey: CryptoKey): Vault {
       const [iv, ct] = v.split('.');
       return dec.decode(await aes(vaultKey, unb64(ct), 'dec', unb64(iv)));
     },
-    async forget(name) { await db.query('DELETE FROM device_secrets WHERE key=$1', ['vault:' + name]); },
+    async forget(name) { await db.query('DELETE FROM device_secrets WHERE key=$1', ['vault:' + name]); await flush(db); },
   };
 }
 

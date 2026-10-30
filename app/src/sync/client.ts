@@ -54,6 +54,7 @@ export async function connectServer(db: Db, cfg: { url: string; pairingCode: str
     await setMeta(db, 'sync_pushed_seq', (await getMeta(db, 'sync_pushed_seq')) ?? '0');
     await setMeta(db, 'sync_pulled_seq', (await getMeta(db, 'sync_pulled_seq')) ?? '0');
     await setMeta(db, 'sync_last_error', '');
+    await flush(db);   // the pairing token and store id must survive a reload
     return { storeId: body.storeId };
   }
   throw new Error('could not reserve an order prefix');
@@ -62,6 +63,7 @@ export async function connectServer(db: Db, cfg: { url: string; pairingCode: str
 /** Back to mode 1. The device keeps its full local copy. */
 export async function disconnectServer(db: Db) {
   for (const k of ['sync_url', 'device_token', 'sync_last_error']) await db.query('DELETE FROM meta WHERE key = $1', [k]);
+  await flush(db);
 }
 
 export async function getSyncStatus(db: Db, online = true): Promise<SyncStatus> {

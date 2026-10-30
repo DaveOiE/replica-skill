@@ -1,6 +1,7 @@
 // Device identity and the small amount of local state every device needs. Not business logic.
 import type { Db } from '../db/types';
 import { newId, randomPrefix } from './ids';
+import { flush } from '../db/durability';
 
 export async function getMeta(db: Db, key: string): Promise<string | null> {
   return (await db.query<{ value: string }>('SELECT value FROM meta WHERE key=$1', [key]))[0]?.value ?? null;
@@ -13,6 +14,11 @@ export interface DeviceInfo { id: string; name: string; prefix: string }
 
 /** First run on a device: create its identity. Safe to call again. */
 export async function initDevice(db: Db, name: string): Promise<DeviceInfo> {
+  const info = await initDeviceTx(db, name);
+  await flush(db);   // the device's identity must never be generated twice
+  return info;
+}
+async function initDeviceTx(db: Db, name: string): Promise<DeviceInfo> {
   return db.transaction(async (tx) => {
     const id = await getMeta(tx, 'device_id');
     if (id) {
@@ -39,6 +45,11 @@ export async function deviceId(db: Db): Promise<string> {
  * Restoring in place after a disaster (the original is gone) may keep the identity and skip this.
  */
 export async function restoreAsNewDevice(db: Db, name: string): Promise<DeviceInfo> {
+  const info = await restoreAsNewDeviceTx(db, name);
+  await flush(db);
+  return info;
+}
+async function restoreAsNewDeviceTx(db: Db, name: string): Promise<DeviceInfo> {
   return db.transaction(async (tx) => {
     const old = await deviceId(tx);
     const mine = newId();
