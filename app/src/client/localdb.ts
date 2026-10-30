@@ -1,6 +1,6 @@
 'use client';
 import type { PGlite } from '@electric-sql/pglite';
-import { createPglite, fromPglite } from '../db/pglite';
+import { createPglite, closePglite, fromPglite } from '../db/pglite';
 import { migrate } from '../db/migrate';
 import { initDevice, getMeta, type DeviceInfo } from '../domain/store';
 import type { Db } from '../db/types';
@@ -49,7 +49,7 @@ export async function isSetUp(db: Db): Promise<boolean> {
 
 /** Throw away the (empty, not yet set up) database so a backup can be restored in its place. */
 export async function wipeLocal(local: Local): Promise<void> {
-  await local.pg.close();
+  await closePglite(local.pg);
   await new Promise<void>((resolve, reject) => {
     const req = indexedDB.deleteDatabase('/pglite/' + local.dataDir.replace('idb://', ''));
     req.onsuccess = () => resolve(); req.onerror = () => reject(req.error); req.onblocked = () => resolve();

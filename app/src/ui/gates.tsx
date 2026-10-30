@@ -7,7 +7,7 @@ import { openPhysicalBackup, loadPhysicalData } from '../backup/backup';
 import { readHeader } from '../backup/crypto';
 import { wipeLocal } from '../client/localdb';
 import { restoreAsNewDevice } from '../domain/store';
-import { fromPglite } from '../db/pglite';
+import { fromPglite, closePglite } from '../db/pglite';
 import { StoreMergeError, connectServer } from '../sync/client';
 
 export function LockScreen() {
@@ -89,7 +89,7 @@ export function FirstRun() {
       await wipeLocal(local);
       const pg = loadPhysicalData(data, dataDir);
       if (asNew) await restoreAsNewDevice(fromPglite(pg), 'Till (restored)');
-      await pg.close();
+      await closePglite(pg);
       location.reload();
     } catch (err) { setMsg(err instanceof Error ? err.message : String(err)); setBusy(false); }
   };

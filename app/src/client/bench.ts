@@ -1,6 +1,6 @@
 // Device speed test. Builds a TEMPORARY shop in its own database (never the real one), does the things a till does,
 // and reports timings plus what the device is. Run on the actual tablet or PC; results are only meaningful there.
-import { createPglite, fromPglite } from '../db/pglite';
+import { createPglite, closePglite, fromPglite } from '../db/pglite';
 import { migrate } from '../db/migrate';
 import { initDevice } from '../domain/store';
 import { startNewStore } from '../installer';
@@ -32,7 +32,7 @@ export async function runBench(opts: { products: number; checkouts?: number; onS
   const ms: Record<string, number> = {}; const notes: string[] = [];
   const dir = opts.dataDir ?? 'idb://tillbox-bench';
   step('open');
-  const [pg, openMs] = await timeIt(async () => { const p = createPglite(dir, { relaxedDurability: mode === 'relaxed' }); await p.waitReady; return p; });
+  const [pg, openMs] = await timeIt(async () => { const p = createPglite(dir, { writeBehind: mode === 'relaxed' }); await p.waitReady; return p; });
   ms.engineStart = round(openMs);
   const db = fromPglite(pg);
   const [, migMs] = await timeIt(() => migrate(db)); ms.migrate = round(migMs);
@@ -100,7 +100,7 @@ export async function runBench(opts: { products: number; checkouts?: number; onS
   await flush(db);
   const est = await navigator.storage?.estimate?.().catch(() => undefined);
   const heap = (performance as unknown as { memory?: { usedJSHeapSize: number } }).memory?.usedJSHeapSize;
-  await pg.close();
+  await closePglite(pg);
   await new Promise<void>((resolve) => { const r = indexedDB.deleteDatabase('/pglite/' + dir.replace('idb://', '')); r.onsuccess = r.onerror = r.onblocked = () => resolve(); });
   if (!heap) notes.push('This browser does not report JavaScript memory; the WebAssembly engine memory is not visible to the page either.');
   return {

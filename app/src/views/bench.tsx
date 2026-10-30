@@ -20,7 +20,7 @@ export default function Bench() {
         <div className="field"><label htmlFor="bn">{t('bench.products')}</label>
           <select id="bn" className="input" value={n} onChange={(e) => setN(Number(e.target.value))} data-testid="bench-n">{[500, 2000, 5000, 10000].map((x) => <option key={x} value={x}>{x.toLocaleString()}</option>)}</select></div>
         <div className="field"><label htmlFor="bd">Storage mode</label>
-          <select id="bd" className="input" value={dur} onChange={(e) => setDur(e.target.value as 'strict' | 'relaxed')} data-testid="bench-durability"><option value="relaxed">Relaxed (what the app uses): saved to browser storage right after, confirmed once safe</option><option value="strict">Strict: browser storage after every statement (slow; for comparison)</option></select></div>
+          <select id="bd" className="input" value={dur} onChange={(e) => setDur(e.target.value as 'strict' | 'relaxed')} data-testid="bench-durability"><option value="relaxed">Write-behind (what the app uses): saved shortly after, confirmed once safe</option><option value="strict">Strict: saved after every statement (slow; for comparison)</option></select></div>
         <button className="btn primary" onClick={run} disabled={busy} data-testid="bench-run">{t('bench.run')}</button>
         {busy && <p role="status" data-testid="bench-step">{t('bench.running')} {step}</p>}
         {err && <p role="alert" data-testid="bench-error">{err}</p>}

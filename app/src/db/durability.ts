@@ -1,21 +1,23 @@
 // Durability on the device.
 //
-// The on-device database is stored in the browser (IndexedDB). In "strict" mode the engine copies its files into
-// IndexedDB after EVERY statement, even a read: measured at about 120 ms each on a desktop, so one sale (a handful
-// of statements) took over half a second. In "relaxed" mode that copy runs in the background right after the
-// statement, coalesced, and a statement returns at once (a whole sale: about 17 ms).
+// The on-device database is stored in the browser (IndexedDB). The engine's own rule is to copy its files into
+// IndexedDB after EVERY statement, even a read: measured at about 120 ms each on a desktop, so one sale (a handful of
+// statements) took over half a second and a logical export took 9 seconds. So the app uses write-behind
+// (db/writebehind.ts): a statement returns at once (a whole sale: about 20 ms) and the copy to browser storage is made
+// when we ask for it, or shortly after the last change.
 //
-// What relaxed costs: the background copy asks the browser for "relaxed" IndexedDB durability, which Chromium may
-// buffer, so the newest commits can be lost if the browser is killed. (Measured, not assumed: a confirmed sale was
-// lost after kill -9 when the barrier only waited for the relaxed copy.) The copy is one atomic transaction, so what
-// is lost is whole commits, never a half-written database.
-//
-// So the rule is: before anything that must not be lost or must not be told to anyone else, call flush(). On the
-// device it takes the engine's lock and does one STRICT write of everything not yet stored (about 120 ms).
+// What this costs: a commit that has not been copied yet lives only in memory, so a crash can lose it. The copy is one
+// atomic IndexedDB transaction, so what is lost is whole commits, never a half-written database. To make that window
+// harmless, call flush() before anything that must not be lost or must not be told to anyone else:
 //   - confirming a sale to the customer or printing a receipt
 //   - sending changes to a server (a device must never push what it could still lose: after a crash it would reuse
 //     the same order number for a different order)
-//   - locking, backing up, and the page being hidden or closed
+//   - locking, backing up, closing the database, and the page being hidden or closed
+// flush() takes the engine's lock and does one STRICT write of everything not yet stored (about 120 ms).
+//
+// Tried first, and rejected: the engine's built-in "relaxed durability" option. Its background copy is invisible to
+// the app, raced close(), and a sale that had been confirmed on screen was LOST when the browser was killed
+// (e2e/crash.spec.ts). Measured, not assumed.
 import type { Db } from './types';
 
 /** Resolves once everything committed so far is safely in browser storage. */
